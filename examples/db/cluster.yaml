@@ -1,0 +1,94 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgsodium-config
+data:
+  pgsodium_getkey.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    if [[ -z "${VAULT_KEY}" ]]; then
+      echo "PGSODIUM_KEY is not set" >&2
+      exit 1
+    fi
+
+    echo -n "$VAULT_KEY"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pgsodium-key
+data:
+  # Generate a 32-byte key
+  # head -c 32 /dev/urandom | od -A n -t x1 | tr -d ' \n' | base64
+  key: NmE4YzQwMWY3NzI4YzdiMWViOTE5NmJhMWRlYmFkOTRhMDRlZTgwZDUzZDg4NWE5MWZlODY0MzdkOGIyYmQ2OA==
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: supabase-admin-credentials
+  labels:
+    cnpg.io/reload: "true"
+type: kubernetes.io/basic-auth
+stringData:
+  username: supabase_admin
+  password: 1n1t-R00t!
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cluster-example
+spec:
+  instances: 1
+  imageName: ghcr.io/supabase/postgres:15.6.1.145
+  postgresUID: 105
+  postgresGID: 106
+
+  bootstrap:
+    initdb:
+      database: app
+      owner: supabase_admin
+
+  postgresql:
+    shared_preload_libraries:
+      - pg_stat_statements
+      - pgaudit
+      - plpgsql
+      - plpgsql_check
+      - pg_cron
+      - pg_net
+      - pgsodium
+      - timescaledb
+      - auto_explain
+      - pg_tle
+      - plan_filter
+    parameters:
+      pgsodium.getkey_script: /projected/bin/pgsodium_getkey.sh
+      cron.database_name: app
+      auto_explain.log_min_duration: 10s
+  projectedVolumeTemplate:
+    sources:
+      - configMap:
+          name: pgsodium-config
+          items:
+            - key: pgsodium_getkey.sh
+              path: bin/pgsodium_getkey.sh
+              mode: 0755
+  env:
+    # cloudnative-pg reserves all env variables that start with PG for internal use
+    - name: VAULT_KEY
+      valueFrom:
+        secretKeyRef:
+          name: pgsodium-key
+          key: key
+
+  managed:
+    roles:
+      - name: supabase_admin
+        ensure: present
+        superuser: true
+        login: true
+        passwordSecret:
+          name: supabase-admin-credentials
+  storage:
+    size: 1Gi
