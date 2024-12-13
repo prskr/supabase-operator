@@ -1,13 +1,20 @@
 package main
 
 import (
+	"embed"
 	"log/slog"
 	"os"
+	"text/template"
 
 	_ "github.com/magefile/mage/sh"
 )
 
-var workingDir string
+var (
+	workingDir string
+	//go:embed templates/*.tmpl
+	templatesFS embed.FS
+	templates   *template.Template
+)
 
 func init() {
 	logLevel := new(slog.LevelVar)
@@ -27,4 +34,6 @@ func init() {
 	} else {
 		workingDir = wd
 	}
+
+	templates = template.Must(template.ParseFS(templatesFS, "templates/*.tmpl"))
 }

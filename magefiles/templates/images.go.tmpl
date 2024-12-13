@@ -1,0 +1,17 @@
+package supabase
+
+type ImageRef struct {
+    // The repository of the image
+    Repository string
+    // The tag of the image
+    Tag string
+}
+
+var Images = map[string]ImageRef{
+{{- range $name, $image := .Images }}
+    "{{$name}}": {
+        Repository: "{{$image.Repository}}",
+        Tag: "{{$image.Tag}}",
+    },
+{{- end }}
+}
