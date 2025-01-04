@@ -10,12 +10,16 @@ var (
 	ControllerGen = command("controller-gen")
 	Gofumpt       = command("gofumpt")
 	GolangciLint  = command("golangci-lint")
+	Sqlc          = command("sqlc")
+	CRDRefDocs    = command("crd-ref-docs")
 )
 
 var tools map[command]string = map[command]string{
 	ControllerGen: "sigs.k8s.io/controller-tools/cmd/controller-gen",
 	Gofumpt:       "mvdan.cc/gofumpt",
 	GolangciLint:  "github.com/golangci/golangci-lint/cmd/golangci-lint",
+	Sqlc:          "github.com/sqlc-dev/sqlc/cmd/sqlc",
+	CRDRefDocs:    "github.com/elastic/crd-ref-docs",
 }
 
 var (

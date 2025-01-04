@@ -30,7 +30,7 @@ import (
 	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
 )
 
-var _ = Describe("Core Controller", func() {
+var _ = Describe("Dashboard Controller", func() {
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
 
@@ -40,13 +40,13 @@ var _ = Describe("Core Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		core := &supabasev1alpha1.Core{}
+		dashboard := &supabasev1alpha1.Dashboard{}
 
 		BeforeEach(func() {
-			By("creating the custom resource for the Kind Core")
-			err := k8sClient.Get(ctx, typeNamespacedName, core)
+			By("creating the custom resource for the Kind Dashboard")
+			err := k8sClient.Get(ctx, typeNamespacedName, dashboard)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &supabasev1alpha1.Core{
+				resource := &supabasev1alpha1.Dashboard{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -59,16 +59,16 @@ var _ = Describe("Core Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &supabasev1alpha1.Core{}
+			resource := &supabasev1alpha1.Dashboard{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Cleanup the specific resource instance Core")
+			By("Cleanup the specific resource instance Dashboard")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			controllerReconciler := &CoreReconciler{
+			controllerReconciler := &DashboardReconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
 			}

@@ -1,5 +1,7 @@
 package supabase
 
+import "fmt"
+
 type ImageRef struct {
 	// The repository of the image
 	Repository string
@@ -7,57 +9,55 @@ type ImageRef struct {
 	Tag string
 }
 
-var Images = map[string]ImageRef{
-	"analytics": {
-		Repository: "supabase/logflare",
-		Tag:        "1.4.0",
-	},
-	"auth": {
-		Repository: "supabase/gotrue",
-		Tag:        "v2.164.0",
-	},
-	"db": {
-		Repository: "supabase/postgres",
-		Tag:        "15.6.1.146",
-	},
-	"functions": {
+func (r ImageRef) String() string {
+	return fmt.Sprintf("%s:%s", r.Repository, r.Tag)
+}
+
+var Images = struct {
+	EdgeRuntime  ImageRef
+	Envoy        ImageRef
+	Gotrue       ImageRef
+	ImgProxy     ImageRef
+	PostgresMeta ImageRef
+	Postgrest    ImageRef
+	Realtime     ImageRef
+	Storage      ImageRef
+	Studio       ImageRef
+}{
+	EdgeRuntime: ImageRef{
 		Repository: "supabase/edge-runtime",
 		Tag:        "v1.65.3",
 	},
-	"imgproxy": {
+	Envoy: ImageRef{
+		Repository: "envoyproxy/envoy",
+		Tag:        "distroless-v1.32.3",
+	},
+	Gotrue: ImageRef{
+		Repository: "supabase/gotrue",
+		Tag:        "v2.164.0",
+	},
+	ImgProxy: ImageRef{
 		Repository: "darthsim/imgproxy",
 		Tag:        "v3.8.0",
 	},
-	"kong": {
-		Repository: "kong",
-		Tag:        "2.8.1",
-	},
-	"meta": {
+	PostgresMeta: ImageRef{
 		Repository: "supabase/postgres-meta",
 		Tag:        "v0.84.2",
 	},
-	"realtime": {
-		Repository: "supabase/realtime",
-		Tag:        "v2.33.58",
-	},
-	"rest": {
+	Postgrest: ImageRef{
 		Repository: "postgrest/postgrest",
 		Tag:        "v12.2.0",
 	},
-	"storage": {
+	Realtime: ImageRef{
+		Repository: "supabase/realtime",
+		Tag:        "v2.33.70",
+	},
+	Storage: ImageRef{
 		Repository: "supabase/storage-api",
 		Tag:        "v1.11.13",
 	},
-	"studio": {
+	Studio: ImageRef{
 		Repository: "supabase/studio",
 		Tag:        "20241202-71e5240",
-	},
-	"supavisor": {
-		Repository: "supabase/supavisor",
-		Tag:        "1.1.56",
-	},
-	"vector": {
-		Repository: "timberio/vector",
-		Tag:        "0.28.1-alpine",
 	},
 }

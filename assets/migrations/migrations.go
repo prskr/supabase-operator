@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"embed"
+	"fmt"
 	"io/fs"
 	"iter"
 	"path"
@@ -25,8 +26,18 @@ func MigrationScripts() iter.Seq2[Script, error] {
 	return readScripts(path.Join(".", "migrations"))
 }
 
+func RoleCreationScript(roleName string) (Script, error) {
+	fileName := fmt.Sprintf("%s.sql", roleName)
+	content, err := migrationsFS.ReadFile(path.Join("roles", fileName))
+	if err != nil {
+		return Script{}, err
+	}
+
+	return Script{fileName, string(content)}, nil
+}
+
 func readScripts(dir string) iter.Seq2[Script, error] {
-	return iter.Seq2[Script, error](func(yield func(Script, error) bool) {
+	return func(yield func(Script, error) bool) {
 		files, err := migrationsFS.ReadDir(dir)
 		if err != nil {
 			yield(Script{}, err)
@@ -58,5 +69,5 @@ func readScripts(dir string) iter.Seq2[Script, error] {
 				return
 			}
 		}
-	})
+	}
 }

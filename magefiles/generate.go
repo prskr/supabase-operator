@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -20,22 +22,32 @@ const (
 )
 
 func GenerateAll(ctx context.Context) {
-	mg.CtxDeps(ctx, FetchImageMeta, FetchMigrations, Manifests, Generate)
+	mg.CtxDeps(ctx, FetchImageMeta, FetchMigrations, CRDs, CRDDocs)
 }
 
-func Manifests() error {
-	return RunTool(
-		tools[ControllerGen],
-		"rbac:roleName=manager-role",
-		"crd",
-		"webhook",
-		`paths="./..."`,
-		"output:crd:artifacts:config=config/crd/bases",
+func CRDs() error {
+	return errors.Join(
+		RunTool(
+			tools[ControllerGen],
+			"rbac:roleName=manager-role",
+			"crd",
+			"webhook",
+			`paths="./..."`,
+			"output:crd:artifacts:config=config/crd/bases",
+		),
+		RunTool(tools[ControllerGen], `object:headerFile="hack/boilerplate.go.txt"`, `paths="./..."`),
 	)
 }
 
-func Generate() error {
-	return RunTool(tools[ControllerGen], `object:headerFile="hack/boilerplate.go.txt"`, `paths="./..."`)
+func CRDDocs() error {
+	return RunTool(
+		tools[CRDRefDocs],
+		"--source-path=./api/",
+		"--renderer=markdown",
+		"--config=crd-docs.yaml",
+		"--output-path=./docs/api/",
+		"--output-mode=group",
+	)
 }
 
 func FetchImageMeta(ctx context.Context) error {
@@ -73,6 +85,17 @@ func FetchImageMeta(ctx context.Context) error {
 		Tag        string
 	}
 
+	serviceMappings := map[string]string{
+		"auth":      "Gotrue",
+		"functions": "EdgeRuntime",
+		"imgproxy":  "ImgProxy",
+		"meta":      "PostgresMeta",
+		"realtime":  "Realtime",
+		"rest":      "Postgrest",
+		"storage":   "Storage",
+		"studio":    "Studio",
+	}
+
 	templateData := struct {
 		Images map[string]imageRef
 	}{
@@ -83,13 +106,37 @@ func FetchImageMeta(ctx context.Context) error {
 		splitIdx := strings.LastIndex(service.Image, ":")
 		repo := service.Image[:splitIdx]
 		tag := service.Image[splitIdx+1:]
-		templateData.Images[name] = imageRef{
+
+		mapping, ok := serviceMappings[name]
+		if !ok {
+			continue
+		}
+
+		templateData.Images[mapping] = imageRef{
 			Repository: repo,
 			Tag:        tag,
 		}
 	}
 
-	return templates.ExecuteTemplate(f, "images.go.tmpl", templateData)
+	latestEnvoyTag, err := latestReleaseVersion(ctx, "envoyproxy", "envoy")
+	if err != nil {
+		return err
+	}
+
+	templateData.Images["Envoy"] = imageRef{
+		Repository: "envoyproxy/envoy",
+		Tag:        fmt.Sprintf("distroless-%s", latestEnvoyTag),
+	}
+
+	if err := templates.ExecuteTemplate(f, "images.go.tmpl", templateData); err != nil {
+		return err
+	}
+
+	if err := f.Sync(); err != nil {
+		return err
+	}
+
+	return RunTool(tools[Gofumpt], "-l", "-w", f.Name())
 }
 
 func FetchMigrations(ctx context.Context) error {

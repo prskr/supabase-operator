@@ -1,4 +1,11 @@
 ## Append samples of your project ##
+
+namespace: supabase-demo
+
 resources:
-- supabase_v1alpha1_core.yaml
-# +kubebuilder:scaffold:manifestskustomizesamples
+  - namespace.yaml
+  - cnpg-cluster.yaml
+  - supabase_v1alpha1_core.yaml
+  - supabase_v1alpha1_apigateway.yaml
+  - supabase_v1alpha1_dashboard.yaml
+  # +kubebuilder:scaffold:manifestskustomizesamples

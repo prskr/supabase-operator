@@ -5,9 +5,29 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - supabase.k8s.icb4dc0.de
+  - ""
   resources:
-  - cores
+  - configmaps
+  - secrets
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - apps
+  resources:
+  - deployments
   verbs:
   - create
   - delete
@@ -19,13 +39,31 @@ rules:
 - apiGroups:
   - supabase.k8s.icb4dc0.de
   resources:
+  - apigateways
+  - cores
+  - dashboards
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - supabase.k8s.icb4dc0.de
+  resources:
+  - apigateways/finalizers
   - cores/finalizers
+  - dashboards/finalizers
   verbs:
   - update
 - apiGroups:
   - supabase.k8s.icb4dc0.de
   resources:
+  - apigateways/status
   - cores/status
+  - dashboards/status
   verbs:
   - get
   - patch

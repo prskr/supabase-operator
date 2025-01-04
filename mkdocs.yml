@@ -1,0 +1,26 @@
+site_name: Supabase Operator
+site_url: https://docs.supabase-operator.icb4dc0.de/
+theme:
+  name: material
+  custom_dir: docs/overrides
+  features:
+    - navigation.instant
+    - search.suggest
+    - search.highlight
+    - toc.integrate
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+plugins:
+  - search
+
+nav:
+  - Home:
+      - About: index.md
+      - Getting Started: getting_started.md
+  - API Reference: api/supabase.k8s.icb4dc0.de.md

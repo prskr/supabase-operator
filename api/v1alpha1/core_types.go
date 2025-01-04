@@ -19,46 +19,366 @@ package v1alpha1
 import (
 	"context"
 	"errors"
+	"fmt"
+	"iter"
+	"path"
+	"slices"
+	"strconv"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
 )
 
+func init() {
+	SchemeBuilder.Register(&Core{}, &CoreList{})
+}
+
+var ErrNoSuchSecretValue = errors.New("no such secret value")
+
+type DatabaseRolesSecrets struct {
+	Admin          *corev1.LocalObjectReference `json:"supabaseAdmin,omitempty"`
+	Authenticator  *corev1.LocalObjectReference `json:"authenticator,omitempty"`
+	AuthAdmin      *corev1.LocalObjectReference `json:"supabaseAuthAdmin,omitempty"`
+	FunctionsAdmin *corev1.LocalObjectReference `json:"supabaseFunctionsAdmin,omitempty"`
+	StorageAdmin   *corev1.LocalObjectReference `json:"supabaseStorageAdmin,omitempty"`
+}
+
+type DatabaseRoles struct {
+	// SelfManaged - whether the database roles are managed externally
+	// when enabled the operator does not attempt to create secrets, generate passwords or whatsoever for all database roles
+	// i.e. all secrets need to be provided or the instance won't work
+	SelfManaged bool `json:"selfManaged,omitempty"`
+	// Secrets - typed 'map' of secrets for each database role that Supabase needs
+	Secrets DatabaseRolesSecrets `json:"secrets,omitempty"`
+}
+
 type Database struct {
-	DSN     *string                   `json:"dsn,omitempty"`
-	DSNFrom *corev1.SecretKeySelector `json:"dsnFrom,omitempty"`
+	DSN          *string                   `json:"dsn,omitempty"`
+	DSNSecretRef *corev1.SecretKeySelector `json:"dsnFrom,omitempty"`
+	Roles        DatabaseRoles             `json:"roles,omitempty"`
 }
 
 func (d Database) GetDSN(ctx context.Context, client client.Client) (string, error) {
-	if d.DSN != nil {
-		return *d.DSN, nil
-	}
-
-	if d.DSNFrom == nil {
+	if d.DSNSecretRef == nil {
 		return "", errors.New("DSN not set")
 	}
 
 	var secret corev1.Secret
-	if err := client.Get(ctx, types.NamespacedName{Name: d.DSNFrom.Name}, &secret); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: d.DSNSecretRef.Name}, &secret); err != nil {
 		return "", err
 	}
 
-	data, ok := secret.Data[d.DSNFrom.Key]
+	data, ok := secret.Data[d.DSNSecretRef.Key]
 	if !ok {
-		return "", errors.New("key not found in secret")
+		return "", fmt.Errorf("%w: %s", ErrNoSuchSecretValue, d.DSNSecretRef.Key)
 	}
 
 	return string(data), nil
 }
 
+func (d Database) DSNEnv(key string) corev1.EnvVar {
+	return corev1.EnvVar{
+		Name: key,
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: d.DSNSecretRef,
+		},
+	}
+}
+
+type JwtSpec struct {
+	// Secret - JWT HMAC secret in plain text
+	// This is WRITE-ONLY and will be copied to the SecretRef by the defaulter
+	Secret *string `json:"secret,omitempty"`
+	// SecretRef - object reference to the Secret where JWT values are stored
+	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
+	// SecretKey - key in secret where to read the JWT HMAC secret from
+	// +kubebuilder:default=secret
+	SecretKey string `json:"secretKey,omitempty"`
+	// JwksKey - key in secret where to read the JWKS from
+	// +kubebuilder:default=jwks.json
+	JwksKey string `json:"jwksKey,omitempty"`
+	// AnonKey - key in secret where to read the anon JWT from
+	// +kubebuilder:default=anon_key
+	AnonKey string `json:"anonKey,omitempty"`
+	// ServiceKey - key in secret where to read the service JWT from
+	// +kubebuilder:default=service_key
+	ServiceKey string `json:"serviceKey,omitempty"`
+	// Expiry - expiration time in seconds for JWTs
+	// +kubebuilder:default=3600
+	Expiry int `json:"expiry,omitempty"`
+}
+
+func (s JwtSpec) GetJWTSecret(ctx context.Context, client client.Client) ([]byte, error) {
+	var secret corev1.Secret
+	if err := client.Get(ctx, types.NamespacedName{Name: s.SecretRef.Name}, &secret); err != nil {
+		return nil, nil
+	}
+
+	value, ok := secret.Data[s.SecretKey]
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrNoSuchSecretValue, s.SecretKey)
+	}
+
+	return value, nil
+}
+
+func (s JwtSpec) SecretKeySelector() *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: *s.SecretRef,
+		Key:                  s.SecretKey,
+	}
+}
+
+func (s JwtSpec) JwksKeySelector() *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: *s.SecretRef,
+		Key:                  s.JwksKey,
+	}
+}
+
+func (s JwtSpec) SecretAsEnv(key string) corev1.EnvVar {
+	return corev1.EnvVar{
+		Name: key,
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: *s.SecretRef,
+				Key:                  s.SecretKey,
+			},
+		},
+	}
+}
+
+func (s JwtSpec) ExpiryAsEnv(key string) corev1.EnvVar {
+	return corev1.EnvVar{
+		Name:  key,
+		Value: strconv.Itoa(s.Expiry),
+	}
+}
+
+type PostgrestSpec struct {
+	// Schemas - schema where PostgREST is looking for objects (tables, views, functions, ...)
+	// +kubebuilder:default={"public","graphql_public"}
+	Schemas []string `json:"schemas,omitempty"`
+	// ExtraSearchPath - Extra schemas to add to the search_path of every request.
+	// These schemas tables, views and functions don’t get API endpoints, they can only be referred from the database objects inside your db-schemas.
+	// +kubebuilder:default={"public","extensions"}
+	ExtraSearchPath []string `json:"extraSearchPath,omitempty"`
+	// AnonRole - name of the anon role
+	// +kubebuilder:default=anon
+	AnonRole string `json:"anonRole,omitempty"`
+	// MaxRows - maximum number of rows PostgREST will load at a time
+	// +kubebuilder:default=1000
+	MaxRows int `json:"maxRows,omitempty"`
+	// WorkloadTemplate - customize the PostgREST workload
+	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+}
+
+type AuthProviderMeta struct {
+	// Enabled - whether the authentication provider is enabled or not
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+func (p *AuthProviderMeta) Vars(provider string) []corev1.EnvVar {
+	if p == nil {
+		return nil
+	}
+
+	return []corev1.EnvVar{{
+		Name:  fmt.Sprintf("GOTRUE_EXTERNAL_%s_ENABLED", strings.ToUpper(provider)),
+		Value: strconv.FormatBool(p.Enabled),
+	}}
+}
+
+type EmailAuthSmtpSpec struct {
+	Host            string                       `json:"host"`
+	Port            uint16                       `json:"port"`
+	MaxFrequency    *uint                        `json:"maxFrequency,omitempty"`
+	CredentialsFrom *corev1.LocalObjectReference `json:"credentialsFrom"`
+}
+
+type EmailAuthProvider struct {
+	AuthProviderMeta     `json:",inline"`
+	AdminEmail           string             `json:"adminEmail"`
+	SenderName           *string            `json:"senderName,omitempty"`
+	Autoconfirm          *bool              `json:"autoconfirmEmail,omitempty"`
+	SubjectsInvite       string             `json:"subjectsInvite,omitempty"`
+	SubjectsConfirmation string             `json:"subjectsConfirmation,omitempty"`
+	SmtpSpec             *EmailAuthSmtpSpec `json:"smtpSpec"`
+}
+
+func (p *EmailAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
+	if p == nil || p.SmtpSpec == nil {
+		return nil
+	}
+
+	svcDefaults := supabase.ServiceConfig.Auth.Defaults
+
+	vars := []corev1.EnvVar{
+		{Name: "GOTRUE_SMTP_HOST", Value: p.SmtpSpec.Host},
+		{Name: "GOTRUE_SMTP_PORT", Value: strconv.FormatUint(uint64(p.SmtpSpec.Port), 10)},
+		{
+			Name: "GOTRUE_SMTP_USER",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: *p.SmtpSpec.CredentialsFrom,
+					Key:                  corev1.BasicAuthUsernameKey,
+				},
+			},
+		},
+		{
+			Name: "GOTRUE_SMTP_PASS",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: *p.SmtpSpec.CredentialsFrom,
+					Key:                  corev1.BasicAuthPasswordKey,
+				},
+			},
+		},
+		{Name: "GOTRUE_SMTP_ADMIN_EMAIL", Value: p.AdminEmail},
+		{Name: "MAILER_URLPATHS_INVITE", Value: path.Join(apiExternalURL, svcDefaults.MailerUrlPathsInvite)},
+		{Name: "MAILER_URLPATHS_CONFIRMATION", Value: path.Join(apiExternalURL, svcDefaults.MailerUrlPathsConfirmation)},
+		{Name: "MAILER_URLPATHS_RECOVERY", Value: path.Join(apiExternalURL, svcDefaults.MailerUrlPathsRecovery)},
+		{Name: "MAILER_URLPATHS_EMAIL_CHANGE", Value: path.Join(apiExternalURL, svcDefaults.MailerUrlPathsEmailChange)},
+	}
+
+	if p.SubjectsInvite != "" {
+		vars = append(vars, corev1.EnvVar{Name: "MAILER_SUBJECTS_INVITE", Value: p.SubjectsInvite})
+	}
+
+	return vars
+}
+
+type PhoneAuthProvider struct {
+	AuthProviderMeta `json:",inline"`
+}
+
+func (p *PhoneAuthProvider) Vars() []corev1.EnvVar {
+	if p == nil {
+		return nil
+	}
+
+	return []corev1.EnvVar{}
+}
+
+type OAuthProvider struct {
+	ClientID        string                    `json:"clientID"`
+	ClientSecretRef *corev1.SecretKeySelector `json:"clientSecretRef"`
+	URL             string                    `json:"url,omitempty"`
+}
+
+func (p *OAuthProvider) Vars(provider, apiExternalURL string) []corev1.EnvVar {
+	if p == nil {
+		return nil
+	}
+
+	vars := []corev1.EnvVar{
+		{
+			Name:  fmt.Sprintf("GOTRUE_EXTERNAL_%s_CLIENT_ID", strings.ToUpper(provider)),
+			Value: p.ClientID,
+		},
+		{
+			Name:  fmt.Sprintf("GOTRUE_EXTERNAL_%s_REDIRECT_URI", strings.ToUpper(provider)),
+			Value: path.Join(apiExternalURL, "/auth/v1/callback"),
+		},
+		{
+			Name: fmt.Sprintf("GOTRUE_EXTERNAL_%s_SECRET", strings.ToUpper(provider)),
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: p.ClientSecretRef,
+			},
+		},
+	}
+
+	if p.URL != "" {
+		vars = append(vars, corev1.EnvVar{
+			Name:  fmt.Sprintf("GOTRUE_EXTERNAL_%s_URL", strings.ToUpper(provider)),
+			Value: p.URL,
+		})
+	}
+
+	return vars
+}
+
+type AzureAuthProvider struct {
+	AuthProviderMeta `json:",inline"`
+	OAuthProvider    `json:",inline"`
+}
+
+func (p *AzureAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
+	const providerName = "AZURE"
+	if p == nil {
+		return nil
+	}
+
+	return slices.Concat(
+		p.AuthProviderMeta.Vars(providerName),
+		p.OAuthProvider.Vars(providerName, apiExternalURL),
+	)
+}
+
+type GithubAuthProvider struct {
+	AuthProviderMeta `json:",inline"`
+	OAuthProvider    `json:",inline"`
+}
+
+func (p *GithubAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
+	const providerName = "GITHUB"
+	if p == nil {
+		return nil
+	}
+
+	return slices.Concat(
+		p.AuthProviderMeta.Vars(providerName),
+		p.OAuthProvider.Vars(providerName, apiExternalURL),
+	)
+}
+
+type AuthProviders struct {
+	Email  *EmailAuthProvider  `json:"email,omitempty"`
+	Azure  *AzureAuthProvider  `json:"azure,omitempty"`
+	Github *GithubAuthProvider `json:"github,omitempty"`
+	Phone  *PhoneAuthProvider  `json:"phone,omitempty"`
+}
+
+func (p *AuthProviders) Vars(apiExternalURL string) []corev1.EnvVar {
+	if p == nil {
+		return nil
+	}
+
+	return slices.Concat(
+		p.Email.Vars(apiExternalURL),
+		p.Azure.Vars(apiExternalURL),
+		p.Github.Vars(apiExternalURL),
+		p.Phone.Vars(),
+	)
+}
+
+type AuthSpec struct {
+	// APIExternalURL is referring to the URL where Supabase API will be available
+	// Typically this is the ingress of the API gateway
+	APIExternalURL string `json:"externalUrl"`
+	// SiteURL is referring to the URL of the (frontend) application
+	// In most Kubernetes scenarios this is the same as the APIExternalURL with a different path handler in the ingress
+	SiteURL                string            `json:"siteUrl"`
+	AdditionalRedirectUrls []string          `json:"additionalRedirectUrls,omitempty"`
+	DisableSignup          *bool             `json:"disableSignup,omitempty"`
+	AnonymousUsersEnabled  *bool             `json:"anonymousUsersEnabled,omitempty"`
+	Providers              *AuthProviders    `json:"providers,omitempty"`
+	WorkloadTemplate       *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+	EmailSignupDisabled    *bool             `json:"emailSignupDisabled,omitempty"`
+}
+
 // CoreSpec defines the desired state of Core.
 type CoreSpec struct {
-	// Important: Run "make" to regenerate code after modifying this file
-
-	Database Database `json:"database,omitempty"`
+	JWT       *JwtSpec      `json:"jwt,omitempty"`
+	Database  Database      `json:"database,omitempty"`
+	Postgrest PostgrestSpec `json:"postgrest,omitempty"`
+	Auth      *AuthSpec     `json:"auth,omitempty"`
 }
 
 type MigrationStatus map[string]int64
@@ -72,11 +392,26 @@ func (s MigrationStatus) Record(name string) {
 	s[name] = time.Now().UTC().UnixMilli()
 }
 
+type DatabaseStatus struct {
+	AppliedMigrations MigrationStatus   `json:"appliedMigrations,omitempty"`
+	Roles             map[string][]byte `json:"roles,omitempty"`
+}
+
+type CoreConditionType string
+
+type CoreCondition struct {
+	Type               CoreConditionType      `json:"type"`
+	Status             corev1.ConditionStatus `json:"status"`
+	LastProbeTime      metav1.Time            `json:"lastProbeTime,omitempty"`
+	LastTransitionTime metav1.Time            `json:"lastTransitionTime,omitempty"`
+	Reason             string                 `json:"reason,omitempty"`
+	Message            string                 `json:"message,omitempty"`
+}
+
 // CoreStatus defines the observed state of Core.
 type CoreStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	AppliedMigrations MigrationStatus `json:"appliedMigrations,omitempty"`
+	Database   DatabaseStatus  `json:"database,omitempty"`
+	Conditions []CoreCondition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -100,6 +435,12 @@ type CoreList struct {
 	Items           []Core `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&Core{}, &CoreList{})
+func (l CoreList) Iter() iter.Seq[*Core] {
+	return func(yield func(*Core) bool) {
+		for _, c := range l.Items {
+			if !yield(&c) {
+				return
+			}
+		}
+	}
 }

@@ -40,7 +40,7 @@ metadata:
   name: cluster-example
 spec:
   instances: 1
-  imageName: ghcr.io/supabase/postgres:15.6.1.145
+  imageName: ghcr.io/supabase/postgres:15.8.1.021
   postgresUID: 105
   postgresGID: 106
 

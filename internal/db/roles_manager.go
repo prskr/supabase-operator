@@ -1,0 +1,69 @@
+package db
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/jackc/pgx/v5"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"code.icb4dc0.de/prskr/supabase-operator/assets/migrations"
+)
+
+const (
+	alterUserPwd    = `ALTER ROLE %s WITH PASSWORD '%s';`
+	checkUserExists = `SELECT 1 FROM pg_user WHERE usename = $1;`
+)
+
+func NewRolesManager(conn *pgx.Conn) RolesManager {
+	return RolesManager{
+		Conn: conn,
+	}
+}
+
+type RolesManager struct {
+	Conn *pgx.Conn
+}
+
+func (mgr RolesManager) UpdateRolePassword(ctx context.Context, roleName string, password []byte) error {
+	if err := mgr.ensureLoginRoleExists(ctx, roleName); err != nil {
+		return err
+	}
+
+	_, err := mgr.Conn.Exec(ctx, fmt.Sprintf(alterUserPwd, roleName, password))
+	return err
+}
+
+func (mgr RolesManager) ensureLoginRoleExists(ctx context.Context, roleName string) error {
+	logger := log.FromContext(ctx).WithValues("role_name", roleName)
+
+	rows, err := mgr.Conn.Query(ctx, checkUserExists, roleName)
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	_, err = pgx.CollectExactlyOneRow(rows, func(row pgx.CollectableRow) (out int, err error) {
+		err = row.Scan(&out)
+		return
+	})
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+		logger.Info("No rows, this means the role does not exists, creating it now")
+	} else {
+		return nil
+	}
+
+	script, err := migrations.RoleCreationScript(roleName)
+	if err != nil {
+		return err
+	}
+
+	_, err = mgr.Conn.Exec(ctx, script.Content)
+
+	return err
+}

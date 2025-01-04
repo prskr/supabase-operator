@@ -3,6 +3,7 @@
 package tools
 
 import (
+	_ "github.com/elastic/crd-ref-docs"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "mvdan.cc/gofumpt"
 	_ "sigs.k8s.io/controller-runtime/tools/setup-envtest"

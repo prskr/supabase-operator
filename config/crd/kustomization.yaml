@@ -2,8 +2,10 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/supabase.k8s.icb4dc0.de_cores.yaml
-# +kubebuilder:scaffold:crdkustomizeresource
+  - bases/supabase.k8s.icb4dc0.de_cores.yaml
+  - bases/supabase.k8s.icb4dc0.de_apigateways.yaml
+  - bases/supabase.k8s.icb4dc0.de_dashboards.yaml
+  # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
@@ -16,5 +18,5 @@ patches:
 
 # [WEBHOOK] To enable webhook, uncomment the following section
 # the following config is for teaching kustomize how to do kustomization for CRDs.
-#configurations:
-#- kustomizeconfig.yaml
+configurations:
+  - kustomizeconfig.yaml

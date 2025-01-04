@@ -28,6 +28,7 @@ linters:
     - gofmt
     - goimports
     - gosimple
+    - godox
     - govet
     - ineffassign
     - lll

@@ -1,5 +1,7 @@
 package supabase
 
+import "fmt"
+
 type ImageRef struct {
     // The repository of the image
     Repository string
@@ -7,9 +9,17 @@ type ImageRef struct {
     Tag string
 }
 
-var Images = map[string]ImageRef{
+func (r ImageRef) String() string {
+    return fmt.Sprintf("%s:%s", r.Repository, r.Tag)
+}
+
+var Images = struct{
 {{- range $name, $image := .Images }}
-    "{{$name}}": {
+    {{$name}} ImageRef
+{{- end }}
+}{
+{{- range $name, $image := .Images }}
+    {{$name}}: ImageRef{
         Repository: "{{$image.Repository}}",
         Tag: "{{$image.Tag}}",
     },

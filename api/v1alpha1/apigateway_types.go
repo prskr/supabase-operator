@@ -1,0 +1,95 @@
+/*
+Copyright 2024 Peter Kurfer.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package v1alpha1
+
+import (
+	"iter"
+	"maps"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+func init() {
+	SchemeBuilder.Register(&APIGateway{}, &APIGatewayList{})
+}
+
+type ControlPlaneSpec struct {
+	// Host is the hostname of the envoy control plane endpoint
+	Host string `json:"host"`
+	// Port is the port number of the envoy control plane endpoint - typically this is 18000
+	// +kubebuilder:default=18000
+	// +kubebuilder:validation:Maximum=65535
+	Port uint16 `json:"port"`
+}
+
+type EnvoySpec struct {
+	// ControlPlane - configure the control plane where Envoy will retrieve its configuration from
+	ControlPlane *ControlPlaneSpec `json:"controlPlane"`
+	// WorkloadTemplate - customize the Envoy deployment
+	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+}
+
+// APIGatewaySpec defines the desired state of APIGateway.
+type APIGatewaySpec struct {
+	// Envoy - configure the envoy instance and most importantly the control-plane
+	Envoy *EnvoySpec `json:"envoy"`
+	// JWKSSelector - selector where the JWKS can be retrieved from to enable the API gateway to validate JWTs
+	JWKSSelector *corev1.SecretKeySelector `json:"jwks"`
+}
+
+// APIGatewayStatus defines the observed state of APIGateway.
+type APIGatewayStatus struct{}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+// APIGateway is the Schema for the apigateways API.
+type APIGateway struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   APIGatewaySpec   `json:"spec,omitempty"`
+	Status APIGatewayStatus `json:"status,omitempty"`
+}
+
+func (g APIGateway) JwksSecretMeta() metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:      g.Spec.JWKSSelector.Name,
+		Namespace: g.Namespace,
+		Labels:    maps.Clone(g.Labels),
+	}
+}
+
+// +kubebuilder:object:root=true
+
+// APIGatewayList contains a list of APIGateway.
+type APIGatewayList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []APIGateway `json:"items"`
+}
+
+func (l APIGatewayList) Iter() iter.Seq[*APIGateway] {
+	return func(yield func(*APIGateway) bool) {
+		for _, gw := range l.Items {
+			if !yield(&gw) {
+				return
+			}
+		}
+	}
+}

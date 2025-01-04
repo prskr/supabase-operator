@@ -1,8 +1,9 @@
 package main
 
 import (
+	"log/slog"
+
 	"github.com/magefile/mage/mg" // mg contains helpful utility functions, like Deps
-	"golang.org/x/exp/slog"
 )
 
 // Default target to run when none is specified

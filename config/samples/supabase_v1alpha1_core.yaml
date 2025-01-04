@@ -1,3 +1,10 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: supabase-demo-credentials
+stringData:
+  url: postgresql://supabase_admin:1n1t-R00t!@cluster-example-rw.supabase-demo:5432/app
+---
 apiVersion: supabase.k8s.icb4dc0.de/v1alpha1
 kind: Core
 metadata:
@@ -8,5 +15,11 @@ metadata:
 spec:
   database:
     dsnFrom:
-      name: example-cluster-credentials
+      name: supabase-demo-credentials
       key: url
+  auth:
+    externalUrl: http://localhost:8000/
+    siteUrl: http://localhost:3000/
+    disableSignup: true
+    enableEmailAutoconfirm: true
+    providers: {}

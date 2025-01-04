@@ -1,0 +1,12 @@
+- op: add
+  path: /spec/template/spec/containers/0/args/1
+  value: --logging.development=true
+- op: replace
+  path: /spec/template/spec/containers/0/resources
+  value:
+    limits:
+      cpu: 500m
+      memory: 768Mi
+    requests:
+      cpu: 250m
+      memory: 384Mi

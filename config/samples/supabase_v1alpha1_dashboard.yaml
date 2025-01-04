@@ -1,0 +1,13 @@
+apiVersion: supabase.k8s.icb4dc0.de/v1alpha1
+kind: Dashboard
+metadata:
+  labels:
+    app.kubernetes.io/name: supabase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: core-sample
+spec:
+  db:
+    host: cluster-example-rw.supabase-demo
+    dbName: app
+    dbCredentialsRef:
+      name: db-roles-creds-supabase-admin
