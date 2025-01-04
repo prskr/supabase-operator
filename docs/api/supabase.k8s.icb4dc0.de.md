@@ -13,6 +13,8 @@ Package v1alpha1 contains API Schema definitions for the supabase v1alpha1 API g
 - [APIGatewayList](#apigatewaylist)
 - [Core](#core)
 - [CoreList](#corelist)
+- [Dashboard](#dashboard)
+- [DashboardList](#dashboardlist)
 
 
 
@@ -168,7 +170,7 @@ _Appears in:_
 | `image` _string_ |  |  |  |
 | `pullPolicy` _[PullPolicy](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#pullpolicy-v1-core)_ |  |  |  |
 | `imagePullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core) array_ |  |  |  |
-| `securityContext` _[SecurityContext](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#securitycontext-v1-core)_ |  |  |  |
+| `securityContext` _[SecurityContext](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#securitycontext-v1-core)_ | SecurityContext - |  |  |
 | `resources` _[ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core)_ |  |  |  |
 | `volumeMounts` _[VolumeMount](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#volumemount-v1-core) array_ |  |  |  |
 | `additionalEnv` _[EnvVar](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#envvar-v1-core) array_ |  |  |  |
@@ -282,6 +284,82 @@ _Appears in:_
 
 
 
+#### Dashboard
+
+
+
+Dashboard is the Schema for the dashboards API.
+
+
+
+_Appears in:_
+- [DashboardList](#dashboardlist)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `supabase.k8s.icb4dc0.de/v1alpha1` | | |
+| `kind` _string_ | `Dashboard` | | |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `spec` _[DashboardSpec](#dashboardspec)_ |  |  |  |
+
+
+#### DashboardDbSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [DashboardSpec](#dashboardspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `host` _string_ |  |  |  |
+| `port` _integer_ | Port - Database port, typically 5432 | 5432 |  |
+| `dbName` _string_ |  |  |  |
+| `dbCredentialsRef` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ | DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from<br />Credentials need to be stored in basic auth form |  |  |
+
+
+#### DashboardList
+
+
+
+DashboardList contains a list of Dashboard.
+
+
+
+
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `supabase.k8s.icb4dc0.de/v1alpha1` | | |
+| `kind` _string_ | `DashboardList` | | |
+| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `items` _[Dashboard](#dashboard) array_ |  |  |  |
+
+
+#### DashboardSpec
+
+
+
+DashboardSpec defines the desired state of Dashboard.
+
+
+
+_Appears in:_
+- [Dashboard](#dashboard)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `db` _[DashboardDbSpec](#dashboarddbspec)_ |  |  |  |
+| `pgMeta` _[PGMetaSpec](#pgmetaspec)_ | PGMeta | \{  \} |  |
+| `studio` _[StudioSpec](#studiospec)_ | Studio | \{  \} |  |
+
+
+
+
 #### Database
 
 
@@ -330,10 +408,11 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `authenticator` _[SecretReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretreference-v1-core)_ |  |  |  |
-| `supabaseAuthAdmin` _[SecretReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretreference-v1-core)_ |  |  |  |
-| `supabaseFunctionsAdmin` _[SecretReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretreference-v1-core)_ |  |  |  |
-| `supabaseStorageAdmin` _[SecretReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretreference-v1-core)_ |  |  |  |
+| `supabaseAdmin` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ |  |  |  |
+| `authenticator` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ |  |  |  |
+| `supabaseAuthAdmin` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ |  |  |  |
+| `supabaseFunctionsAdmin` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ |  |  |  |
+| `supabaseStorageAdmin` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ |  |  |  |
 
 
 #### DatabaseStatus
@@ -501,6 +580,22 @@ _Appears in:_
 | `url` _string_ |  |  |  |
 
 
+#### PGMetaSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [DashboardSpec](#dashboardspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the pg-meta deployment |  |  |
+
+
 #### PhoneAuthProvider
 
 
@@ -530,11 +625,27 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `schemas` _string array_ | Schemas - schema where PostgREST is looking for objects (tables, views, functions, ...) | [public graphql_public] | UniqueItems: true <br /> |
-| `extraSearchPath` _string array_ | ExtraSearchPath - Extra schemas to add to the search_path of every request.<br />These schemas tables, views and functions don’t get API endpoints, they can only be referred from the database objects inside your db-schemas. | [public extensions] | UniqueItems: true <br /> |
+| `schemas` _string array_ | Schemas - schema where PostgREST is looking for objects (tables, views, functions, ...) | [public graphql_public] |  |
+| `extraSearchPath` _string array_ | ExtraSearchPath - Extra schemas to add to the search_path of every request.<br />These schemas tables, views and functions don’t get API endpoints, they can only be referred from the database objects inside your db-schemas. | [public extensions] |  |
 | `anonRole` _string_ | AnonRole - name of the anon role | anon |  |
 | `maxRows` _integer_ | MaxRows - maximum number of rows PostgREST will load at a time | 1000 |  |
 | `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the PostgREST workload |  |  |
+
+
+#### StudioSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [DashboardSpec](#dashboardspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the studio deployment |  |  |
 
 
 #### WorkloadTemplate
@@ -548,13 +659,15 @@ _Appears in:_
 _Appears in:_
 - [AuthSpec](#authspec)
 - [EnvoySpec](#envoyspec)
+- [PGMetaSpec](#pgmetaspec)
 - [PostgrestSpec](#postgrestspec)
+- [StudioSpec](#studiospec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `replicas` _integer_ |  |  |  |
 | `securityContext` _[PodSecurityContext](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#podsecuritycontext-v1-core)_ |  |  |  |
 | `additionalLabels` _object (keys:string, values:string)_ |  |  |  |
-| `workload` _[ContainerTemplate](#containertemplate)_ |  |  |  |
+| `workload` _[ContainerTemplate](#containertemplate)_ | Workload - customize the container template of the workload |  |  |
 
 

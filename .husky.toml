@@ -1,0 +1,23 @@
+[hooks]
+
+# git hook pre commit
+pre-commit = [
+    "go mod tidy -go=1.23",
+    "go run mage.go FetchImageMeta",
+    "go run mage.go CRDs",
+    "go run mage.go CRDDocs",
+    "husky lint-staged",
+    # "golangci-lint run",
+]
+
+# git hook commit msg
+commit-msg = [
+    "husky lint-commit",
+]
+
+# list staged files do some pre-process and git add
+[lint-staged]
+"*.go" = [
+    "goimports -l -w",
+    "gofumpt -l -w",
+]
