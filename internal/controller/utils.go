@@ -3,8 +3,6 @@ package controller
 import (
 	"context"
 	"crypto/sha256"
-	"errors"
-	"io"
 	"maps"
 	"reflect"
 
@@ -19,17 +17,6 @@ import (
 
 	"code.icb4dc0.de/prskr/supabase-operator/api"
 )
-
-func Close(closer io.Closer, err *error) {
-	*err = errors.Join(*err, closer.Close())
-}
-
-func CloseCtx(ctx context.Context, closable interface {
-	Close(ctx context.Context) error
-}, err *error,
-) {
-	*err = errors.Join(*err, closable.Close(ctx))
-}
 
 func ptrOf[T any](val T) *T {
 	return &val

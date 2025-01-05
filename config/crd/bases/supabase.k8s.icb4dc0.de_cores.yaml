@@ -1779,34 +1779,12 @@ spec:
           status:
             description: CoreStatus defines the observed state of Core.
             properties:
-              conditions:
-                items:
-                  properties:
-                    lastProbeTime:
-                      format: date-time
-                      type: string
-                    lastTransitionTime:
-                      format: date-time
-                      type: string
-                    message:
-                      type: string
-                    reason:
-                      type: string
-                    status:
-                      type: string
-                    type:
-                      type: string
-                  required:
-                  - status
-                  - type
-                  type: object
-                type: array
               database:
                 properties:
                   appliedMigrations:
                     additionalProperties:
-                      format: int64
-                      type: integer
+                      format: date-time
+                      type: string
                     type: object
                   roles:
                     additionalProperties:

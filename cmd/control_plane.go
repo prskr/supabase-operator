@@ -73,7 +73,8 @@ func (p controlPlane) Run(ctx context.Context, cache cache.SnapshotCache) (err e
 	// gRPC golang library sets a very small upper bound for the number gRPC/h2
 	// streams over a single TCP connection. If a proxy multiplexes requests over
 	// a single connection to the management server, then it might lead to
-	// availability problems. Keepalive timeouts based on connection_keepalive parameter https://www.envoyproxy.io/docs/envoy/latest/configuration/overview/examples#dynamic
+	// availability problems. Keepalive timeouts based on connection_keepalive parameter
+	// https://www.envoyproxy.io/docs/envoy/latest/configuration/overview/examples#dynamic
 
 	grpcOptions := append(make([]grpc.ServerOption, 0, 4),
 		grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams),
@@ -139,6 +140,7 @@ func (p controlPlane) Run(ctx context.Context, cache cache.SnapshotCache) (err e
 	return err
 }
 
+//nolint:unparam // signature required by kong
 func (p controlPlane) AfterApply(kongctx *kong.Context) error {
 	kongctx.BindTo(cache.NewSnapshotCache(false, cache.IDHash{}, nil), (*cache.SnapshotCache)(nil))
 	return nil

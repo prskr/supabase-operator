@@ -36,6 +36,7 @@ import (
 	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
 	"code.icb4dc0.de/prskr/supabase-operator/assets/migrations"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/db"
+	"code.icb4dc0.de/prskr/supabase-operator/internal/errx"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/meta"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
 )
@@ -69,7 +70,7 @@ func (r *CoreDbReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
-	defer CloseCtx(ctx, conn, &err)
+	defer errx.CloseCtx(ctx, conn, &err)
 
 	logger.Info("Connected to database, checking for outstanding migrations")
 	if err := r.applyMissingMigrations(ctx, conn, &core); err != nil {

@@ -104,6 +104,7 @@ func (v *CoreCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Ob
 	return warns, nil
 }
 
+//nolint:unparam // keep signature for later
 func (v *CoreCustomValidator) validateDb(
 	ctx context.Context,
 	core *supabasev1alpha1.Core,

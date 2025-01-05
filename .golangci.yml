@@ -64,3 +64,10 @@ linters-settings:
         alias: $1$2
       - pkg: "k8s.io/apimachinery/pkg/apis/meta/v1"
         alias: metav1
+
+severity:
+  default-severity: error
+  rules:
+    - linters:
+        - godox
+      severity: info

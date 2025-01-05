@@ -3,9 +3,7 @@
 # git hook pre commit
 pre-commit = [
     "go mod tidy -go=1.23",
-    "go run mage.go FetchImageMeta",
-    "go run mage.go CRDs",
-    "go run mage.go CRDDocs",
+    "go run mage.go GenerateAll",
     "husky lint-staged",
     # "golangci-lint run",
 ]

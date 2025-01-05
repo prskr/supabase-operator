@@ -5,10 +5,10 @@ import (
 	"errors"
 	"iter"
 
-	"code.icb4dc0.de/prskr/supabase-operator/assets/migrations"
 	"github.com/jackc/pgx/v5"
 
 	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
+	"code.icb4dc0.de/prskr/supabase-operator/assets/migrations"
 )
 
 type Migrator struct {

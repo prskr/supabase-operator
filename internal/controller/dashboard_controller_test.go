@@ -68,7 +68,7 @@ var _ = Describe("Dashboard Controller", func() {
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			controllerReconciler := &DashboardReconciler{
+			controllerReconciler := &DashboardPGMetaReconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
 			}

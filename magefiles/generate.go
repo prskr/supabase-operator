@@ -1,10 +1,12 @@
 package main
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,8 +15,9 @@ import (
 	"strings"
 
 	"github.com/magefile/mage/mg"
-	"github.com/magefile/mage/sh"
 	"gopkg.in/yaml.v3"
+
+	"code.icb4dc0.de/prskr/supabase-operator/internal/errx"
 )
 
 const (
@@ -50,7 +53,7 @@ func CRDDocs() error {
 	)
 }
 
-func FetchImageMeta(ctx context.Context) error {
+func FetchImageMeta(ctx context.Context) (err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, composeFileUrl, nil)
 	if err != nil {
 		return err
@@ -61,7 +64,7 @@ func FetchImageMeta(ctx context.Context) error {
 		return err
 	}
 
-	defer resp.Body.Close()
+	defer errx.Close(resp.Body, &err)
 
 	var composeFile struct {
 		Services map[string]struct {
@@ -78,7 +81,7 @@ func FetchImageMeta(ctx context.Context) error {
 		return err
 	}
 
-	defer f.Close()
+	defer errx.Close(f, &err)
 
 	type imageRef struct {
 		Repository string
@@ -139,55 +142,75 @@ func FetchImageMeta(ctx context.Context) error {
 	return RunTool(tools[Gofumpt], "-l", "-w", f.Name())
 }
 
-func FetchMigrations(ctx context.Context) error {
+func FetchMigrations(ctx context.Context) (err error) {
 	latestRelease, err := latestReleaseVersion(ctx, "supabase", "postgres")
 	if err != nil {
 		return err
 	}
 
-	checkoutDir, err := os.MkdirTemp(os.TempDir(), "supabase-*")
+	releaseArtifactURL := fmt.Sprintf("https://github.com/supabase/postgres/archive/refs/tags/%s.tar.gz", latestRelease)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, releaseArtifactURL, nil)
 	if err != nil {
 		return err
 	}
 
-	repoFS := os.DirFS(checkoutDir)
-
-	defer os.RemoveAll(checkoutDir)
-
-	if err := Git("clone", "--filter=blob:none", "--no-checkout", "https://github.com/supabase/postgres", checkoutDir); err != nil {
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
 		return err
 	}
 
-	if err := Git("-C", checkoutDir, "sparse-checkout", "set", "--cone", "migrations"); err != nil {
+	defer errx.Close(resp.Body, &err)
+
+	gzipReader, err := gzip.NewReader(resp.Body)
+	if err != nil {
 		return err
 	}
 
-	if err := Git("-C", checkoutDir, "checkout", latestRelease); err != nil {
-		return err
+	defer errx.Close(gzipReader, &err)
+
+	migrationsDirPath := path.Join(fmt.Sprintf("postgres-%s", latestRelease), ".", "migrations", "db") + "/"
+	tarReader := tar.NewReader(gzipReader)
+
+	var header *tar.Header
+
+	for header, err = tarReader.Next(); err == nil; header, err = tarReader.Next() {
+		fileInfo := header.FileInfo()
+		if fileInfo.IsDir() || path.Ext(fileInfo.Name()) != ".sql" {
+			continue
+		}
+
+		fileName := header.Name
+		if strings.HasPrefix(fileName, migrationsDirPath) {
+			fileName = strings.TrimPrefix(fileName, migrationsDirPath)
+
+			dir, _ := path.Split(fileName)
+			outDir := filepath.Join(workingDir, "assets", "migrations", filepath.FromSlash(dir))
+			if err := os.MkdirAll(outDir, 0o750); err != nil {
+				return err
+			}
+
+			slog.Info("Copying file", slog.String("file", fileName))
+			outFile, err := os.Create(filepath.Join(workingDir, "assets", "migrations", filepath.FromSlash(fileName)))
+			if err != nil {
+				return err
+			}
+
+			if _, err := io.Copy(outFile, tarReader); err != nil {
+				return err
+			}
+
+			if err := outFile.Close(); err != nil {
+				return err
+			}
+
+		} else {
+			slog.Debug("skipping file", slog.String("file", fileName))
+		}
 	}
 
-	migrationsDirPath := path.Join(".", "migrations", "db")
-	return fs.WalkDir(repoFS, migrationsDirPath, func(filePath string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
 
-		if d.IsDir() || filepath.Ext(filePath) != ".sql" {
-			return nil
-		}
-
-		fileName, err := filepath.Rel(migrationsDirPath, filePath)
-		if err != nil {
-			return err
-		}
-
-		dir, _ := filepath.Split(fileName)
-
-		if err := os.MkdirAll(filepath.Join(workingDir, "assets", "migrations", dir), 0o750); err != nil {
-			return err
-		}
-
-		slog.Info("Copying migration file", slog.String("file", fileName))
-		return sh.Copy(filepath.Join(workingDir, "assets", "migrations", fileName), filepath.Join(checkoutDir, filepath.FromSlash(filePath)))
-	})
+	return err
 }

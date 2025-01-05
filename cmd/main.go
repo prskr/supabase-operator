@@ -59,6 +59,7 @@ type app struct {
 	} `embed:"" prefix:"logging."`
 }
 
+//nolint:unparam // signature required by kong
 func (a app) AfterApply(kongctx *kong.Context) error {
 	opts := zap.Options{
 		Development:     a.Logging.Development,

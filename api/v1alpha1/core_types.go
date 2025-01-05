@@ -25,7 +25,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -381,7 +380,7 @@ type CoreSpec struct {
 	Auth      *AuthSpec     `json:"auth,omitempty"`
 }
 
-type MigrationStatus map[string]int64
+type MigrationStatus map[string]metav1.Time
 
 func (s MigrationStatus) IsApplied(name string) bool {
 	_, ok := s[name]
@@ -389,7 +388,7 @@ func (s MigrationStatus) IsApplied(name string) bool {
 }
 
 func (s MigrationStatus) Record(name string) {
-	s[name] = time.Now().UTC().UnixMilli()
+	s[name] = metav1.Now()
 }
 
 type DatabaseStatus struct {
@@ -399,19 +398,9 @@ type DatabaseStatus struct {
 
 type CoreConditionType string
 
-type CoreCondition struct {
-	Type               CoreConditionType      `json:"type"`
-	Status             corev1.ConditionStatus `json:"status"`
-	LastProbeTime      metav1.Time            `json:"lastProbeTime,omitempty"`
-	LastTransitionTime metav1.Time            `json:"lastTransitionTime,omitempty"`
-	Reason             string                 `json:"reason,omitempty"`
-	Message            string                 `json:"message,omitempty"`
-}
-
 // CoreStatus defines the observed state of Core.
 type CoreStatus struct {
-	Database   DatabaseStatus  `json:"database,omitempty"`
-	Conditions []CoreCondition `json:"conditions,omitempty"`
+	Database DatabaseStatus `json:"database,omitempty"`
 }
 
 // +kubebuilder:object:root=true
