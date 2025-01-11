@@ -7,7 +7,15 @@ metadata:
   name: core-sample
 spec:
   db:
-    host: cluster-example-rw.supabase-demo
+    host: cluster-example-rw.supabase-demo.svc
     dbName: app
     dbCredentialsRef:
       name: db-roles-creds-supabase-admin
+  studio:
+    externalUrl: http://localhost:8000
+    jwt:
+      anonKey: anon_key
+      secretKey: secret
+      secretRef:
+        name: core-sample-jwt
+      serviceKey: service_key

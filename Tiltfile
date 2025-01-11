@@ -67,3 +67,14 @@ k8s_resource(
         'supabase-controller-manager'
     ],
 )
+
+k8s_resource(
+    objects=["core-sample:Dashboard:supabase-demo"],
+    extra_pod_selectors={"app.kubernetes.io/component": "dashboard", "app.kubernetes.io/name": "studio"},
+    discovery_strategy="selectors-only",
+    port_forwards=[3000],
+    new_name='Dashboard',
+    resource_deps=[
+        'supabase-controller-manager'
+    ],
+)

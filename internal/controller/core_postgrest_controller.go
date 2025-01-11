@@ -78,50 +78,12 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 		postgrestSpec = core.Spec.Postgrest
 	)
 
-	if postgrestSpec.WorkloadTemplate == nil {
-		postgrestSpec.WorkloadTemplate = new(supabasev1alpha1.WorkloadTemplate)
-	}
-
-	if postgrestSpec.WorkloadTemplate.Workload == nil {
-		postgrestSpec.WorkloadTemplate.Workload = new(supabasev1alpha1.ContainerTemplate)
-	}
-
 	var (
-		image                    = supabase.Images.Postgrest.String()
-		podSecurityContext       = postgrestSpec.WorkloadTemplate.SecurityContext
-		pullPolicy               = postgrestSpec.WorkloadTemplate.Workload.PullPolicy
-		containerSecurityContext = postgrestSpec.WorkloadTemplate.Workload.SecurityContext
-		anonRole                 = ValueOrFallback(postgrestSpec.AnonRole, serviceCfg.Defaults.AnonRole)
-		postgrestSchemas         = ValueOrFallback(postgrestSpec.Schemas, serviceCfg.Defaults.Schemas)
-		jwtSecretHash            string
-		namespacedClient         = client.NewNamespacedClient(r.Client, core.Namespace)
+		anonRole         = ValueOrFallback(postgrestSpec.AnonRole, serviceCfg.Defaults.AnonRole)
+		postgrestSchemas = ValueOrFallback(postgrestSpec.Schemas, serviceCfg.Defaults.Schemas)
+		jwtSecretHash    string
+		namespacedClient = client.NewNamespacedClient(r.Client, core.Namespace)
 	)
-
-	if img := postgrestSpec.WorkloadTemplate.Workload.Image; img != "" {
-		image = img
-	}
-
-	if podSecurityContext == nil {
-		podSecurityContext = &corev1.PodSecurityContext{
-			RunAsNonRoot: ptrOf(true),
-		}
-	}
-
-	if containerSecurityContext == nil {
-		containerSecurityContext = &corev1.SecurityContext{
-			Privileged:               ptrOf(false),
-			RunAsUser:                ptrOf(int64(1000)),
-			RunAsGroup:               ptrOf(int64(1000)),
-			RunAsNonRoot:             ptrOf(true),
-			AllowPrivilegeEscalation: ptrOf(false),
-			ReadOnlyRootFilesystem:   ptrOf(true),
-			Capabilities: &corev1.Capabilities{
-				Drop: []corev1.Capability{
-					"ALL",
-				},
-			},
-		}
-	}
 
 	databaseDSN, err := core.Spec.Database.GetDSN(ctx, namespacedClient)
 	if err != nil {
@@ -140,7 +102,7 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 	}
 
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, postgrestDeployment, func() error {
-		postgrestDeployment.Labels = MergeLabels(
+		postgrestDeployment.Labels = postgrestSpec.WorkloadTemplate.MergeLabels(
 			objectLabels(core, serviceCfg.Name, "core", supabase.Images.Postgrest.Tag),
 			core.Labels,
 		)
@@ -161,6 +123,7 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 				Name:  serviceCfg.EnvKeys.DBUri,
 				Value: strings.TrimSuffix(fmt.Sprintf("postgres://%s:$(DB_CREDENTIALS_PASSWORD)@%s%s?%s", supabase.DBRoleAuthenticator, parsedDSN.Host, parsedDSN.Path, parsedDSN.Query().Encode()), "?"),
 			},
+			serviceCfg.EnvKeys.Host.Var(),
 			serviceCfg.EnvKeys.JWTSecret.Var(core.Spec.JWT.JwksKeySelector()),
 			serviceCfg.EnvKeys.Schemas.Var(postgrestSchemas),
 			serviceCfg.EnvKeys.AnonRole.Var(anonRole),
@@ -168,7 +131,9 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 			serviceCfg.EnvKeys.ExtraSearchPath.Var(serviceCfg.Defaults.ExtraSearchPath),
 			serviceCfg.EnvKeys.AppSettingsJWTSecret.Var(core.Spec.JWT.SecretKeySelector()),
 			serviceCfg.EnvKeys.AppSettingsJWTExpiry.Var(ValueOrFallback(core.Spec.JWT.Expiry, supabase.ServiceConfig.JWT.Defaults.Expiry)),
-			serviceCfg.EnvKeys.AdminServerPort.Var(3001),
+			serviceCfg.EnvKeys.AdminServerPort.Var((serviceCfg.Defaults.AdminPort)),
+			serviceCfg.EnvKeys.MaxRows.Var(postgrestSpec.MaxRows),
+			serviceCfg.EnvKeys.OpenAPIProxyURI.Var(fmt.Sprintf("%s/rest/v1", strings.TrimSuffix(core.Spec.APIExternalURL, "/"))),
 		}
 
 		if postgrestDeployment.CreationTimestamp.IsZero() {
@@ -177,7 +142,7 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 			}
 		}
 
-		postgrestDeployment.Spec.Replicas = postgrestSpec.WorkloadTemplate.Replicas
+		postgrestDeployment.Spec.Replicas = postgrestSpec.WorkloadTemplate.ReplicaCount()
 
 		postgrestDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
@@ -187,29 +152,29 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 				Labels: objectLabels(core, serviceCfg.Name, "core", supabase.Images.Postgrest.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: postgrestSpec.WorkloadTemplate.Workload.ImagePullSecrets,
+				ImagePullSecrets: postgrestSpec.WorkloadTemplate.PullSecrets(),
 				Containers: []corev1.Container{
 					{
 						Name:            "supabase-rest",
-						Image:           image,
-						ImagePullPolicy: pullPolicy,
+						Image:           postgrestSpec.WorkloadTemplate.Image(supabase.Images.Postgrest.String()),
+						ImagePullPolicy: postgrestSpec.WorkloadTemplate.ImagePullPolicy(),
 						Args:            []string{"postgrest"},
-						Env:             MergeEnv(postgrestEnv, postgrestSpec.WorkloadTemplate.Workload.AdditionalEnv...),
+						Env:             postgrestSpec.WorkloadTemplate.MergeEnv(postgrestEnv),
 						Ports: []corev1.ContainerPort{
 							{
 								Name:          "rest",
-								ContainerPort: 3000,
+								ContainerPort: serviceCfg.Defaults.ServerPort,
 								Protocol:      corev1.ProtocolTCP,
 							},
 							{
 								Name:          "admin",
-								ContainerPort: 3001,
+								ContainerPort: serviceCfg.Defaults.AdminPort,
 								Protocol:      corev1.ProtocolTCP,
 							},
 						},
-						SecurityContext: containerSecurityContext,
-						Resources:       postgrestSpec.WorkloadTemplate.Workload.Resources,
-						VolumeMounts:    postgrestSpec.WorkloadTemplate.Workload.VolumeMounts,
+						SecurityContext: postgrestSpec.WorkloadTemplate.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
+						Resources:       postgrestSpec.WorkloadTemplate.Resources(),
+						VolumeMounts:    postgrestSpec.WorkloadTemplate.AdditionalVolumeMounts(),
 						ReadinessProbe: &corev1.Probe{
 							InitialDelaySeconds: 5,
 							PeriodSeconds:       3,
@@ -218,7 +183,7 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path: "/ready",
-									Port: intstr.IntOrString{IntVal: 3001},
+									Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.AdminPort},
 								},
 							},
 						},
@@ -229,13 +194,13 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
 									Path: "/live",
-									Port: intstr.IntOrString{IntVal: 3001},
+									Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.AdminPort},
 								},
 							},
 						},
 					},
 				},
-				SecurityContext: podSecurityContext,
+				SecurityContext: postgrestSpec.WorkloadTemplate.PodSecurityContext(),
 			},
 		}
 
@@ -258,12 +223,14 @@ func (r *CorePostgrestReconiler) reconcilePostgrestService(
 	}
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, postgrestService, func() error {
-		postgrestService.Labels = MergeLabels(
+		postgrestService.Labels = core.Spec.Postgrest.WorkloadTemplate.MergeLabels(
 			objectLabels(core, supabase.ServiceConfig.Postgrest.Name, "core", supabase.Images.Postgrest.Tag),
 			core.Labels,
 		)
 
-		postgrestService.Labels[meta.SupabaseLabel.EnvoyCluster] = core.Name
+		if _, ok := postgrestService.Labels[meta.SupabaseLabel.EnvoyCluster]; !ok {
+			postgrestService.Labels[meta.SupabaseLabel.EnvoyCluster] = core.Name
+		}
 
 		postgrestService.Spec = corev1.ServiceSpec{
 			Selector: selectorLabels(core, supabase.ServiceConfig.Postgrest.Name),

@@ -178,7 +178,7 @@ func (r *APIGatewayReconciler) reconcileEnvoyConfig(
 	}
 
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, configMap, func() error {
-		configMap.Labels = MergeLabels(objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Postgrest.Tag), gateway.Labels)
+		configMap.Labels = MergeLabels(objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Envoy.Tag), gateway.Labels)
 
 		type nodeSpec struct {
 			Cluster string
@@ -245,58 +245,15 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 		},
 	}
 
-	envoySpec := gateway.Spec.Envoy
-
-	if envoySpec == nil {
-		envoySpec = new(supabasev1alpha1.EnvoySpec)
-	}
-
-	if envoySpec.WorkloadTemplate == nil {
-		envoySpec.WorkloadTemplate = new(supabasev1alpha1.WorkloadTemplate)
-	}
-
-	if envoySpec.WorkloadTemplate.Workload == nil {
-		envoySpec.WorkloadTemplate.Workload = new(supabasev1alpha1.ContainerTemplate)
-	}
-
 	var (
-		image                    = supabase.Images.Envoy.String()
-		podSecurityContext       = envoySpec.WorkloadTemplate.SecurityContext
-		pullPolicy               = envoySpec.WorkloadTemplate.Workload.PullPolicy
-		containerSecurityContext = envoySpec.WorkloadTemplate.Workload.SecurityContext
+		envoySpec  = gateway.Spec.Envoy
+		serviceCfg = supabase.ServiceConfig.Envoy
 	)
 
-	if img := envoySpec.WorkloadTemplate.Workload.Image; img != "" {
-		image = img
-	}
-
-	if podSecurityContext == nil {
-		podSecurityContext = &corev1.PodSecurityContext{
-			RunAsNonRoot: ptrOf(true),
-		}
-	}
-
-	if containerSecurityContext == nil {
-		containerSecurityContext = &corev1.SecurityContext{
-			Privileged:               ptrOf(false),
-			RunAsUser:                ptrOf(int64(65532)),
-			RunAsGroup:               ptrOf(int64(65532)),
-			RunAsNonRoot:             ptrOf(true),
-			AllowPrivilegeEscalation: ptrOf(false),
-			ReadOnlyRootFilesystem:   ptrOf(true),
-			Capabilities: &corev1.Capabilities{
-				Drop: []corev1.Capability{
-					"ALL",
-				},
-			},
-		}
-	}
-
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, envoyDeployment, func() error {
-		envoyDeployment.Labels = MergeLabels(
-			objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Postgrest.Tag),
+		envoyDeployment.Labels = envoySpec.WorkloadTemplate.MergeLabels(
+			objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Envoy.Tag),
 			gateway.Labels,
-			envoySpec.WorkloadTemplate.AdditionalLabels,
 		)
 
 		if envoyDeployment.CreationTimestamp.IsZero() {
@@ -305,7 +262,7 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 			}
 		}
 
-		envoyDeployment.Spec.Replicas = envoySpec.WorkloadTemplate.Replicas
+		envoyDeployment.Spec.Replicas = envoySpec.WorkloadTemplate.ReplicaCount()
 
 		envoyDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
@@ -313,19 +270,16 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 					fmt.Sprintf("%s/%s", supabasev1alpha1.GroupVersion.Group, "config-hash"): configHash,
 					fmt.Sprintf("%s/%s", supabasev1alpha1.GroupVersion.Group, "jwks-hash"):   jwksHash,
 				},
-				Labels: MergeLabels(
-					objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Envoy.Tag),
-					envoySpec.WorkloadTemplate.AdditionalLabels,
-				),
+				Labels: objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Envoy.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets:             envoySpec.WorkloadTemplate.Workload.ImagePullSecrets,
+				ImagePullSecrets:             envoySpec.WorkloadTemplate.PullSecrets(),
 				AutomountServiceAccountToken: ptrOf(false),
 				Containers: []corev1.Container{
 					{
 						Name:            "envoy-proxy",
-						Image:           image,
-						ImagePullPolicy: pullPolicy,
+						Image:           envoySpec.WorkloadTemplate.Image(supabase.Images.Envoy.String()),
+						ImagePullPolicy: envoySpec.WorkloadTemplate.ImagePullPolicy(),
 						Args:            []string{"-c /etc/envoy/config.yaml"},
 						Ports: []corev1.ContainerPort{
 							{
@@ -362,18 +316,18 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 								},
 							},
 						},
-						SecurityContext: containerSecurityContext,
-						Resources:       envoySpec.WorkloadTemplate.Workload.Resources,
-						VolumeMounts: []corev1.VolumeMount{
-							{
+						SecurityContext: envoySpec.WorkloadTemplate.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
+						Resources:       envoySpec.WorkloadTemplate.Resources(),
+						VolumeMounts: envoySpec.WorkloadTemplate.AdditionalVolumeMounts(
+							corev1.VolumeMount{
 								Name:      "config",
 								ReadOnly:  true,
 								MountPath: "/etc/envoy",
 							},
-						},
+						),
 					},
 				},
-				SecurityContext: podSecurityContext,
+				SecurityContext: envoySpec.WorkloadTemplate.PodSecurityContext(),
 				Volumes: []corev1.Volume{
 					{
 						Name: "config",
@@ -432,10 +386,10 @@ func (r *APIGatewayReconciler) reconcileEnvoyService(
 	}
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, envoyService, func() error {
-		envoyService.Labels = MergeLabels(objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Postgrest.Tag), gateway.Labels)
+		envoyService.Labels = MergeLabels(objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Envoy.Tag), gateway.Labels)
 
 		envoyService.Spec = corev1.ServiceSpec{
-			Selector: selectorLabels(gateway, "postgrest"),
+			Selector: selectorLabels(gateway, "envoy"),
 			Ports: []corev1.ServicePort{
 				{
 					Name:        "rest",

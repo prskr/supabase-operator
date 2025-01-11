@@ -144,25 +144,36 @@ func (m manager) Run(ctx context.Context) error {
 		return fmt.Errorf("unable to create controller Dashboard PG-Meta: %w", err)
 	}
 
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhooksupabasev1alpha1.SetupCoreWebhookWithManager(mgr); err != nil {
-			return fmt.Errorf("unable to create webhook: %w", err)
-		}
+	if err = (&controller.DashboardStudioReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("unable to create controller Dashboard PG-Meta: %w", err)
 	}
+
 	if err = (&controller.APIGatewayReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(ctx, mgr); err != nil {
 		return fmt.Errorf("unable to create controller APIGateway: %w", err)
 	}
+
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhooksupabasev1alpha1.SetupCoreWebhookWithManager(mgr); err != nil {
+			return fmt.Errorf("unable to create webhook: %w", err)
+		}
+
 		if err = webhooksupabasev1alpha1.SetupAPIGatewayWebhookWithManager(mgr, webhookConfig); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "APIGateway")
 			os.Exit(1)
 		}
+
+		if err = webhooksupabasev1alpha1.SetupDashboardWebhookWithManager(mgr); err != nil {
+			return fmt.Errorf("unable to create webhook: %w", err)
+		}
 	}
+
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

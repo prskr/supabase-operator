@@ -21,9 +21,53 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type DashboardJwtSpec struct {
+	// SecretRef - object reference to the Secret where JWT values are stored
+	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
+	// SecretKey - key in secret where to read the JWT HMAC secret from
+	// +kubebuilder:default=secret
+	SecretKey string `json:"secretKey,omitempty"`
+	// AnonKey - key in secret where to read the anon JWT from
+	// +kubebuilder:default=anon_key
+	AnonKey string `json:"anonKey,omitempty"`
+	// ServiceKey - key in secret where to read the service JWT from
+	// +kubebuilder:default=service_key
+	ServiceKey string `json:"serviceKey,omitempty"`
+}
+
+func (s DashboardJwtSpec) SecretKeySelector() *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: *s.SecretRef,
+		Key:                  s.SecretKey,
+	}
+}
+
+func (s DashboardJwtSpec) AnonKeySelector() *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: *s.SecretRef,
+		Key:                  s.AnonKey,
+	}
+}
+
+func (s DashboardJwtSpec) ServiceKeySelector() *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: *s.SecretRef,
+		Key:                  s.ServiceKey,
+	}
+}
+
 type StudioSpec struct {
+	JWT *DashboardJwtSpec `json:"jwt,omitempty"`
 	// WorkloadTemplate - customize the studio deployment
 	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+	// GatewayServiceSelector - selector to find the service for the API gateway
+	// Required to configure the API URL in the studio deployment
+	// If you don't run multiple APIGateway instances in the same namespaces, the default will be fine
+	// +kubebuilder:default={"app.kubernetes.io/name":"envoy","app.kubernetes.io/component":"api-gateway"}
+	GatewayServiceMatchLabels map[string]string `json:"gatewayServiceSelector,omitempty"`
+	// APIExternalURL is referring to the URL where Supabase API will be available
+	// Typically this is the ingress of the API gateway
+	APIExternalURL string `json:"externalUrl"`
 }
 
 type PGMetaSpec struct {
@@ -60,10 +104,8 @@ func (s DashboardDbSpec) PasswordRef() *corev1.SecretKeySelector {
 type DashboardSpec struct {
 	DBSpec *DashboardDbSpec `json:"db"`
 	// PGMeta
-	// +kubebuilder:default={}
 	PGMeta *PGMetaSpec `json:"pgMeta,omitempty"`
 	// Studio
-	// +kubebuilder:default={}
 	Studio *StudioSpec `json:"studio,omitempty"`
 }
 

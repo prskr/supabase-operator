@@ -2,62 +2,9 @@ package supabase
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-type stringEnv string
-
-func (e stringEnv) Var(value string) corev1.EnvVar {
-	return corev1.EnvVar{
-		Name:  string(e),
-		Value: value,
-	}
-}
-
-type stringSliceEnv struct {
-	key       string
-	separator string
-}
-
-func (e stringSliceEnv) Var(value []string) corev1.EnvVar {
-	return corev1.EnvVar{
-		Name:  e.key,
-		Value: strings.Join(value, e.separator),
-	}
-}
-
-type intEnv string
-
-func (e intEnv) Var(value int) corev1.EnvVar {
-	return corev1.EnvVar{
-		Name:  string(e),
-		Value: strconv.Itoa(value),
-	}
-}
-
-type boolEnv string
-
-func (e boolEnv) Var(value bool) corev1.EnvVar {
-	return corev1.EnvVar{
-		Name:  string(e),
-		Value: strconv.FormatBool(value),
-	}
-}
-
-type secretEnv string
-
-func (e secretEnv) Var(sel *corev1.SecretKeySelector) corev1.EnvVar {
-	return corev1.EnvVar{
-		Name: string(e),
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: sel,
-		},
-	}
-}
 
 type serviceConfig[TEnvKeys, TDefaults any] struct {
 	Name     string
@@ -74,6 +21,7 @@ func (cfg serviceConfig[TEnvKeys, TDefaults]) ObjectMeta(obj metav1.Object) meta
 }
 
 type postgrestEnvKeys struct {
+	Host                 fixedEnv
 	DBUri                string
 	Schemas              stringSliceEnv
 	AnonRole             stringEnv
@@ -81,31 +29,34 @@ type postgrestEnvKeys struct {
 	UseLegacyGucs        boolEnv
 	ExtraSearchPath      stringSliceEnv
 	AppSettingsJWTSecret secretEnv
-	AppSettingsJWTExpiry intEnv
-	AdminServerPort      intEnv
-	MaxRows              intEnv
+	AppSettingsJWTExpiry intEnv[int]
+	AdminServerPort      intEnv[int32]
+	MaxRows              intEnv[int]
+	OpenAPIProxyURI      stringEnv
 }
 
 type postgrestConfigDefaults struct {
-	AnonRole        string
-	Schemas         []string
-	ExtraSearchPath []string
+	AnonRole              string
+	Schemas               []string
+	ExtraSearchPath       []string
+	UID, GID              int64
+	ServerPort, AdminPort int32
 }
 
 type authEnvKeys struct {
-	ApiHost                    stringEnv
-	ApiPort                    intEnv
+	ApiHost                    fixedEnv
+	ApiPort                    fixedEnv
 	ApiExternalUrl             stringEnv
-	DBDriver                   stringEnv
+	DBDriver                   fixedEnv
 	DatabaseUrl                string
 	SiteUrl                    stringEnv
 	AdditionalRedirectURLs     stringSliceEnv
 	DisableSignup              boolEnv
-	JWTIssuer                  stringEnv
-	JWTAdminRoles              stringEnv
-	JWTAudience                stringEnv
-	JwtDefaultGroup            stringEnv
-	JwtExpiry                  intEnv
+	JWTIssuer                  fixedEnv
+	JWTAdminRoles              fixedEnv
+	JWTAudience                fixedEnv
+	JwtDefaultGroup            fixedEnv
+	JwtExpiry                  intEnv[int]
 	JwtSecret                  secretEnv
 	EmailSignupDisabled        boolEnv
 	MailerUrlPathsInvite       stringEnv
@@ -116,35 +67,50 @@ type authEnvKeys struct {
 }
 
 type authConfigDefaults struct {
-	ApiHost                    string
-	ApiPort                    int
-	DbDriver                   string
-	JwtIssuer                  string
-	JwtAdminRoles              string
-	JwtAudience                string
-	JwtDefaultGroupName        string
 	MailerUrlPathsInvite       string
 	MailerUrlPathsConfirmation string
 	MailerUrlPathsRecovery     string
 	MailerUrlPathsEmailChange  string
+	APIPort                    int32
+	UID, GID                   int64
 }
 
 type pgMetaEnvKeys struct {
-	APIPort    intEnv
+	APIPort    intEnv[int32]
 	DBHost     stringEnv
-	DBPort     intEnv
+	DBPort     intEnv[int]
 	DBName     stringEnv
 	DBUser     secretEnv
 	DBPassword secretEnv
 }
 
 type pgMetaDefaults struct {
-	APIPort int
+	APIPort int32
 	DBPort  string
+	NodeUID int64
+	NodeGID int64
+}
+
+type studioEnvKeys struct {
+	PGMetaURL      stringEnv
+	DBPassword     secretEnv
+	ApiUrl         stringEnv
+	APIExternalURL stringEnv
+	JwtSecret      secretEnv
+	AnonKey        secretEnv
+	ServiceKey     secretEnv
+	Host           fixedEnv
+}
+
+type studioDefaults struct {
+	NodeUID int64
+	NodeGID int64
+	APIPort int32
 }
 
 type envoyDefaults struct {
 	ConfigKey string
+	UID, GID  int64
 }
 
 type envoyServiceConfig struct {
@@ -176,12 +142,14 @@ var ServiceConfig = struct {
 	Postgrest serviceConfig[postgrestEnvKeys, postgrestConfigDefaults]
 	Auth      serviceConfig[authEnvKeys, authConfigDefaults]
 	PGMeta    serviceConfig[pgMetaEnvKeys, pgMetaDefaults]
+	Studio    serviceConfig[studioEnvKeys, studioDefaults]
 	Envoy     envoyServiceConfig
 	JWT       jwtConfig
 }{
 	Postgrest: serviceConfig[postgrestEnvKeys, postgrestConfigDefaults]{
 		Name: "postgrest",
 		EnvKeys: postgrestEnvKeys{
+			Host:                 fixedEnvOf("PGRST_SERVER_HOST", "*"),
 			DBUri:                "PGRST_DB_URI",
 			Schemas:              stringSliceEnv{key: "PGRST_DB_SCHEMAS", separator: ","},
 			AnonRole:             "PGRST_DB_ANON_ROLE",
@@ -191,28 +159,34 @@ var ServiceConfig = struct {
 			AppSettingsJWTExpiry: "PGRST_APP_SETTINGS_JWT_EXP",
 			AdminServerPort:      "PGRST_ADMIN_SERVER_PORT",
 			ExtraSearchPath:      stringSliceEnv{key: "PGRST_DB_EXTRA_SEARCH_PATH", separator: ","},
+			MaxRows:              "PGRST_DB_MAX_ROWS",
+			OpenAPIProxyURI:      "PGRST_OPENAPI_SERVER_PROXY_URI",
 		},
 		Defaults: postgrestConfigDefaults{
 			AnonRole:        "anon",
 			Schemas:         []string{"public", "graphql_public"},
 			ExtraSearchPath: []string{"public", "extensions"},
+			UID:             1000,
+			GID:             1000,
+			ServerPort:      3000,
+			AdminPort:       3001,
 		},
 	},
 	Auth: serviceConfig[authEnvKeys, authConfigDefaults]{
 		Name: "auth",
 		EnvKeys: authEnvKeys{
-			ApiHost:                    "GOTRUE_API_HOST",
-			ApiPort:                    "GOTRUE_API_PORT",
+			ApiHost:                    fixedEnvOf("GOTRUE_API_HOST", "0.0.0.0"),
+			ApiPort:                    fixedEnvOf("GOTRUE_API_PORT", "9999"),
 			ApiExternalUrl:             "API_EXTERNAL_URL",
-			DBDriver:                   "GOTRUE_DB_DRIVER",
+			DBDriver:                   fixedEnvOf("GOTRUE_DB_DRIVER", "postgres"),
 			DatabaseUrl:                "GOTRUE_DB_DATABASE_URL",
 			SiteUrl:                    "GOTRUE_SITE_URL",
 			AdditionalRedirectURLs:     stringSliceEnv{key: "GOTRUE_URI_ALLOW_LIST", separator: ","},
 			DisableSignup:              "GOTRUE_DISABLE_SIGNUP",
-			JWTIssuer:                  "GOTRUE_JWT_ISSUER",
-			JWTAdminRoles:              "GOTRUE_JWT_ADMIN_ROLES",
-			JWTAudience:                "GOTRUE_JWT_AUD",
-			JwtDefaultGroup:            "GOTRUE_JWT_DEFAULT_GROUP_NAME",
+			JWTIssuer:                  fixedEnvOf("GOTRUE_JWT_ISSUER", "supabase"),
+			JWTAdminRoles:              fixedEnvOf("GOTRUE_JWT_ADMIN_ROLES", "service_role"),
+			JWTAudience:                fixedEnvOf("GOTRUE_JWT_AUD", "authenticated"),
+			JwtDefaultGroup:            fixedEnvOf("GOTRUE_JWT_DEFAULT_GROUP_NAME", "authenticated"),
 			JwtExpiry:                  "GOTRUE_JWT_EXP",
 			JwtSecret:                  "GOTRUE_JWT_SECRET",
 			EmailSignupDisabled:        "GOTRUE_EXTERNAL_EMAIL_ENABLED",
@@ -223,17 +197,13 @@ var ServiceConfig = struct {
 			AnonymousUsersEnabled:      "GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED",
 		},
 		Defaults: authConfigDefaults{
-			ApiHost:                    "0.0.0.0",
-			ApiPort:                    9999,
-			DbDriver:                   "postgres",
-			JwtIssuer:                  "supabase",
-			JwtAdminRoles:              "service_role",
-			JwtAudience:                "authenticated",
-			JwtDefaultGroupName:        "authenticated",
 			MailerUrlPathsInvite:       "/auth/v1/verify",
 			MailerUrlPathsConfirmation: "/auth/v1/verify",
 			MailerUrlPathsRecovery:     "/auth/v1/verify",
 			MailerUrlPathsEmailChange:  "/auth/v1/verify",
+			APIPort:                    9999,
+			UID:                        1000,
+			GID:                        1000,
 		},
 	},
 	PGMeta: serviceConfig[pgMetaEnvKeys, pgMetaDefaults]{
@@ -249,11 +219,33 @@ var ServiceConfig = struct {
 		Defaults: pgMetaDefaults{
 			APIPort: 8080,
 			DBPort:  "5432",
+			NodeUID: 1000,
+			NodeGID: 1000,
+		},
+	},
+	Studio: serviceConfig[studioEnvKeys, studioDefaults]{
+		Name: "studio",
+		EnvKeys: studioEnvKeys{
+			PGMetaURL:      "STUDIO_PG_META_URL",
+			DBPassword:     "POSTGRES_PASSWORD",
+			ApiUrl:         "SUPABASE_URL",
+			APIExternalURL: "SUPABASE_PUBLIC_URL",
+			JwtSecret:      "AUTH_JWT_SECRET",
+			AnonKey:        "SUPABASE_ANON_KEY",
+			ServiceKey:     "SUPABASE_SERVICE_KEY",
+			Host:           fixedEnvOf("HOSTNAME", "0.0.0.0"),
+		},
+		Defaults: studioDefaults{
+			NodeUID: 1000,
+			NodeGID: 1000,
+			APIPort: 3000,
 		},
 	},
 	Envoy: envoyServiceConfig{
 		Defaults: envoyDefaults{
-			"config.yaml",
+			ConfigKey: "config.yaml",
+			UID:       65532,
+			GID:       65532,
 		},
 	},
 	JWT: jwtConfig{

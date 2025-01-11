@@ -90,7 +90,7 @@ func (d Database) DSNEnv(key string) corev1.EnvVar {
 	}
 }
 
-type JwtSpec struct {
+type CoreJwtSpec struct {
 	// Secret - JWT HMAC secret in plain text
 	// This is WRITE-ONLY and will be copied to the SecretRef by the defaulter
 	Secret *string `json:"secret,omitempty"`
@@ -113,7 +113,7 @@ type JwtSpec struct {
 	Expiry int `json:"expiry,omitempty"`
 }
 
-func (s JwtSpec) GetJWTSecret(ctx context.Context, client client.Client) ([]byte, error) {
+func (s CoreJwtSpec) GetJWTSecret(ctx context.Context, client client.Client) ([]byte, error) {
 	var secret corev1.Secret
 	if err := client.Get(ctx, types.NamespacedName{Name: s.SecretRef.Name}, &secret); err != nil {
 		return nil, nil
@@ -127,21 +127,21 @@ func (s JwtSpec) GetJWTSecret(ctx context.Context, client client.Client) ([]byte
 	return value, nil
 }
 
-func (s JwtSpec) SecretKeySelector() *corev1.SecretKeySelector {
+func (s CoreJwtSpec) SecretKeySelector() *corev1.SecretKeySelector {
 	return &corev1.SecretKeySelector{
 		LocalObjectReference: *s.SecretRef,
 		Key:                  s.SecretKey,
 	}
 }
 
-func (s JwtSpec) JwksKeySelector() *corev1.SecretKeySelector {
+func (s CoreJwtSpec) JwksKeySelector() *corev1.SecretKeySelector {
 	return &corev1.SecretKeySelector{
 		LocalObjectReference: *s.SecretRef,
 		Key:                  s.JwksKey,
 	}
 }
 
-func (s JwtSpec) SecretAsEnv(key string) corev1.EnvVar {
+func (s CoreJwtSpec) SecretAsEnv(key string) corev1.EnvVar {
 	return corev1.EnvVar{
 		Name: key,
 		ValueFrom: &corev1.EnvVarSource{
@@ -153,7 +153,7 @@ func (s JwtSpec) SecretAsEnv(key string) corev1.EnvVar {
 	}
 }
 
-func (s JwtSpec) ExpiryAsEnv(key string) corev1.EnvVar {
+func (s CoreJwtSpec) ExpiryAsEnv(key string) corev1.EnvVar {
 	return corev1.EnvVar{
 		Name:  key,
 		Value: strconv.Itoa(s.Expiry),
@@ -358,12 +358,6 @@ func (p *AuthProviders) Vars(apiExternalURL string) []corev1.EnvVar {
 }
 
 type AuthSpec struct {
-	// APIExternalURL is referring to the URL where Supabase API will be available
-	// Typically this is the ingress of the API gateway
-	APIExternalURL string `json:"externalUrl"`
-	// SiteURL is referring to the URL of the (frontend) application
-	// In most Kubernetes scenarios this is the same as the APIExternalURL with a different path handler in the ingress
-	SiteURL                string            `json:"siteUrl"`
 	AdditionalRedirectUrls []string          `json:"additionalRedirectUrls,omitempty"`
 	DisableSignup          *bool             `json:"disableSignup,omitempty"`
 	AnonymousUsersEnabled  *bool             `json:"anonymousUsersEnabled,omitempty"`
@@ -374,7 +368,13 @@ type AuthSpec struct {
 
 // CoreSpec defines the desired state of Core.
 type CoreSpec struct {
-	JWT       *JwtSpec      `json:"jwt,omitempty"`
+	// APIExternalURL is referring to the URL where Supabase API will be available
+	// Typically this is the ingress of the API gateway
+	APIExternalURL string `json:"externalUrl"`
+	// SiteURL is referring to the URL of the (frontend) application
+	// In most Kubernetes scenarios this is the same as the APIExternalURL with a different path handler in the ingress
+	SiteURL   string        `json:"siteUrl"`
+	JWT       *CoreJwtSpec  `json:"jwt,omitempty"`
 	Database  Database      `json:"database,omitempty"`
 	Postgrest PostgrestSpec `json:"postgrest,omitempty"`
 	Auth      *AuthSpec     `json:"auth,omitempty"`

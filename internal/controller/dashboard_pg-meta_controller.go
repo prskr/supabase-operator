@@ -40,19 +40,6 @@ type DashboardPGMetaReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=supabase.k8s.icb4dc0.de,resources=dashboards,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=supabase.k8s.icb4dc0.de,resources=dashboards/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=supabase.k8s.icb4dc0.de,resources=dashboards/finalizers,verbs=update
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Dashboard object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.1/pkg/reconcile
 func (r *DashboardPGMetaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var (
 		dashboard supabasev1alpha1.Dashboard
@@ -101,47 +88,6 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
 		pgMetaSpec = new(supabasev1alpha1.PGMetaSpec)
 	}
 
-	if pgMetaSpec.WorkloadTemplate == nil {
-		pgMetaSpec.WorkloadTemplate = new(supabasev1alpha1.WorkloadTemplate)
-	}
-
-	if pgMetaSpec.WorkloadTemplate.Workload == nil {
-		pgMetaSpec.WorkloadTemplate.Workload = new(supabasev1alpha1.ContainerTemplate)
-	}
-
-	var (
-		image                    = supabase.Images.PostgresMeta.String()
-		podSecurityContext       = pgMetaSpec.WorkloadTemplate.SecurityContext
-		pullPolicy               = pgMetaSpec.WorkloadTemplate.Workload.PullPolicy
-		containerSecurityContext = pgMetaSpec.WorkloadTemplate.Workload.SecurityContext
-	)
-
-	if img := pgMetaSpec.WorkloadTemplate.Workload.Image; img != "" {
-		image = img
-	}
-
-	if podSecurityContext == nil {
-		podSecurityContext = &corev1.PodSecurityContext{
-			RunAsNonRoot: ptrOf(true),
-		}
-	}
-
-	if containerSecurityContext == nil {
-		containerSecurityContext = &corev1.SecurityContext{
-			Privileged:               ptrOf(false),
-			RunAsUser:                ptrOf(int64(1000)),
-			RunAsGroup:               ptrOf(int64(1000)),
-			RunAsNonRoot:             ptrOf(true),
-			AllowPrivilegeEscalation: ptrOf(false),
-			ReadOnlyRootFilesystem:   ptrOf(true),
-			Capabilities: &corev1.Capabilities{
-				Drop: []corev1.Capability{
-					"ALL",
-				},
-			},
-		}
-	}
-
 	dsnSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dashboard.Spec.DBSpec.DBCredentialsRef.Name,
@@ -153,7 +99,7 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
 	}
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, pgMetaDeployment, func() error {
-		pgMetaDeployment.Labels = MergeLabels(
+		pgMetaDeployment.Labels = pgMetaSpec.WorkloadTemplate.MergeLabels(
 			objectLabels(dashboard, serviceCfg.Name, "dashboard", supabase.Images.PostgresMeta.Tag),
 			dashboard.Labels,
 		)
@@ -164,11 +110,12 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
 			}
 		}
 
-		pgMetaDeployment.Spec.Replicas = pgMetaSpec.WorkloadTemplate.Replicas
+		pgMetaDeployment.Spec.Replicas = pgMetaSpec.WorkloadTemplate.ReplicaCount()
 
 		pgMetaEnv := []corev1.EnvVar{
 			serviceCfg.EnvKeys.APIPort.Var(serviceCfg.Defaults.APIPort),
 			serviceCfg.EnvKeys.DBHost.Var(dashboard.Spec.DBSpec.Host),
+			serviceCfg.EnvKeys.DBName.Var(dashboard.Spec.DBSpec.DBName),
 			serviceCfg.EnvKeys.DBPort.Var(dashboard.Spec.DBSpec.Port),
 			serviceCfg.EnvKeys.DBUser.Var(dashboard.Spec.DBSpec.UserRef()),
 			serviceCfg.EnvKeys.DBPassword.Var(dashboard.Spec.DBSpec.PasswordRef()),
@@ -179,20 +126,20 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
 				Labels: objectLabels(dashboard, serviceCfg.Name, "dashboard", supabase.Images.PostgresMeta.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: pgMetaSpec.WorkloadTemplate.Workload.ImagePullSecrets,
+				ImagePullSecrets: pgMetaSpec.WorkloadTemplate.PullSecrets(),
 				Containers: []corev1.Container{{
 					Name:            "supabase-meta",
-					Image:           image,
-					ImagePullPolicy: pullPolicy,
-					Env:             MergeEnv(pgMetaEnv, pgMetaSpec.WorkloadTemplate.Workload.AdditionalEnv...),
+					Image:           pgMetaSpec.WorkloadTemplate.Image(supabase.Images.PostgresMeta.String()),
+					ImagePullPolicy: pgMetaSpec.WorkloadTemplate.ImagePullPolicy(),
+					Env:             pgMetaSpec.WorkloadTemplate.MergeEnv(pgMetaEnv),
 					Ports: []corev1.ContainerPort{{
 						Name:          "api",
-						ContainerPort: int32(serviceCfg.Defaults.APIPort),
+						ContainerPort: serviceCfg.Defaults.APIPort,
 						Protocol:      corev1.ProtocolTCP,
 					}},
-					SecurityContext: containerSecurityContext,
-					Resources:       pgMetaSpec.WorkloadTemplate.Workload.Resources,
-					VolumeMounts:    pgMetaSpec.WorkloadTemplate.Workload.VolumeMounts,
+					SecurityContext: pgMetaSpec.WorkloadTemplate.ContainerSecurityContext(serviceCfg.Defaults.NodeUID, serviceCfg.Defaults.NodeGID),
+					Resources:       pgMetaSpec.WorkloadTemplate.Resources(),
+					VolumeMounts:    pgMetaSpec.WorkloadTemplate.AdditionalVolumeMounts(),
 					ReadinessProbe: &corev1.Probe{
 						InitialDelaySeconds: 5,
 						PeriodSeconds:       3,
@@ -201,7 +148,7 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path: "/health",
-								Port: intstr.IntOrString{IntVal: int32(serviceCfg.Defaults.APIPort)},
+								Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.APIPort},
 							},
 						},
 					},
@@ -212,12 +159,12 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path: "/health",
-								Port: intstr.IntOrString{IntVal: int32(serviceCfg.Defaults.APIPort)},
+								Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.APIPort},
 							},
 						},
 					},
 				}},
-				SecurityContext: podSecurityContext,
+				SecurityContext: pgMetaSpec.WorkloadTemplate.PodSecurityContext(),
 			},
 		}
 
@@ -239,15 +186,19 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaService(
 		ObjectMeta: supabase.ServiceConfig.PGMeta.ObjectMeta(dashboard),
 	}
 
+	if dashboard.Spec.PGMeta == nil {
+		dashboard.Spec.PGMeta = new(supabasev1alpha1.PGMetaSpec)
+	}
+
 	_, err := controllerutil.CreateOrPatch(ctx, r.Client, pgMetaService, func() error {
-		pgMetaService.Labels = MergeLabels(
+		pgMetaService.Labels = dashboard.Spec.PGMeta.WorkloadTemplate.MergeLabels(
 			objectLabels(dashboard, supabase.ServiceConfig.PGMeta.Name, "dashboard", supabase.Images.PostgresMeta.Tag),
 			dashboard.Labels,
 		)
 
-		pgMetaService.Labels[meta.SupabaseLabel.EnvoyCluster] = dashboard.Name
-
-		apiPort := int32(supabase.ServiceConfig.PGMeta.Defaults.APIPort)
+		if _, ok := pgMetaService.Labels[meta.SupabaseLabel.EnvoyCluster]; !ok {
+			pgMetaService.Labels[meta.SupabaseLabel.EnvoyCluster] = dashboard.Name
+		}
 
 		pgMetaService.Spec = corev1.ServiceSpec{
 			Selector: selectorLabels(dashboard, supabase.ServiceConfig.PGMeta.Name),
@@ -256,8 +207,8 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaService(
 					Name:        "api",
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: ptrOf("http"),
-					Port:        apiPort,
-					TargetPort:  intstr.IntOrString{IntVal: apiPort},
+					Port:        supabase.ServiceConfig.PGMeta.Defaults.APIPort,
+					TargetPort:  intstr.IntOrString{IntVal: supabase.ServiceConfig.PGMeta.Defaults.APIPort},
 				},
 			},
 		}

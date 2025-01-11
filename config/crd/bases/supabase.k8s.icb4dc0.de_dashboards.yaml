@@ -71,7 +71,6 @@ spec:
                 - host
                 type: object
               pgMeta:
-                default: {}
                 description: PGMeta
                 properties:
                   workloadTemplate:
@@ -764,9 +763,57 @@ spec:
                     type: object
                 type: object
               studio:
-                default: {}
                 description: Studio
                 properties:
+                  externalUrl:
+                    description: |-
+                      APIExternalURL is referring to the URL where Supabase API will be available
+                      Typically this is the ingress of the API gateway
+                    type: string
+                  gatewayServiceSelector:
+                    additionalProperties:
+                      type: string
+                    default:
+                      app.kubernetes.io/component: api-gateway
+                      app.kubernetes.io/name: envoy
+                    description: |-
+                      GatewayServiceSelector - selector to find the service for the API gateway
+                      Required to configure the API URL in the studio deployment
+                      If you don't run multiple APIGateway instances in the same namespaces, the default will be fine
+                    type: object
+                  jwt:
+                    properties:
+                      anonKey:
+                        default: anon_key
+                        description: AnonKey - key in secret where to read the anon
+                          JWT from
+                        type: string
+                      secretKey:
+                        default: secret
+                        description: SecretKey - key in secret where to read the JWT
+                          HMAC secret from
+                        type: string
+                      secretRef:
+                        description: SecretRef - object reference to the Secret where
+                          JWT values are stored
+                        properties:
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      serviceKey:
+                        default: service_key
+                        description: ServiceKey - key in secret where to read the
+                          service JWT from
+                        type: string
+                    type: object
                   workloadTemplate:
                     description: WorkloadTemplate - customize the studio deployment
                     properties:
@@ -1455,6 +1502,8 @@ spec:
                     required:
                     - securityContext
                     type: object
+                required:
+                - externalUrl
                 type: object
             required:
             - db

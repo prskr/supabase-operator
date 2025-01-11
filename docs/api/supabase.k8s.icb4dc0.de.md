@@ -125,8 +125,6 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `externalUrl` _string_ | APIExternalURL is referring to the URL where Supabase API will be available<br />Typically this is the ingress of the API gateway |  |  |
-| `siteUrl` _string_ | SiteURL is referring to the URL of the (frontend) application<br />In most Kubernetes scenarios this is the same as the APIExternalURL with a different path handler in the ingress |  |  |
 | `additionalRedirectUrls` _string array_ |  |  |  |
 | `disableSignup` _boolean_ |  |  |  |
 | `anonymousUsersEnabled` _boolean_ |  |  |  |
@@ -212,7 +210,9 @@ _Appears in:_
 | `spec` _[CoreSpec](#corespec)_ |  |  |  |
 
 
-#### CoreCondition
+
+
+#### CoreJwtSpec
 
 
 
@@ -221,28 +221,17 @@ _Appears in:_
 
 
 _Appears in:_
-- [CoreStatus](#corestatus)
+- [CoreSpec](#corespec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `type` _[CoreConditionType](#coreconditiontype)_ |  |  |  |
-| `lastProbeTime` _[Time](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#time-v1-meta)_ |  |  |  |
-| `lastTransitionTime` _[Time](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#time-v1-meta)_ |  |  |  |
-| `reason` _string_ |  |  |  |
-| `message` _string_ |  |  |  |
-
-
-#### CoreConditionType
-
-_Underlying type:_ _string_
-
-
-
-
-
-_Appears in:_
-- [CoreCondition](#corecondition)
-
+| `secret` _string_ | Secret - JWT HMAC secret in plain text<br />This is WRITE-ONLY and will be copied to the SecretRef by the defaulter |  |  |
+| `secretRef` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ | SecretRef - object reference to the Secret where JWT values are stored |  |  |
+| `secretKey` _string_ | SecretKey - key in secret where to read the JWT HMAC secret from | secret |  |
+| `jwksKey` _string_ | JwksKey - key in secret where to read the JWKS from | jwks.json |  |
+| `anonKey` _string_ | AnonKey - key in secret where to read the anon JWT from | anon_key |  |
+| `serviceKey` _string_ | ServiceKey - key in secret where to read the service JWT from | service_key |  |
+| `expiry` _integer_ | Expiry - expiration time in seconds for JWTs | 3600 |  |
 
 
 #### CoreList
@@ -276,7 +265,9 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `jwt` _[JwtSpec](#jwtspec)_ |  |  |  |
+| `externalUrl` _string_ | APIExternalURL is referring to the URL where Supabase API will be available<br />Typically this is the ingress of the API gateway |  |  |
+| `siteUrl` _string_ | SiteURL is referring to the URL of the (frontend) application<br />In most Kubernetes scenarios this is the same as the APIExternalURL with a different path handler in the ingress |  |  |
+| `jwt` _[CoreJwtSpec](#corejwtspec)_ |  |  |  |
 | `database` _[Database](#database)_ |  |  |  |
 | `postgrest` _[PostgrestSpec](#postgrestspec)_ |  |  |  |
 | `auth` _[AuthSpec](#authspec)_ |  |  |  |
@@ -322,6 +313,25 @@ _Appears in:_
 | `dbCredentialsRef` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ | DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from<br />Credentials need to be stored in basic auth form |  |  |
 
 
+#### DashboardJwtSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [StudioSpec](#studiospec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `secretRef` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ | SecretRef - object reference to the Secret where JWT values are stored |  |  |
+| `secretKey` _string_ | SecretKey - key in secret where to read the JWT HMAC secret from | secret |  |
+| `anonKey` _string_ | AnonKey - key in secret where to read the anon JWT from | anon_key |  |
+| `serviceKey` _string_ | ServiceKey - key in secret where to read the service JWT from | service_key |  |
+
+
 #### DashboardList
 
 
@@ -354,8 +364,8 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `db` _[DashboardDbSpec](#dashboarddbspec)_ |  |  |  |
-| `pgMeta` _[PGMetaSpec](#pgmetaspec)_ | PGMeta | \{  \} |  |
-| `studio` _[StudioSpec](#studiospec)_ | Studio | \{  \} |  |
+| `pgMeta` _[PGMetaSpec](#pgmetaspec)_ | PGMeta |  |  |
+| `studio` _[StudioSpec](#studiospec)_ | Studio |  |  |
 
 
 
@@ -526,31 +536,9 @@ _Appears in:_
 | `pullPolicy` _[PullPolicy](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#pullpolicy-v1-core)_ |  |  |  |
 
 
-#### JwtSpec
-
-
-
-
-
-
-
-_Appears in:_
-- [CoreSpec](#corespec)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `secret` _string_ | Secret - JWT HMAC secret in plain text<br />This is WRITE-ONLY and will be copied to the SecretRef by the defaulter |  |  |
-| `secretRef` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ | SecretRef - object reference to the Secret where JWT values are stored |  |  |
-| `secretKey` _string_ | SecretKey - key in secret where to read the JWT HMAC secret from | secret |  |
-| `jwksKey` _string_ | JwksKey - key in secret where to read the JWKS from | jwks.json |  |
-| `anonKey` _string_ | AnonKey - key in secret where to read the anon JWT from | anon_key |  |
-| `serviceKey` _string_ | ServiceKey - key in secret where to read the service JWT from | service_key |  |
-| `expiry` _integer_ | Expiry - expiration time in seconds for JWTs | 3600 |  |
-
-
 #### MigrationStatus
 
-_Underlying type:_ _object_
+_Underlying type:_ _[Time](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#time-v1-meta)_
 
 
 
@@ -645,7 +633,10 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
+| `jwt` _[DashboardJwtSpec](#dashboardjwtspec)_ |  |  |  |
 | `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the studio deployment |  |  |
+| `gatewayServiceSelector` _object (keys:string, values:string)_ | GatewayServiceSelector - selector to find the service for the API gateway<br />Required to configure the API URL in the studio deployment<br />If you don't run multiple APIGateway instances in the same namespaces, the default will be fine | \{ app.kubernetes.io/component:api-gateway app.kubernetes.io/name:envoy \} |  |
+| `externalUrl` _string_ | APIExternalURL is referring to the URL where Supabase API will be available<br />Typically this is the ingress of the API gateway |  |  |
 
 
 #### WorkloadTemplate

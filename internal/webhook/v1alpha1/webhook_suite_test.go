@@ -124,6 +124,9 @@ var _ = BeforeSuite(func() {
 	err = SetupAPIGatewayWebhookWithManager(mgr, WebhookConfig{CurrentNamespace: "default"})
 	Expect(err).NotTo(HaveOccurred())
 
+	err = SetupDashboardWebhookWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
+
 	// +kubebuilder:scaffold:webhook
 
 	go func() {

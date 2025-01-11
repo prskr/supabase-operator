@@ -111,7 +111,7 @@ func (d *CoreCustomDefaulter) defaultJWT(ctx context.Context, core *supabasev1al
 	corelog.Info("Defaulting JWT")
 
 	if core.Spec.JWT == nil {
-		core.Spec.JWT = new(supabasev1alpha1.JwtSpec)
+		core.Spec.JWT = new(supabasev1alpha1.CoreJwtSpec)
 	}
 
 	if core.Spec.JWT.SecretRef == nil {

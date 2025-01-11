@@ -72,51 +72,10 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 		authDeployment = &appsv1.Deployment{
 			ObjectMeta: supabase.ServiceConfig.Auth.ObjectMeta(core),
 		}
-		authSpec = core.Spec.Auth
-		svcCfg   = supabase.ServiceConfig.Auth
+		authSpec         = core.Spec.Auth
+		svcCfg           = supabase.ServiceConfig.Auth
+		namespacedClient = client.NewNamespacedClient(r.Client, core.Namespace)
 	)
-
-	if authSpec.WorkloadTemplate == nil {
-		authSpec.WorkloadTemplate = new(supabasev1alpha1.WorkloadTemplate)
-	}
-
-	if authSpec.WorkloadTemplate.Workload == nil {
-		authSpec.WorkloadTemplate.Workload = new(supabasev1alpha1.ContainerTemplate)
-	}
-
-	var (
-		image                    = supabase.Images.Gotrue.String()
-		podSecurityContext       = authSpec.WorkloadTemplate.SecurityContext
-		pullPolicy               = authSpec.WorkloadTemplate.Workload.PullPolicy
-		containerSecurityContext = authSpec.WorkloadTemplate.Workload.SecurityContext
-		namespacedClient         = client.NewNamespacedClient(r.Client, core.Namespace)
-	)
-
-	if img := authSpec.WorkloadTemplate.Workload.Image; img != "" {
-		image = img
-	}
-
-	if podSecurityContext == nil {
-		podSecurityContext = &corev1.PodSecurityContext{
-			RunAsNonRoot: ptrOf(true),
-		}
-	}
-
-	if containerSecurityContext == nil {
-		containerSecurityContext = &corev1.SecurityContext{
-			Privileged:               ptrOf(false),
-			RunAsUser:                ptrOf(int64(1000)),
-			RunAsGroup:               ptrOf(int64(1000)),
-			RunAsNonRoot:             ptrOf(true),
-			AllowPrivilegeEscalation: ptrOf(false),
-			ReadOnlyRootFilesystem:   ptrOf(true),
-			Capabilities: &corev1.Capabilities{
-				Drop: []corev1.Capability{
-					"ALL",
-				},
-			},
-		}
-	}
 
 	databaseDSN, err := core.Spec.Database.GetDSN(ctx, namespacedClient)
 	if err != nil {
@@ -129,7 +88,7 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 	}
 
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, authDeployment, func() error {
-		authDeployment.Labels = MergeLabels(
+		authDeployment.Labels = authSpec.WorkloadTemplate.MergeLabels(
 			objectLabels(core, "auth", "core", supabase.Images.Gotrue.Tag),
 			core.Labels,
 		)
@@ -153,24 +112,24 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 		}
 
 		authEnv := append(authDbEnv,
-			svcCfg.EnvKeys.ApiHost.Var(svcCfg.Defaults.ApiHost),
-			svcCfg.EnvKeys.ApiPort.Var(svcCfg.Defaults.ApiPort),
-			svcCfg.EnvKeys.ApiExternalUrl.Var(authSpec.APIExternalURL),
-			svcCfg.EnvKeys.DBDriver.Var(svcCfg.Defaults.DbDriver),
-			svcCfg.EnvKeys.SiteUrl.Var(authSpec.SiteURL),
+			svcCfg.EnvKeys.ApiHost.Var(),
+			svcCfg.EnvKeys.ApiPort.Var(),
+			svcCfg.EnvKeys.ApiExternalUrl.Var(core.Spec.APIExternalURL),
+			svcCfg.EnvKeys.DBDriver.Var(),
+			svcCfg.EnvKeys.SiteUrl.Var(core.Spec.SiteURL),
 			svcCfg.EnvKeys.AdditionalRedirectURLs.Var(authSpec.AdditionalRedirectUrls),
 			svcCfg.EnvKeys.DisableSignup.Var(boolValueOf(authSpec.DisableSignup)),
-			svcCfg.EnvKeys.JWTIssuer.Var(svcCfg.Defaults.JwtIssuer),
-			svcCfg.EnvKeys.JWTAdminRoles.Var(svcCfg.Defaults.JwtAdminRoles),
-			svcCfg.EnvKeys.JWTAudience.Var(svcCfg.Defaults.JwtAudience),
-			svcCfg.EnvKeys.JwtDefaultGroup.Var(svcCfg.Defaults.JwtDefaultGroupName),
+			svcCfg.EnvKeys.JWTIssuer.Var(),
+			svcCfg.EnvKeys.JWTAdminRoles.Var(),
+			svcCfg.EnvKeys.JWTAudience.Var(),
+			svcCfg.EnvKeys.JwtDefaultGroup.Var(),
 			svcCfg.EnvKeys.JwtExpiry.Var(ValueOrFallback(core.Spec.JWT.Expiry, supabase.ServiceConfig.JWT.Defaults.Expiry)),
 			svcCfg.EnvKeys.JwtSecret.Var(core.Spec.JWT.SecretKeySelector()),
 			svcCfg.EnvKeys.EmailSignupDisabled.Var(boolValueOf(authSpec.EmailSignupDisabled)),
 			svcCfg.EnvKeys.AnonymousUsersEnabled.Var(boolValueOf(authSpec.AnonymousUsersEnabled)),
 		)
 
-		authEnv = append(authEnv, authSpec.Providers.Vars(authSpec.APIExternalURL)...)
+		authEnv = append(authEnv, authSpec.Providers.Vars(core.Spec.APIExternalURL)...)
 
 		if authDeployment.CreationTimestamp.IsZero() {
 			authDeployment.Spec.Selector = &metav1.LabelSelector{
@@ -178,38 +137,38 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 			}
 		}
 
-		authDeployment.Spec.Replicas = authSpec.WorkloadTemplate.Replicas
+		authDeployment.Spec.Replicas = authSpec.WorkloadTemplate.ReplicaCount()
 
 		authDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: objectLabels(core, "auth", "core", supabase.Images.Gotrue.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: authSpec.WorkloadTemplate.Workload.ImagePullSecrets,
+				ImagePullSecrets: authSpec.WorkloadTemplate.PullSecrets(),
 				InitContainers: []corev1.Container{{
-					Name:            "migrations",
-					Image:           image,
-					ImagePullPolicy: pullPolicy,
+					Name:            "supabase-auth-migrations",
+					Image:           authSpec.WorkloadTemplate.Image(supabase.Images.Gotrue.String()),
+					ImagePullPolicy: authSpec.WorkloadTemplate.ImagePullPolicy(),
 					Command:         []string{"/usr/local/bin/auth"},
 					Args:            []string{"migrate"},
-					Env:             authEnv,
-					SecurityContext: containerSecurityContext,
+					Env:             authSpec.WorkloadTemplate.MergeEnv(authEnv),
+					SecurityContext: authSpec.WorkloadTemplate.ContainerSecurityContext(svcCfg.Defaults.UID, svcCfg.Defaults.GID),
 				}},
 				Containers: []corev1.Container{{
 					Name:            "supabase-auth",
-					Image:           image,
-					ImagePullPolicy: pullPolicy,
+					Image:           authSpec.WorkloadTemplate.Image(supabase.Images.Gotrue.String()),
+					ImagePullPolicy: authSpec.WorkloadTemplate.ImagePullPolicy(),
 					Command:         []string{"/usr/local/bin/auth"},
 					Args:            []string{"serve"},
-					Env:             MergeEnv(authEnv, authSpec.WorkloadTemplate.Workload.AdditionalEnv...),
+					Env:             authSpec.WorkloadTemplate.MergeEnv(authEnv),
 					Ports: []corev1.ContainerPort{{
 						Name:          "api",
-						ContainerPort: 9999,
+						ContainerPort: svcCfg.Defaults.APIPort,
 						Protocol:      corev1.ProtocolTCP,
 					}},
-					SecurityContext: containerSecurityContext,
-					Resources:       authSpec.WorkloadTemplate.Workload.Resources,
-					VolumeMounts:    authSpec.WorkloadTemplate.Workload.VolumeMounts,
+					SecurityContext: authSpec.WorkloadTemplate.ContainerSecurityContext(svcCfg.Defaults.UID, svcCfg.Defaults.GID),
+					Resources:       authSpec.WorkloadTemplate.Resources(),
+					VolumeMounts:    authSpec.WorkloadTemplate.AdditionalVolumeMounts(),
 					ReadinessProbe: &corev1.Probe{
 						InitialDelaySeconds: 5,
 						PeriodSeconds:       3,
@@ -218,7 +177,7 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path: "/health",
-								Port: intstr.IntOrString{IntVal: 9999},
+								Port: intstr.IntOrString{IntVal: svcCfg.Defaults.APIPort},
 							},
 						},
 					},
@@ -229,12 +188,12 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path: "/health",
-								Port: intstr.IntOrString{IntVal: 9999},
+								Port: intstr.IntOrString{IntVal: svcCfg.Defaults.APIPort},
 							},
 						},
 					},
 				}},
-				SecurityContext: podSecurityContext,
+				SecurityContext: authSpec.WorkloadTemplate.PodSecurityContext(),
 			},
 		}
 
@@ -257,12 +216,14 @@ func (r *CoreAuthReconciler) reconcileAuthService(
 	}
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, authService, func() error {
-		authService.Labels = MergeLabels(
+		authService.Labels = core.Spec.Postgrest.WorkloadTemplate.MergeLabels(
 			objectLabels(core, "auth", "core", supabase.Images.Gotrue.Tag),
 			core.Labels,
 		)
 
-		authService.Labels[meta.SupabaseLabel.EnvoyCluster] = core.Name
+		if _, ok := authService.Labels[meta.SupabaseLabel.EnvoyCluster]; !ok {
+			authService.Labels[meta.SupabaseLabel.EnvoyCluster] = core.Name
+		}
 
 		authService.Spec = corev1.ServiceSpec{
 			Selector: selectorLabels(core, "auth"),

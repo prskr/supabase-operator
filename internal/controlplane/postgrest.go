@@ -33,7 +33,7 @@ func (c *PostgrestCluster) Routes(instance string) []*routev3.Route {
 			Name: "PostgREST: /rest/v1/* -> http://rest:3000/*",
 			Match: &routev3.RouteMatch{
 				PathSpecifier: &routev3.RouteMatch_Prefix{
-					Prefix: "/rest/v1",
+					Prefix: "/rest/v1/",
 				},
 			},
 			Action: &routev3.Route_Route{

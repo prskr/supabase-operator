@@ -13,13 +13,19 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: core-sample
 spec:
+  externalUrl: http://localhost:8000/
+  siteUrl: http://localhost:3000/
   database:
     dsnFrom:
       name: supabase-demo-credentials
       key: url
   auth:
-    externalUrl: http://localhost:8000/
-    siteUrl: http://localhost:3000/
     disableSignup: true
     enableEmailAutoconfirm: true
     providers: {}
+  postgrest:
+    maxRows: 1000
+  jwt:
+    expiry: 3600
+    secretRef:
+      name: core-sample-jwt

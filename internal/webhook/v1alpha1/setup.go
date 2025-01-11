@@ -29,3 +29,11 @@ func SetupCoreWebhookWithManager(mgr ctrl.Manager) error {
 		WithDefaulter(&CoreCustomDefaulter{Client: mgr.GetClient()}).
 		Complete()
 }
+
+// SetupDashboardWebhookWithManager registers the webhook for Dashboard in the manager.
+func SetupDashboardWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).For(&supabasev1alpha1.Dashboard{}).
+		WithValidator(&DashboardCustomValidator{}).
+		WithDefaulter(&DashboardCustomDefaulter{}).
+		Complete()
+}

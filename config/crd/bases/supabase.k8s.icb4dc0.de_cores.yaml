@@ -51,11 +51,6 @@ spec:
                     type: boolean
                   emailSignupDisabled:
                     type: boolean
-                  externalUrl:
-                    description: |-
-                      APIExternalURL is referring to the URL where Supabase API will be available
-                      Typically this is the ingress of the API gateway
-                    type: string
                   providers:
                     properties:
                       azure:
@@ -191,11 +186,6 @@ spec:
                             type: boolean
                         type: object
                     type: object
-                  siteUrl:
-                    description: |-
-                      SiteURL is referring to the URL of the (frontend) application
-                      In most Kubernetes scenarios this is the same as the APIExternalURL with a different path handler in the ingress
-                    type: string
                   workloadTemplate:
                     properties:
                       additionalLabels:
@@ -883,9 +873,6 @@ spec:
                     required:
                     - securityContext
                     type: object
-                required:
-                - externalUrl
-                - siteUrl
                 type: object
               database:
                 properties:
@@ -1010,6 +997,11 @@ spec:
                         type: boolean
                     type: object
                 type: object
+              externalUrl:
+                description: |-
+                  APIExternalURL is referring to the URL where Supabase API will be available
+                  Typically this is the ingress of the API gateway
+                type: string
               jwt:
                 properties:
                   anonKey:
@@ -1775,6 +1767,14 @@ spec:
                     - securityContext
                     type: object
                 type: object
+              siteUrl:
+                description: |-
+                  SiteURL is referring to the URL of the (frontend) application
+                  In most Kubernetes scenarios this is the same as the APIExternalURL with a different path handler in the ingress
+                type: string
+            required:
+            - externalUrl
+            - siteUrl
             type: object
           status:
             description: CoreStatus defines the observed state of Core.
