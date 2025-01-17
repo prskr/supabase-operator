@@ -69,6 +69,10 @@ func (d *APIGatewayCustomDefaulter) Default(ctx context.Context, obj runtime.Obj
 		apiGateway.Spec.Envoy = new(supabasev1alpha1.EnvoySpec)
 	}
 
+	if apiGateway.Spec.Envoy.NodeName == "" {
+		apiGateway.Spec.Envoy.NodeName = apiGateway.Name
+	}
+
 	if apiGateway.Spec.Envoy.ControlPlane == nil {
 		if d.CurrentNamespace == defaultManagerNamespace {
 			d.Recorder.Event(

@@ -191,7 +191,7 @@ func (r *APIGatewayReconciler) reconcileEnvoyConfig(
 			Port uint16
 		}
 
-		instance := fmt.Sprintf("%s:%s", gateway.Name, gateway.Namespace)
+		instance := fmt.Sprintf("%s:%s", gateway.Spec.Envoy.NodeName, gateway.Namespace)
 
 		tmplData := struct {
 			Node         nodeSpec

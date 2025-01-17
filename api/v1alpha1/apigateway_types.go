@@ -38,6 +38,10 @@ type ControlPlaneSpec struct {
 }
 
 type EnvoySpec struct {
+	// NodeName - identifies the Envoy cluster within the current namespace
+	// if not set, the name of the APIGateway resource will be used
+	// The primary use case is to make the assignment of multiple supabase instances in a single namespace explicit.
+	NodeName string `json:"nodeName,omitempty"`
 	// ControlPlane - configure the control plane where Envoy will retrieve its configuration from
 	ControlPlane *ControlPlaneSpec `json:"controlPlane"`
 	// WorkloadTemplate - customize the Envoy deployment
