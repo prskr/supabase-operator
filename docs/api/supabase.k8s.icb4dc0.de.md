@@ -15,6 +15,8 @@ Package v1alpha1 contains API Schema definitions for the supabase v1alpha1 API g
 - [CoreList](#corelist)
 - [Dashboard](#dashboard)
 - [DashboardList](#dashboardlist)
+- [Storage](#storage)
+- [StorageList](#storagelist)
 
 
 
@@ -70,6 +72,8 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `envoy` _[EnvoySpec](#envoyspec)_ | Envoy - configure the envoy instance and most importantly the control-plane |  |  |
 | `jwks` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ | JWKSSelector - selector where the JWKS can be retrieved from to enable the API gateway to validate JWTs |  |  |
+| `serviceSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#labelselector-v1-meta)_ | ServiceSelector - selector to match all Supabase services (or in fact EndpointSlices) that should be considered for this APIGateway | \{ matchExpressions:[map[key:app.kubernetes.io/part-of operator:In values:[supabase]] map[key:supabase.k8s.icb4dc0.de/api-gateway-target operator:Exists]] \} |  |
+| `componentTypeLabel` _string_ | ComponentTypeLabel - Label to identify which Supabase component a Service represents (e.g. auth, postgrest, ...) | app.kubernetes.io/name |  |
 
 
 
@@ -496,8 +500,26 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
+| `nodeName` _string_ | NodeName - identifies the Envoy cluster within the current namespace<br />if not set, the name of the APIGateway resource will be used<br />The primary use case is to make the assignment of multiple supabase instances in a single namespace explicit. |  |  |
 | `controlPlane` _[ControlPlaneSpec](#controlplanespec)_ | ControlPlane - configure the control plane where Envoy will retrieve its configuration from |  |  |
 | `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the Envoy deployment |  |  |
+
+
+#### EnvoyStatus
+
+
+
+
+
+
+
+_Appears in:_
+- [APIGatewayStatus](#apigatewaystatus)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `configVersion` _string_ |  |  |  |
+| `resourceHash` _integer array_ |  |  |  |
 
 
 #### GithubAuthProvider
@@ -618,6 +640,61 @@ _Appears in:_
 | `anonRole` _string_ | AnonRole - name of the anon role | anon |  |
 | `maxRows` _integer_ | MaxRows - maximum number of rows PostgREST will load at a time | 1000 |  |
 | `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the PostgREST workload |  |  |
+
+
+#### Storage
+
+
+
+Storage is the Schema for the storages API.
+
+
+
+_Appears in:_
+- [StorageList](#storagelist)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `supabase.k8s.icb4dc0.de/v1alpha1` | | |
+| `kind` _string_ | `Storage` | | |
+| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `spec` _[StorageSpec](#storagespec)_ |  |  |  |
+
+
+#### StorageList
+
+
+
+StorageList contains a list of Storage.
+
+
+
+
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiVersion` _string_ | `supabase.k8s.icb4dc0.de/v1alpha1` | | |
+| `kind` _string_ | `StorageList` | | |
+| `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
+| `items` _[Storage](#storage) array_ |  |  |  |
+
+
+#### StorageSpec
+
+
+
+StorageSpec defines the desired state of Storage.
+
+
+
+_Appears in:_
+- [Storage](#storage)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `foo` _string_ | Foo is an example field of Storage. Edit storage_types.go to remove/update |  |  |
+
+
 
 
 #### StudioSpec

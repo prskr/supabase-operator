@@ -26,15 +26,15 @@ var Images = struct {
 }{
 	EdgeRuntime: ImageRef{
 		Repository: "supabase/edge-runtime",
-		Tag:        "v1.65.3",
+		Tag:        "v1.66.4",
 	},
 	Envoy: ImageRef{
 		Repository: "envoyproxy/envoy",
-		Tag:        "distroless-v1.32.3",
+		Tag:        "distroless-v1.33.0",
 	},
 	Gotrue: ImageRef{
 		Repository: "supabase/gotrue",
-		Tag:        "v2.164.0",
+		Tag:        "v2.167.0",
 	},
 	ImgProxy: ImageRef{
 		Repository: "darthsim/imgproxy",
@@ -54,10 +54,10 @@ var Images = struct {
 	},
 	Storage: ImageRef{
 		Repository: "supabase/storage-api",
-		Tag:        "v1.11.13",
+		Tag:        "v1.14.5",
 	},
 	Studio: ImageRef{
 		Repository: "supabase/studio",
-		Tag:        "20241202-71e5240",
+		Tag:        "20250113-83c9420",
 	},
 }
