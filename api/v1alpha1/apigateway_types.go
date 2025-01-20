@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Peter Kurfer.
+Copyright 2025 Peter Kurfer.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -54,15 +54,30 @@ type APIGatewaySpec struct {
 	Envoy *EnvoySpec `json:"envoy"`
 	// JWKSSelector - selector where the JWKS can be retrieved from to enable the API gateway to validate JWTs
 	JWKSSelector *corev1.SecretKeySelector `json:"jwks"`
+	// ServiceSelector - selector to match all Supabase services (or in fact EndpointSlices) that should be considered for this APIGateway
+	// +kubebuilder:default={"matchExpressions":{{"key": "app.kubernetes.io/part-of", "operator":"In", "values":{"supabase"}},{"key":"supabase.k8s.icb4dc0.de/api-gateway-target","operator":"Exists"}}}
+	ServiceSelector *metav1.LabelSelector `json:"serviceSelector"`
+	// ComponentTypeLabel - Label to identify which Supabase component a Service represents (e.g. auth, postgrest, ...)
+	// +kubebuilder:default="app.kubernetes.io/name"
+	ComponentTypeLabel string `json:"componentTypeLabel,omitempty"`
+}
+
+type EnvoyStatus struct {
+	ConfigVersion string `json:"configVersion,omitempty"`
+	ResourceHash  []byte `json:"resourceHash,omitempty"`
 }
 
 // APIGatewayStatus defines the observed state of APIGateway.
-type APIGatewayStatus struct{}
+type APIGatewayStatus struct {
+	Envoy          EnvoyStatus         `json:"envoy,omitempty"`
+	ServiceTargets map[string][]string `json:"serviceTargets,omitempty"`
+}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
 // APIGateway is the Schema for the apigateways API.
+// +kubebuilder:printcolumn:name="EnvoyConfigVersion",type=string,JSONPath=`.status.envoy.configVersion`
 type APIGateway struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

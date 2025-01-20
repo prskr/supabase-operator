@@ -27,6 +27,7 @@ linters:
     - gocyclo
     - gofmt
     - goimports
+    - goheader
     - gosimple
     - godox
     - govet
@@ -56,6 +57,12 @@ linters-settings:
       - dot
   goimports:
     local-prefixes: code.icb4dc0.de/prskr/supabase-operator
+  goheader:
+    values:
+      const:
+        AUTHOR: Peter Kurfer
+    template-path: hack/header.tmpl
+
   importas:
     no-unaliased: true
     no-extra-aliases: true

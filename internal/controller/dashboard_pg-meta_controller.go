@@ -196,8 +196,8 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaService(
 			dashboard.Labels,
 		)
 
-		if _, ok := pgMetaService.Labels[meta.SupabaseLabel.EnvoyCluster]; !ok {
-			pgMetaService.Labels[meta.SupabaseLabel.EnvoyCluster] = dashboard.Name
+		if _, ok := pgMetaService.Labels[meta.SupabaseLabel.ApiGatewayTarget]; !ok {
+			pgMetaService.Labels[meta.SupabaseLabel.ApiGatewayTarget] = ""
 		}
 
 		pgMetaService.Spec = corev1.ServiceSpec{

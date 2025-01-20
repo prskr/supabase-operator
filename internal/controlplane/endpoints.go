@@ -1,6 +1,10 @@
 package controlplane
 
 import (
+	"encoding/json"
+	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -10,16 +14,43 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 )
 
+var _ json.Marshaler = (*ServiceCluster)(nil)
+
 type ServiceCluster struct {
 	ServiceEndpoints map[string]Endpoints
 }
 
-func (c *ServiceCluster) AddOrUpdateEndpoints(eps *discoveryv1.EndpointSlice) {
+// MarshalJSON implements json.Marshaler.
+func (c *ServiceCluster) MarshalJSON() ([]byte, error) {
+	tmp := struct {
+		Endpoints []string `json:"endpoints"`
+	}{}
+
+	for _, endpoints := range c.ServiceEndpoints {
+		tmp.Endpoints = append(tmp.Endpoints, endpoints.Targets...)
+	}
+
+	slices.Sort(tmp.Endpoints)
+
+	return json.Marshal(tmp)
+}
+
+func (c *ServiceCluster) AddOrUpdateEndpoints(eps discoveryv1.EndpointSlice) {
 	if c.ServiceEndpoints == nil {
 		c.ServiceEndpoints = make(map[string]Endpoints)
 	}
 
 	c.ServiceEndpoints[eps.Name] = newEndpointsFromSlice(eps)
+}
+
+func (c ServiceCluster) Targets() []string {
+	var targets []string
+
+	for _, ep := range c.ServiceEndpoints {
+		targets = append(targets, ep.Targets...)
+	}
+
+	return targets
 }
 
 func (c ServiceCluster) Cluster(name string, port uint32) *clusterv3.Cluster {
@@ -47,12 +78,13 @@ func (c ServiceCluster) endpoints(port uint32) []*endpointv3.LocalityLbEndpoints
 	return eps
 }
 
-func newEndpointsFromSlice(eps *discoveryv1.EndpointSlice) Endpoints {
+func newEndpointsFromSlice(eps discoveryv1.EndpointSlice) Endpoints {
 	var result Endpoints
 
 	for _, ep := range eps.Endpoints {
 		if ep.Conditions.Ready != nil && *ep.Conditions.Ready {
 			result.Addresses = append(result.Addresses, ep.Addresses...)
+			result.Targets = append(result.Targets, strings.ToLower(fmt.Sprintf("%s/%s", ep.TargetRef.Kind, ep.TargetRef.Name)))
 		}
 	}
 
@@ -61,6 +93,7 @@ func newEndpointsFromSlice(eps *discoveryv1.EndpointSlice) Endpoints {
 
 type Endpoints struct {
 	Addresses []string
+	Targets   []string
 }
 
 func (e Endpoints) LBEndpoints(port uint32) []*endpointv3.LbEndpoint {

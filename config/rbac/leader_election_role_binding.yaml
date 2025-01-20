@@ -13,3 +13,6 @@ subjects:
   - kind: ServiceAccount
     name: controller-manager
     namespace: supabase-system
+  - kind: ServiceAccount
+    name: control-plane
+    namespace: supabase-system

@@ -218,8 +218,8 @@ func (r *DashboardStudioReconciler) reconcileStudioService(
 			dashboard.Labels,
 		)
 
-		if _, ok := studioService.Labels[meta.SupabaseLabel.EnvoyCluster]; !ok {
-			studioService.Labels[meta.SupabaseLabel.EnvoyCluster] = dashboard.Name
+		if _, ok := studioService.Labels[meta.SupabaseLabel.ApiGatewayTarget]; !ok {
+			studioService.Labels[meta.SupabaseLabel.ApiGatewayTarget] = ""
 		}
 
 		studioService.Spec = corev1.ServiceSpec{

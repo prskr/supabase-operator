@@ -228,8 +228,8 @@ func (r *CorePostgrestReconiler) reconcilePostgrestService(
 			core.Labels,
 		)
 
-		if _, ok := postgrestService.Labels[meta.SupabaseLabel.EnvoyCluster]; !ok {
-			postgrestService.Labels[meta.SupabaseLabel.EnvoyCluster] = core.Name
+		if _, ok := postgrestService.Labels[meta.SupabaseLabel.ApiGatewayTarget]; !ok {
+			postgrestService.Labels[meta.SupabaseLabel.ApiGatewayTarget] = ""
 		}
 
 		postgrestService.Spec = corev1.ServiceSpec{

@@ -221,8 +221,8 @@ func (r *CoreAuthReconciler) reconcileAuthService(
 			core.Labels,
 		)
 
-		if _, ok := authService.Labels[meta.SupabaseLabel.EnvoyCluster]; !ok {
-			authService.Labels[meta.SupabaseLabel.EnvoyCluster] = core.Name
+		if _, ok := authService.Labels[meta.SupabaseLabel.ApiGatewayTarget]; !ok {
+			authService.Labels[meta.SupabaseLabel.ApiGatewayTarget] = core.Name
 		}
 
 		authService.Spec = corev1.ServiceSpec{

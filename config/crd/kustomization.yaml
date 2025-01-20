@@ -5,6 +5,7 @@ resources:
   - bases/supabase.k8s.icb4dc0.de_cores.yaml
   - bases/supabase.k8s.icb4dc0.de_apigateways.yaml
   - bases/supabase.k8s.icb4dc0.de_dashboards.yaml
+  - bases/supabase.k8s.icb4dc0.de_storages.yaml
   # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

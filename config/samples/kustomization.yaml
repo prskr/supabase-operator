@@ -8,4 +8,5 @@ resources:
   - supabase_v1alpha1_core.yaml
   - supabase_v1alpha1_apigateway.yaml
   - supabase_v1alpha1_dashboard.yaml
+  - supabase_v1alpha1_storage.yaml
   # +kubebuilder:scaffold:manifestskustomizesamples

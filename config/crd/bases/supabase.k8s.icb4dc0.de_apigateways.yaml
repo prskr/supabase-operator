@@ -14,7 +14,11 @@ spec:
     singular: apigateway
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.envoy.configVersion
+      name: EnvoyConfigVersion
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: APIGateway is the Schema for the apigateways API.
@@ -39,6 +43,11 @@ spec:
           spec:
             description: APIGatewaySpec defines the desired state of APIGateway.
             properties:
+              componentTypeLabel:
+                default: app.kubernetes.io/name
+                description: ComponentTypeLabel - Label to identify which Supabase
+                  component a Service represents (e.g. auth, postgrest, ...)
+                type: string
               envoy:
                 description: Envoy - configure the envoy instance and most importantly
                   the control-plane
@@ -61,6 +70,12 @@ spec:
                     - host
                     - port
                     type: object
+                  nodeName:
+                    description: |-
+                      NodeName - identifies the Envoy cluster within the current namespace
+                      if not set, the name of the APIGateway resource will be used
+                      The primary use case is to make the assignment of multiple supabase instances in a single namespace explicit.
+                    type: string
                   workloadTemplate:
                     description: WorkloadTemplate - customize the Envoy deployment
                     properties:
@@ -776,12 +791,83 @@ spec:
                 - key
                 type: object
                 x-kubernetes-map-type: atomic
+              serviceSelector:
+                default:
+                  matchExpressions:
+                  - key: app.kubernetes.io/part-of
+                    operator: In
+                    values:
+                    - supabase
+                  - key: supabase.k8s.icb4dc0.de/api-gateway-target
+                    operator: Exists
+                description: ServiceSelector - selector to match all Supabase services
+                  (or in fact EndpointSlices) that should be considered for this APIGateway
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: |-
+                        A label selector requirement is a selector that contains values, a key, and an operator that
+                        relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: |-
+                            operator represents a key's relationship to a set of values.
+                            Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: |-
+                            values is an array of string values. If the operator is In or NotIn,
+                            the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                            the values array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                      map is equivalent to an element of matchExpressions, whose key field is "key", the
+                      operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
             required:
             - envoy
             - jwks
+            - serviceSelector
             type: object
           status:
             description: APIGatewayStatus defines the observed state of APIGateway.
+            properties:
+              envoy:
+                properties:
+                  configVersion:
+                    type: string
+                  resourceHash:
+                    format: byte
+                    type: string
+                type: object
+              serviceTargets:
+                additionalProperties:
+                  items:
+                    type: string
+                  type: array
+                type: object
             type: object
         type: object
     served: true

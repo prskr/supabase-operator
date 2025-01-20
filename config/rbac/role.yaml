@@ -42,6 +42,7 @@ rules:
   - apigateways
   - cores
   - dashboards
+  - storages
   verbs:
   - create
   - delete
@@ -56,6 +57,7 @@ rules:
   - apigateways/finalizers
   - cores/finalizers
   - dashboards/finalizers
+  - storages/finalizers
   verbs:
   - update
 - apiGroups:
@@ -64,6 +66,7 @@ rules:
   - apigateways/status
   - cores/status
   - dashboards/status
+  - storages/status
   verbs:
   - get
   - patch

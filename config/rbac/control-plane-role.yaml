@@ -5,6 +5,23 @@ metadata:
   name: control-plane-role
 rules:
   - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - apigateways
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - apigateways/status
+    verbs:
+      - get
+      - patch
+      - update
+
+  - apiGroups:
       - discovery.k8s.io
     resources:
       - endpointslices

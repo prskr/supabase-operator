@@ -39,9 +39,9 @@ var WellKnownLabel = struct {
 }
 
 var SupabaseLabel = struct {
-	Reload       string
-	EnvoyCluster string
+	Reload           string
+	ApiGatewayTarget string
 }{
-	Reload:       supabasev1alpha1.GroupVersion.Group + "/reload",
-	EnvoyCluster: supabasev1alpha1.GroupVersion.Group + "/envoy-cluster",
+	Reload:           supabasev1alpha1.GroupVersion.Group + "/reload",
+	ApiGatewayTarget: supabasev1alpha1.GroupVersion.Group + "/api-gateway-target",
 }
