@@ -1,2 +1,2 @@
-Pygments
 mkdocs-material
+mkdocs-kroki-plugin

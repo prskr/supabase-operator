@@ -9,18 +9,16 @@ theme:
     - search.highlight
     - toc.integrate
 
-markdown_extensions:
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
-
 plugins:
   - search
+  - kroki:
+      HttpMethod: POST
 
 nav:
   - Home:
       - About: index.md
       - Getting Started: getting_started.md
+  - Components:
+      - Overview: components/overview.md
+      - Core: components/core.md
   - API Reference: api/supabase.k8s.icb4dc0.de.md

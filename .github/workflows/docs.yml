@@ -1,0 +1,41 @@
+name: Deploy pages
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: "0"
+          fetch-tags: "true"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+
+      - name: Install python packages
+        run: pip install -r requirements.txt
+
+      - name: Build the website
+        run: mkdocs build
+
+      - name: Copy files to the s3 website content bucket
+        run: aws s3 sync site s3://${{ secrets.HCLOUD_BUCKET }} --delete
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.HCLOUD_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.HCLOUD_SECRET_KEY }}
+          AWS_DEFAULT_REGION: hel1
+          AWS_ENDPOINT_URL: ${{ secrets.HCLOUD_ENDPOINT }}
