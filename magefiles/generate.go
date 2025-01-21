@@ -29,6 +29,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/magefile/mage/mg"
 	"gopkg.in/yaml.v3"
@@ -117,8 +118,12 @@ func FetchImageMeta(ctx context.Context) (err error) {
 
 	templateData := struct {
 		Images map[string]imageRef
+		Year   int
+		Author string
 	}{
 		Images: make(map[string]imageRef),
+		Year:   time.Now().Year(),
+		Author: "Peter Kurfer",
 	}
 
 	for name, service := range composeFile.Services {

@@ -33,6 +33,7 @@ jobs:
         run: mkdocs build
 
       - name: Copy files to the s3 website content bucket
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         run: rclone sync site/ HCLOUD:/1661580-supabase-operator-docs/
         env:
           RCLONE_CONFIG_HCLOUD_TYPE: s3
