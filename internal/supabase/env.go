@@ -116,6 +116,7 @@ type studioEnvKeys struct {
 	AnonKey        secretEnv
 	ServiceKey     secretEnv
 	Host           fixedEnv
+	LogsEnabled    fixedEnv
 }
 
 type studioDefaults struct {
@@ -250,6 +251,7 @@ var ServiceConfig = struct {
 			AnonKey:        "SUPABASE_ANON_KEY",
 			ServiceKey:     "SUPABASE_SERVICE_KEY",
 			Host:           fixedEnvOf("HOSTNAME", "0.0.0.0"),
+			LogsEnabled:    fixedEnvOf("NEXT_PUBLIC_ENABLE_LOGS", "true"),
 		},
 		Defaults: studioDefaults{
 			NodeUID: 1000,

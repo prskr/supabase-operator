@@ -129,6 +129,7 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 			serviceCfg.EnvKeys.JwtSecret.Var(studioSpec.JWT.SecretKeySelector()),
 			serviceCfg.EnvKeys.AnonKey.Var(studioSpec.JWT.AnonKeySelector()),
 			serviceCfg.EnvKeys.ServiceKey.Var(studioSpec.JWT.ServiceKeySelector()),
+			serviceCfg.EnvKeys.LogsEnabled.Var(),
 		}
 
 		studioDeployment.Spec.Template = corev1.PodTemplateSpec{
