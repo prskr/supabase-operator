@@ -33,9 +33,11 @@ jobs:
         run: mkdocs build
 
       - name: Copy files to the s3 website content bucket
-        run: aws s3 sync site s3://${{ secrets.HCLOUD_BUCKET }} --delete
+        run: rclone sync site/ HCLOUD:/1661580-supabase-operator-docs/
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.HCLOUD_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.HCLOUD_SECRET_KEY }}
-          AWS_DEFAULT_REGION: hel1
-          AWS_ENDPOINT_URL: ${{ secrets.HCLOUD_ENDPOINT }}
+          RCLONE_CONFIG_HCLOUD_TYPE: s3
+          RCLONE_CONFIG_HCLOUD_PROVIDER: Other
+          RCLONE_CONFIG_HCLOUD_ACCESS_KEY_ID: ${{ secrets.HCLOUD_KEY_ID }}
+          RCLONE_CONFIG_HCLOUD_SECRET_ACCESS_KEY: ${{ secrets.HCLOUD_SECRET_KEY }}
+          RCLONE_CONFIG_HCLOUD_ENDPOINT: ${{ secrets.HCLOUD_ENDPOINT }}
+          RCLONE_CONFIG_HCLOUD_REGION: hel1
