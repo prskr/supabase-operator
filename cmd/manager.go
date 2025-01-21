@@ -156,11 +156,14 @@ func (m manager) Run(ctx context.Context) error {
 		}
 
 		if err = webhooksupabasev1alpha1.SetupAPIGatewayWebhookWithManager(mgr, webhookConfig); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "APIGateway")
-			os.Exit(1)
+			return fmt.Errorf("unable to create webhook: %w", err)
 		}
 
 		if err = webhooksupabasev1alpha1.SetupDashboardWebhookWithManager(mgr); err != nil {
+			return fmt.Errorf("unable to create webhook: %w", err)
+		}
+
+		if err = webhooksupabasev1alpha1.SetupStorageWebhookWithManager(mgr); err != nil {
 			return fmt.Errorf("unable to create webhook: %w", err)
 		}
 	}

@@ -21,43 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type DashboardJwtSpec struct {
-	// SecretRef - object reference to the Secret where JWT values are stored
-	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
-	// SecretKey - key in secret where to read the JWT HMAC secret from
-	// +kubebuilder:default=secret
-	SecretKey string `json:"secretKey,omitempty"`
-	// AnonKey - key in secret where to read the anon JWT from
-	// +kubebuilder:default=anon_key
-	AnonKey string `json:"anonKey,omitempty"`
-	// ServiceKey - key in secret where to read the service JWT from
-	// +kubebuilder:default=service_key
-	ServiceKey string `json:"serviceKey,omitempty"`
-}
-
-func (s DashboardJwtSpec) SecretKeySelector() *corev1.SecretKeySelector {
-	return &corev1.SecretKeySelector{
-		LocalObjectReference: *s.SecretRef,
-		Key:                  s.SecretKey,
-	}
-}
-
-func (s DashboardJwtSpec) AnonKeySelector() *corev1.SecretKeySelector {
-	return &corev1.SecretKeySelector{
-		LocalObjectReference: *s.SecretRef,
-		Key:                  s.AnonKey,
-	}
-}
-
-func (s DashboardJwtSpec) ServiceKeySelector() *corev1.SecretKeySelector {
-	return &corev1.SecretKeySelector{
-		LocalObjectReference: *s.SecretRef,
-		Key:                  s.ServiceKey,
-	}
-}
-
 type StudioSpec struct {
-	JWT *DashboardJwtSpec `json:"jwt,omitempty"`
+	JWT *JwtSpec `json:"jwt,omitempty"`
 	// WorkloadTemplate - customize the studio deployment
 	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
 	// GatewayServiceSelector - selector to find the service for the API gateway
@@ -75,6 +40,16 @@ type PGMetaSpec struct {
 	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
 }
 
+type DbCredentialsReference struct {
+	SecretName string `json:"secretName"`
+	// UsernameKey
+	// +kubebuilder:default="username"
+	UsernameKey string `json:"usernameKey,omitempty"`
+	// PasswordKey
+	// +kubebuilder:default="password"
+	PasswordKey string `json:"passwordKey,omitempty"`
+}
+
 type DashboardDbSpec struct {
 	Host string `json:"host"`
 	// Port - Database port, typically 5432
@@ -83,20 +58,24 @@ type DashboardDbSpec struct {
 	DBName string `json:"dbName"`
 	// DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from
 	// Credentials need to be stored in basic auth form
-	DBCredentialsRef *corev1.LocalObjectReference `json:"dbCredentialsRef"`
+	DBCredentialsRef *DbCredentialsReference `json:"dbCredentialsRef"`
 }
 
 func (s DashboardDbSpec) UserRef() *corev1.SecretKeySelector {
 	return &corev1.SecretKeySelector{
-		LocalObjectReference: *s.DBCredentialsRef,
-		Key:                  corev1.BasicAuthUsernameKey,
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: s.DBCredentialsRef.SecretName,
+		},
+		Key: s.DBCredentialsRef.UsernameKey,
 	}
 }
 
 func (s DashboardDbSpec) PasswordRef() *corev1.SecretKeySelector {
 	return &corev1.SecretKeySelector{
-		LocalObjectReference: *s.DBCredentialsRef,
-		Key:                  corev1.BasicAuthPasswordKey,
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: s.DBCredentialsRef.SecretName,
+		},
+		Key: s.DBCredentialsRef.PasswordKey,
 	}
 }
 

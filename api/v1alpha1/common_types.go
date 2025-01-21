@@ -22,6 +22,50 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+type JwtSpec struct {
+	// SecretRef - object reference to the Secret where JWT values are stored
+	SecretName string `json:"secretName,omitempty"`
+	// SecretKey - key in secret where to read the JWT HMAC secret from
+	// +kubebuilder:default=secret
+	SecretKey string `json:"secretKey,omitempty"`
+	// JwksKey - key in secret where to read the JWKS from
+	// +kubebuilder:default=jwks.json
+	JwksKey string `json:"jwksKey,omitempty"`
+	// AnonKey - key in secret where to read the anon JWT from
+	// +kubebuilder:default=anon_key
+	AnonKey string `json:"anonKey,omitempty"`
+	// ServiceKey - key in secret where to read the service JWT from
+	// +kubebuilder:default=service_key
+	ServiceKey string `json:"serviceKey,omitempty"`
+}
+
+func (s JwtSpec) SecretKeySelector() *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: s.SecretName,
+		},
+		Key: s.SecretKey,
+	}
+}
+
+func (s JwtSpec) AnonKeySelector() *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: s.SecretName,
+		},
+		Key: s.AnonKey,
+	}
+}
+
+func (s JwtSpec) ServiceKeySelector() *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: s.SecretName,
+		},
+		Key: s.ServiceKey,
+	}
+}
+
 type ImageSpec struct {
 	Image      string            `json:"image,omitempty"`
 	PullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`

@@ -41,11 +41,11 @@ func init() {
 var ErrNoSuchSecretValue = errors.New("no such secret value")
 
 type DatabaseRolesSecrets struct {
-	Admin          *corev1.LocalObjectReference `json:"supabaseAdmin,omitempty"`
-	Authenticator  *corev1.LocalObjectReference `json:"authenticator,omitempty"`
-	AuthAdmin      *corev1.LocalObjectReference `json:"supabaseAuthAdmin,omitempty"`
-	FunctionsAdmin *corev1.LocalObjectReference `json:"supabaseFunctionsAdmin,omitempty"`
-	StorageAdmin   *corev1.LocalObjectReference `json:"supabaseStorageAdmin,omitempty"`
+	Admin          string `json:"supabaseAdmin,omitempty"`
+	Authenticator  string `json:"authenticator,omitempty"`
+	AuthAdmin      string `json:"supabaseAuthAdmin,omitempty"`
+	FunctionsAdmin string `json:"supabaseFunctionsAdmin,omitempty"`
+	StorageAdmin   string `json:"supabaseStorageAdmin,omitempty"`
 }
 
 type DatabaseRoles struct {
@@ -91,23 +91,10 @@ func (d Database) DSNEnv(key string) corev1.EnvVar {
 }
 
 type CoreJwtSpec struct {
+	JwtSpec `json:",inline"`
 	// Secret - JWT HMAC secret in plain text
 	// This is WRITE-ONLY and will be copied to the SecretRef by the defaulter
 	Secret *string `json:"secret,omitempty"`
-	// SecretRef - object reference to the Secret where JWT values are stored
-	SecretRef *corev1.LocalObjectReference `json:"secretRef,omitempty"`
-	// SecretKey - key in secret where to read the JWT HMAC secret from
-	// +kubebuilder:default=secret
-	SecretKey string `json:"secretKey,omitempty"`
-	// JwksKey - key in secret where to read the JWKS from
-	// +kubebuilder:default=jwks.json
-	JwksKey string `json:"jwksKey,omitempty"`
-	// AnonKey - key in secret where to read the anon JWT from
-	// +kubebuilder:default=anon_key
-	AnonKey string `json:"anonKey,omitempty"`
-	// ServiceKey - key in secret where to read the service JWT from
-	// +kubebuilder:default=service_key
-	ServiceKey string `json:"serviceKey,omitempty"`
 	// Expiry - expiration time in seconds for JWTs
 	// +kubebuilder:default=3600
 	Expiry int `json:"expiry,omitempty"`
@@ -115,7 +102,7 @@ type CoreJwtSpec struct {
 
 func (s CoreJwtSpec) GetJWTSecret(ctx context.Context, client client.Client) ([]byte, error) {
 	var secret corev1.Secret
-	if err := client.Get(ctx, types.NamespacedName{Name: s.SecretRef.Name}, &secret); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: s.SecretName}, &secret); err != nil {
 		return nil, nil
 	}
 
@@ -129,15 +116,19 @@ func (s CoreJwtSpec) GetJWTSecret(ctx context.Context, client client.Client) ([]
 
 func (s CoreJwtSpec) SecretKeySelector() *corev1.SecretKeySelector {
 	return &corev1.SecretKeySelector{
-		LocalObjectReference: *s.SecretRef,
-		Key:                  s.SecretKey,
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: s.SecretName,
+		},
+		Key: s.SecretKey,
 	}
 }
 
 func (s CoreJwtSpec) JwksKeySelector() *corev1.SecretKeySelector {
 	return &corev1.SecretKeySelector{
-		LocalObjectReference: *s.SecretRef,
-		Key:                  s.JwksKey,
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: s.SecretName,
+		},
+		Key: s.JwksKey,
 	}
 }
 
@@ -146,8 +137,10 @@ func (s CoreJwtSpec) SecretAsEnv(key string) corev1.EnvVar {
 		Name: key,
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: *s.SecretRef,
-				Key:                  s.SecretKey,
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: s.SecretName,
+				},
+				Key: s.SecretKey,
 			},
 		},
 	}
@@ -194,11 +187,21 @@ func (p *AuthProviderMeta) Vars(provider string) []corev1.EnvVar {
 	}}
 }
 
+type SmtpCredentialsReference struct {
+	SecretName string `json:"secretName"`
+	// UsernameKey
+	// +kubebuilder:default="username"
+	UsernameKey string `json:"usernameKey"`
+	// PasswordKey
+	// +kubebuilder:default="password"
+	PasswordKey string `json:"passwordKey"`
+}
+
 type EmailAuthSmtpSpec struct {
-	Host            string                       `json:"host"`
-	Port            uint16                       `json:"port"`
-	MaxFrequency    *uint                        `json:"maxFrequency,omitempty"`
-	CredentialsFrom *corev1.LocalObjectReference `json:"credentialsFrom"`
+	Host           string                    `json:"host"`
+	Port           uint16                    `json:"port"`
+	MaxFrequency   *uint                     `json:"maxFrequency,omitempty"`
+	CredentialsRef *SmtpCredentialsReference `json:"credentialsRef"`
 }
 
 type EmailAuthProvider struct {
@@ -225,8 +228,10 @@ func (p *EmailAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
 			Name: "GOTRUE_SMTP_USER",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: *p.SmtpSpec.CredentialsFrom,
-					Key:                  corev1.BasicAuthUsernameKey,
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: p.SmtpSpec.CredentialsRef.SecretName,
+					},
+					Key: p.SmtpSpec.CredentialsRef.UsernameKey,
 				},
 			},
 		},
@@ -234,8 +239,10 @@ func (p *EmailAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
 			Name: "GOTRUE_SMTP_PASS",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: *p.SmtpSpec.CredentialsFrom,
-					Key:                  corev1.BasicAuthPasswordKey,
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: p.SmtpSpec.CredentialsRef.SecretName,
+					},
+					Key: p.SmtpSpec.CredentialsRef.PasswordKey,
 				},
 			},
 		},

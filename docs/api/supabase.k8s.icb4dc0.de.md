@@ -229,12 +229,12 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `secret` _string_ | Secret - JWT HMAC secret in plain text<br />This is WRITE-ONLY and will be copied to the SecretRef by the defaulter |  |  |
-| `secretRef` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ | SecretRef - object reference to the Secret where JWT values are stored |  |  |
+| `secretName` _string_ | SecretRef - object reference to the Secret where JWT values are stored |  |  |
 | `secretKey` _string_ | SecretKey - key in secret where to read the JWT HMAC secret from | secret |  |
 | `jwksKey` _string_ | JwksKey - key in secret where to read the JWKS from | jwks.json |  |
 | `anonKey` _string_ | AnonKey - key in secret where to read the anon JWT from | anon_key |  |
 | `serviceKey` _string_ | ServiceKey - key in secret where to read the service JWT from | service_key |  |
+| `secret` _string_ | Secret - JWT HMAC secret in plain text<br />This is WRITE-ONLY and will be copied to the SecretRef by the defaulter |  |  |
 | `expiry` _integer_ | Expiry - expiration time in seconds for JWTs | 3600 |  |
 
 
@@ -314,26 +314,7 @@ _Appears in:_
 | `host` _string_ |  |  |  |
 | `port` _integer_ | Port - Database port, typically 5432 | 5432 |  |
 | `dbName` _string_ |  |  |  |
-| `dbCredentialsRef` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ | DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from<br />Credentials need to be stored in basic auth form |  |  |
-
-
-#### DashboardJwtSpec
-
-
-
-
-
-
-
-_Appears in:_
-- [StudioSpec](#studiospec)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `secretRef` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ | SecretRef - object reference to the Secret where JWT values are stored |  |  |
-| `secretKey` _string_ | SecretKey - key in secret where to read the JWT HMAC secret from | secret |  |
-| `anonKey` _string_ | AnonKey - key in secret where to read the anon JWT from | anon_key |  |
-| `serviceKey` _string_ | ServiceKey - key in secret where to read the service JWT from | service_key |  |
+| `dbCredentialsRef` _[DbCredentialsReference](#dbcredentialsreference)_ | DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from<br />Credentials need to be stored in basic auth form |  |  |
 
 
 #### DashboardList
@@ -422,11 +403,11 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `supabaseAdmin` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ |  |  |  |
-| `authenticator` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ |  |  |  |
-| `supabaseAuthAdmin` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ |  |  |  |
-| `supabaseFunctionsAdmin` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ |  |  |  |
-| `supabaseStorageAdmin` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ |  |  |  |
+| `supabaseAdmin` _string_ |  |  |  |
+| `authenticator` _string_ |  |  |  |
+| `supabaseAuthAdmin` _string_ |  |  |  |
+| `supabaseFunctionsAdmin` _string_ |  |  |  |
+| `supabaseStorageAdmin` _string_ |  |  |  |
 
 
 #### DatabaseStatus
@@ -444,6 +425,25 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `appliedMigrations` _[MigrationStatus](#migrationstatus)_ |  |  |  |
 | `roles` _object (keys:string, values:integer array)_ |  |  |  |
+
+
+#### DbCredentialsReference
+
+
+
+
+
+
+
+_Appears in:_
+- [DashboardDbSpec](#dashboarddbspec)
+- [StorageApiDbSpec](#storageapidbspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `secretName` _string_ |  |  |  |
+| `usernameKey` _string_ | UsernameKey | username |  |
+| `passwordKey` _string_ | PasswordKey | password |  |
 
 
 #### EmailAuthProvider
@@ -484,7 +484,7 @@ _Appears in:_
 | `host` _string_ |  |  |  |
 | `port` _integer_ |  |  |  |
 | `maxFrequency` _integer_ |  |  |  |
-| `credentialsFrom` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core)_ |  |  |  |
+| `credentialsRef` _[SmtpCredentialsReference](#smtpcredentialsreference)_ |  |  |  |
 
 
 #### EnvoySpec
@@ -556,6 +556,28 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `image` _string_ |  |  |  |
 | `pullPolicy` _[PullPolicy](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#pullpolicy-v1-core)_ |  |  |  |
+
+
+#### JwtSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [CoreJwtSpec](#corejwtspec)
+- [StorageSpec](#storagespec)
+- [StudioSpec](#studiospec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `secretName` _string_ | SecretRef - object reference to the Secret where JWT values are stored |  |  |
+| `secretKey` _string_ | SecretKey - key in secret where to read the JWT HMAC secret from | secret |  |
+| `jwksKey` _string_ | JwksKey - key in secret where to read the JWKS from | jwks.json |  |
+| `anonKey` _string_ | AnonKey - key in secret where to read the anon JWT from | anon_key |  |
+| `serviceKey` _string_ | ServiceKey - key in secret where to read the service JWT from | service_key |  |
 
 
 #### MigrationStatus
@@ -642,6 +664,60 @@ _Appears in:_
 | `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the PostgREST workload |  |  |
 
 
+#### S3CredentialsRef
+
+
+
+
+
+
+
+_Appears in:_
+- [S3ProtocolSpec](#s3protocolspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `secretName` _string_ |  |  |  |
+| `accessKeyIdKey` _string_ | AccessKeyIdKey - key in Secret where access key id will be referenced from | accessKeyId |  |
+| `accessSecretKeyKey` _string_ | AccessSecretKeyKey - key in Secret where access secret key will be referenced from | secretAccessKey |  |
+
+
+#### S3ProtocolSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [StorageSpec](#storagespec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `region` _string_ | Region - S3 region to use in the API | us-east-1 |  |
+| `allowForwardedHeader` _boolean_ | AllowForwardedHeader | true |  |
+| `credentialsSecretRef` _[S3CredentialsRef](#s3credentialsref)_ | CredentialsSecretRef - reference to the Secret where access key id and access secret key are stored |  |  |
+
+
+#### SmtpCredentialsReference
+
+
+
+
+
+
+
+_Appears in:_
+- [EmailAuthSmtpSpec](#emailauthsmtpspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `secretName` _string_ |  |  |  |
+| `usernameKey` _string_ | UsernameKey | username |  |
+| `passwordKey` _string_ | PasswordKey | password |  |
+
+
 #### Storage
 
 
@@ -659,6 +735,42 @@ _Appears in:_
 | `kind` _string_ | `Storage` | | |
 | `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `spec` _[StorageSpec](#storagespec)_ |  |  |  |
+
+
+#### StorageApiDbSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [StorageSpec](#storagespec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `host` _string_ |  |  |  |
+| `port` _integer_ | Port - Database port, typically 5432 | 5432 |  |
+| `dbName` _string_ |  |  |  |
+| `dbCredentialsRef` _[DbCredentialsReference](#dbcredentialsreference)_ | DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from<br />Credentials need to be stored in basic auth form |  |  |
+
+
+#### StorageBackend
+
+_Underlying type:_ _string_
+
+
+
+
+
+_Appears in:_
+- [StorageSpec](#storagespec)
+
+| Field | Description |
+| --- | --- |
+| `file` |  |
+| `s3` |  |
 
 
 #### StorageList
@@ -692,7 +804,12 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `foo` _string_ | Foo is an example field of Storage. Edit storage_types.go to remove/update |  |  |
+| `backendType` _[StorageBackend](#storagebackend)_ | BackendType - backend storage type to use |  | Enum: [s3 file] <br /> |
+| `fileSizeLimit` _integer_ | FileSizeLimit - maximum file upload size in bytes | 52428800 |  |
+| `jwtAuth` _[JwtSpec](#jwtspec)_ | JwtAuth - Configure the JWT authentication parameters.<br />This includes where to retrieve anon and service key from as well as JWT secret and JWKS references<br />needed to validate JWTs send to the API |  |  |
+| `db` _[StorageApiDbSpec](#storageapidbspec)_ | DBSpec - Configure access to the Postgres database<br />In most cases this will reference the supabase-storage-admin credentials secret provided by the Core resource |  |  |
+| `s3` _[S3ProtocolSpec](#s3protocolspec)_ | S3 - Configure S3 protocol |  |  |
+| `enableImageTransformation` _boolean_ | EnableImageTransformation - whether to deploy the image proxy<br />the image proxy scale images to lower resolutions on demand to reduce traffic for instance for mobile devices |  |  |
 
 
 
@@ -710,7 +827,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `jwt` _[DashboardJwtSpec](#dashboardjwtspec)_ |  |  |  |
+| `jwt` _[JwtSpec](#jwtspec)_ |  |  |  |
 | `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the studio deployment |  |  |
 | `gatewayServiceSelector` _object (keys:string, values:string)_ | GatewayServiceSelector - selector to find the service for the API gateway<br />Required to configure the API URL in the studio deployment<br />If you don't run multiple APIGateway instances in the same namespaces, the default will be fine | \{ app.kubernetes.io/component:api-gateway app.kubernetes.io/name:envoy \} |  |
 | `externalUrl` _string_ | APIExternalURL is referring to the URL where Supabase API will be available<br />Typically this is the ingress of the API gateway |  |  |

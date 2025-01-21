@@ -63,44 +63,32 @@ func (d *CoreCustomDefaulter) Default(ctx context.Context, obj runtime.Object) e
 		return fmt.Errorf("ensuring JWT secret: %w", err)
 	}
 
-	// TODO copy plain text DSN to secret if present
-
 	corelog.Info("Defaulting database roles")
 	if !core.Spec.Database.Roles.SelfManaged {
-		const roleCredsSecretNameTemplate = "db-roles-creds-%s"
-		if core.Spec.Database.Roles.Secrets.Admin == nil {
+		const roleCredsSecretNameTemplate = "%s-db-creds-%s"
+		if core.Spec.Database.Roles.Secrets.Admin == "" {
 			corelog.Info("Defaulting role", "role_name", supabase.DBRoleSupabaseAdmin)
-			core.Spec.Database.Roles.Secrets.Admin = &corev1.LocalObjectReference{
-				Name: fmt.Sprintf(roleCredsSecretNameTemplate, supabase.DBRoleSupabaseAdmin.K8sString()),
-			}
+			core.Spec.Database.Roles.Secrets.Admin = fmt.Sprintf(roleCredsSecretNameTemplate, core.Name, supabase.DBRoleSupabaseAdmin.K8sString())
 		}
 
-		if core.Spec.Database.Roles.Secrets.Authenticator == nil {
+		if core.Spec.Database.Roles.Secrets.Authenticator == "" {
 			corelog.Info("Defaulting role", "role_name", supabase.DBRoleAuthenticator)
-			core.Spec.Database.Roles.Secrets.Authenticator = &corev1.LocalObjectReference{
-				Name: fmt.Sprintf(roleCredsSecretNameTemplate, supabase.DBRoleAuthenticator.K8sString()),
-			}
+			core.Spec.Database.Roles.Secrets.Authenticator = fmt.Sprintf(roleCredsSecretNameTemplate, core.Name, supabase.DBRoleAuthenticator.K8sString())
 		}
 
-		if core.Spec.Database.Roles.Secrets.AuthAdmin == nil {
+		if core.Spec.Database.Roles.Secrets.AuthAdmin == "" {
 			corelog.Info("Defaulting role", "role_name", supabase.DBRoleAuthAdmin)
-			core.Spec.Database.Roles.Secrets.AuthAdmin = &corev1.LocalObjectReference{
-				Name: fmt.Sprintf(roleCredsSecretNameTemplate, supabase.DBRoleAuthAdmin.K8sString()),
-			}
+			core.Spec.Database.Roles.Secrets.AuthAdmin = fmt.Sprintf(roleCredsSecretNameTemplate, core.Name, supabase.DBRoleAuthAdmin.K8sString())
 		}
 
-		if core.Spec.Database.Roles.Secrets.FunctionsAdmin == nil {
+		if core.Spec.Database.Roles.Secrets.FunctionsAdmin == "" {
 			corelog.Info("Defaulting role", "role_name", supabase.DBRoleFunctionsAdmin)
-			core.Spec.Database.Roles.Secrets.FunctionsAdmin = &corev1.LocalObjectReference{
-				Name: fmt.Sprintf(roleCredsSecretNameTemplate, supabase.DBRoleFunctionsAdmin.K8sString()),
-			}
+			core.Spec.Database.Roles.Secrets.FunctionsAdmin = fmt.Sprintf(roleCredsSecretNameTemplate, core.Name, supabase.DBRoleFunctionsAdmin.K8sString())
 		}
 
-		if core.Spec.Database.Roles.Secrets.StorageAdmin == nil {
+		if core.Spec.Database.Roles.Secrets.StorageAdmin == "" {
 			corelog.Info("Defaulting role", "role_name", supabase.DBRoleStorageAdmin)
-			core.Spec.Database.Roles.Secrets.StorageAdmin = &corev1.LocalObjectReference{
-				Name: fmt.Sprintf(roleCredsSecretNameTemplate, supabase.DBRoleStorageAdmin.K8sString()),
-			}
+			core.Spec.Database.Roles.Secrets.StorageAdmin = fmt.Sprintf(roleCredsSecretNameTemplate, core.Name, supabase.DBRoleStorageAdmin.K8sString())
 		}
 	}
 
@@ -114,10 +102,8 @@ func (d *CoreCustomDefaulter) defaultJWT(ctx context.Context, core *supabasev1al
 		core.Spec.JWT = new(supabasev1alpha1.CoreJwtSpec)
 	}
 
-	if core.Spec.JWT.SecretRef == nil {
-		core.Spec.JWT.SecretRef = &corev1.LocalObjectReference{
-			Name: supabase.ServiceConfig.JWT.ObjectName(core),
-		}
+	if core.Spec.JWT.SecretName == "" {
+		core.Spec.JWT.SecretName = supabase.ServiceConfig.JWT.ObjectName(core)
 	}
 
 	if core.Spec.JWT.SecretKey == "" {
@@ -138,7 +124,7 @@ func (d *CoreCustomDefaulter) defaultJWT(ctx context.Context, core *supabasev1al
 
 	jwtSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      core.Spec.JWT.SecretRef.Name,
+			Name:      core.Spec.JWT.SecretName,
 			Namespace: core.Namespace,
 		},
 	}

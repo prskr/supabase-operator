@@ -38,6 +38,7 @@ import (
 	"code.icb4dc0.de/prskr/supabase-operator/internal/db"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/errx"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/meta"
+	"code.icb4dc0.de/prskr/supabase-operator/internal/pw"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
 )
 
@@ -161,11 +162,11 @@ func (r *CoreDbReconciler) ensureDbRolesSecrets(
 	)
 
 	roles := map[string]supabase.DBRole{
-		dbSpec.Roles.Secrets.Authenticator.Name:  supabase.DBRoleAuthenticator,
-		dbSpec.Roles.Secrets.AuthAdmin.Name:      supabase.DBRoleAuthAdmin,
-		dbSpec.Roles.Secrets.FunctionsAdmin.Name: supabase.DBRoleFunctionsAdmin,
-		dbSpec.Roles.Secrets.StorageAdmin.Name:   supabase.DBRoleStorageAdmin,
-		dbSpec.Roles.Secrets.Admin.Name:          supabase.DBRoleSupabaseAdmin,
+		dbSpec.Roles.Secrets.Authenticator:  supabase.DBRoleAuthenticator,
+		dbSpec.Roles.Secrets.AuthAdmin:      supabase.DBRoleAuthAdmin,
+		dbSpec.Roles.Secrets.FunctionsAdmin: supabase.DBRoleFunctionsAdmin,
+		dbSpec.Roles.Secrets.StorageAdmin:   supabase.DBRoleStorageAdmin,
+		dbSpec.Roles.Secrets.Admin:          supabase.DBRoleSupabaseAdmin,
 	}
 
 	if core.Status.Database.Roles == nil {
@@ -210,7 +211,7 @@ func (r *CoreDbReconciler) ensureDbRolesSecrets(
 				if role.String() == dsnUser {
 					credentialsSecret.Data[corev1.BasicAuthPasswordKey] = []byte(dsnPW)
 				} else {
-					credentialsSecret.Data[corev1.BasicAuthPasswordKey] = GeneratePW(24, nil)
+					credentialsSecret.Data[corev1.BasicAuthPasswordKey] = pw.GeneratePW(24, nil)
 				}
 
 				secretLogger.Info("Update database role to match secret credentials")

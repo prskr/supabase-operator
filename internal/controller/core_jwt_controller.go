@@ -57,7 +57,7 @@ func (r *CoreJwtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 	}
 
 	jwtSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: core.Spec.JWT.SecretRef.Name, Namespace: core.Namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: core.Spec.JWT.SecretName, Namespace: core.Namespace},
 	}
 
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, jwtSecret, func() error {

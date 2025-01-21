@@ -129,7 +129,7 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: core.Spec.Database.Roles.Secrets.Authenticator.Name,
+							Name: core.Spec.Database.Roles.Secrets.Authenticator,
 						},
 						Key: corev1.BasicAuthPasswordKey,
 					},

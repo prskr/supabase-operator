@@ -39,10 +39,123 @@ spec:
           spec:
             description: StorageSpec defines the desired state of Storage.
             properties:
-              foo:
-                description: Foo is an example field of Storage. Edit storage_types.go
-                  to remove/update
+              backendType:
+                description: BackendType - backend storage type to use
+                enum:
+                - s3
+                - file
                 type: string
+              db:
+                description: |-
+                  DBSpec - Configure access to the Postgres database
+                  In most cases this will reference the supabase-storage-admin credentials secret provided by the Core resource
+                properties:
+                  dbCredentialsRef:
+                    description: |-
+                      DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from
+                      Credentials need to be stored in basic auth form
+                    properties:
+                      passwordKey:
+                        default: password
+                        description: PasswordKey
+                        type: string
+                      secretName:
+                        type: string
+                      usernameKey:
+                        default: username
+                        description: UsernameKey
+                        type: string
+                    required:
+                    - secretName
+                    type: object
+                  dbName:
+                    type: string
+                  host:
+                    type: string
+                  port:
+                    default: 5432
+                    description: Port - Database port, typically 5432
+                    type: integer
+                required:
+                - dbCredentialsRef
+                - dbName
+                - host
+                type: object
+              enableImageTransformation:
+                description: |-
+                  EnableImageTransformation - whether to deploy the image proxy
+                  the image proxy scale images to lower resolutions on demand to reduce traffic for instance for mobile devices
+                type: boolean
+              fileSizeLimit:
+                default: 52428800
+                description: FileSizeLimit - maximum file upload size in bytes
+                format: int64
+                type: integer
+              jwtAuth:
+                description: |-
+                  JwtAuth - Configure the JWT authentication parameters.
+                  This includes where to retrieve anon and service key from as well as JWT secret and JWKS references
+                  needed to validate JWTs send to the API
+                properties:
+                  anonKey:
+                    default: anon_key
+                    description: AnonKey - key in secret where to read the anon JWT
+                      from
+                    type: string
+                  jwksKey:
+                    default: jwks.json
+                    description: JwksKey - key in secret where to read the JWKS from
+                    type: string
+                  secretKey:
+                    default: secret
+                    description: SecretKey - key in secret where to read the JWT HMAC
+                      secret from
+                    type: string
+                  secretName:
+                    description: SecretRef - object reference to the Secret where
+                      JWT values are stored
+                    type: string
+                  serviceKey:
+                    default: service_key
+                    description: ServiceKey - key in secret where to read the service
+                      JWT from
+                    type: string
+                type: object
+              s3:
+                description: S3 - Configure S3 protocol
+                properties:
+                  allowForwardedHeader:
+                    default: true
+                    description: AllowForwardedHeader
+                    type: boolean
+                  credentialsSecretRef:
+                    description: CredentialsSecretRef - reference to the Secret where
+                      access key id and access secret key are stored
+                    properties:
+                      accessKeyIdKey:
+                        default: accessKeyId
+                        description: AccessKeyIdKey - key in Secret where access key
+                          id will be referenced from
+                        type: string
+                      accessSecretKeyKey:
+                        default: secretAccessKey
+                        description: AccessSecretKeyKey - key in Secret where access
+                          secret key will be referenced from
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - secretName
+                    type: object
+                  region:
+                    default: us-east-1
+                    description: Region - S3 region to use in the API
+                    type: string
+                type: object
+            required:
+            - backendType
+            - db
+            - jwtAuth
             type: object
           status:
             description: StorageStatus defines the observed state of Storage.

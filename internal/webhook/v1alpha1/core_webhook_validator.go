@@ -127,47 +127,47 @@ func (v *CoreCustomValidator) validateDb(
 			}
 		}
 
-		if authenticator := dbSpec.Roles.Secrets.Authenticator; authenticator == nil {
+		if authenticator := dbSpec.Roles.Secrets.Authenticator; authenticator == "" {
 			return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsNotSpecified, supabase.DBRoleAuthenticator)
 		} else {
-			exists, err := doesSecretExists(ctx, authenticator.Name)
+			exists, err := doesSecretExists(ctx, authenticator)
 			if err != nil {
 				return warnings, err
 			} else if !exists {
-				return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsSecretMissing, authenticator.Name)
+				return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsSecretMissing, authenticator)
 			}
 		}
 
-		if authAdmin := dbSpec.Roles.Secrets.AuthAdmin; authAdmin == nil {
+		if authAdmin := dbSpec.Roles.Secrets.AuthAdmin; authAdmin == "" {
 			return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsNotSpecified, supabase.DBRoleAuthAdmin)
 		} else {
-			exists, err := doesSecretExists(ctx, authAdmin.Name)
+			exists, err := doesSecretExists(ctx, authAdmin)
 			if err != nil {
 				return warnings, err
 			} else if !exists {
-				return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsSecretMissing, authAdmin.Name)
+				return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsSecretMissing, authAdmin)
 			}
 		}
 
-		if functionsAdmin := dbSpec.Roles.Secrets.FunctionsAdmin; functionsAdmin == nil {
+		if functionsAdmin := dbSpec.Roles.Secrets.FunctionsAdmin; functionsAdmin == "" {
 			return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsNotSpecified, supabase.DBRoleFunctionsAdmin)
 		} else {
-			exists, err := doesSecretExists(ctx, functionsAdmin.Name)
+			exists, err := doesSecretExists(ctx, functionsAdmin)
 			if err != nil {
 				return warnings, err
 			} else if !exists {
-				return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsSecretMissing, functionsAdmin.Name)
+				return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsSecretMissing, functionsAdmin)
 			}
 		}
 
-		if storageAdmin := dbSpec.Roles.Secrets.StorageAdmin; storageAdmin == nil {
+		if storageAdmin := dbSpec.Roles.Secrets.StorageAdmin; storageAdmin == "" {
 			return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsNotSpecified, supabase.DBRoleStorageAdmin)
 		} else {
-			exists, err := doesSecretExists(ctx, storageAdmin.Name)
+			exists, err := doesSecretExists(ctx, storageAdmin)
 			if err != nil {
 				return warnings, err
 			} else if !exists {
-				return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsSecretMissing, storageAdmin.Name)
+				return warnings, fmt.Errorf("%w: %s", ErrManagedCredentialsSecretMissing, storageAdmin)
 			}
 		}
 	}

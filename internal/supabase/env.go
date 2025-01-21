@@ -125,6 +125,30 @@ type studioDefaults struct {
 	APIPort int32
 }
 
+type storageEnvApiKeys struct {
+	AnonKey                     secretEnv
+	ServiceKey                  secretEnv
+	JwtSecret                   secretEnv
+	JwtJwks                     secretEnv
+	DatabaseDSN                 stringEnv
+	FileSizeLimit               intEnv[uint64]
+	UploadFileSizeLimit         intEnv[uint64]
+	UploadFileSizeLimitStandard intEnv[uint64]
+	StorageBackend              stringEnv
+	TenantID                    fixedEnv
+	StorageS3Region             stringEnv
+	GlobalS3Bucket              fixedEnv
+	EnableImaageTransformation  boolEnv
+	ImgProxyURL                 stringEnv
+	TusUrlPath                  fixedEnv
+	S3AccessKeyId               secretEnv
+	S3AccessKeySecret           secretEnv
+	S3ProtocolPrefix            fixedEnv
+	S3AllowForwardedHeader      boolEnv
+}
+
+type storageApiDefaults struct{}
+
 type envoyDefaults struct {
 	ConfigKey string
 	UID, GID  int64
@@ -160,6 +184,7 @@ var ServiceConfig = struct {
 	Auth      serviceConfig[authEnvKeys, authConfigDefaults]
 	PGMeta    serviceConfig[pgMetaEnvKeys, pgMetaDefaults]
 	Studio    serviceConfig[studioEnvKeys, studioDefaults]
+	Storage   serviceConfig[storageEnvApiKeys, storageApiDefaults]
 	Envoy     envoyServiceConfig
 	JWT       jwtConfig
 }{
@@ -258,6 +283,31 @@ var ServiceConfig = struct {
 			NodeGID: 1000,
 			APIPort: 3000,
 		},
+	},
+	Storage: serviceConfig[storageEnvApiKeys, storageApiDefaults]{
+		Name: "storage-api",
+		EnvKeys: storageEnvApiKeys{
+			AnonKey:                     "ANON_KEY",
+			ServiceKey:                  "SERVICE_KEY",
+			JwtSecret:                   "AUTH_JWT_SECRET",
+			JwtJwks:                     "AUTH_JWT_JWKS",
+			StorageBackend:              "STORAGE_BACKEND",
+			DatabaseDSN:                 "DATABASE_URL",
+			FileSizeLimit:               "FILE_SIZE_LIMIT",
+			UploadFileSizeLimit:         "UPLOAD_FILE_SIZE_LIMIT",
+			UploadFileSizeLimitStandard: "UPLOAD_FILE_SIZE_LIMIT_STANDARD",
+			TenantID:                    fixedEnvOf("TENANT_ID", "stub"),
+			StorageS3Region:             "STORAGE_S3_REGION",
+			GlobalS3Bucket:              fixedEnvOf("GLOBAL_S3_BUCKET", "stub"),
+			EnableImaageTransformation:  "ENABLE_IMAGE_TRANSFORMATION",
+			ImgProxyURL:                 "IMGPROXY_URL",
+			TusUrlPath:                  fixedEnvOf("TUS_URL_PATH", "/storage/v1/upload/resumable"),
+			S3AccessKeyId:               "S3_PROTOCOL_ACCESS_KEY_ID",
+			S3AccessKeySecret:           "S3_PROTOCOL_ACCESS_KEY_SECRET",
+			S3ProtocolPrefix:            fixedEnvOf("S3_PROTOCOL_PREFIX", "/storage/v1"),
+			S3AllowForwardedHeader:      "S3_ALLOW_FORWARDED_HEADER",
+		},
+		Defaults: storageApiDefaults{},
 	},
 	Envoy: envoyServiceConfig{
 		Defaults: envoyDefaults{

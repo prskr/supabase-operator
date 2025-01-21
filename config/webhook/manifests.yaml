@@ -64,6 +64,26 @@ webhooks:
     resources:
     - dashboards
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-supabase-k8s-icb4dc0-de-v1alpha1-storage
+  failurePolicy: Fail
+  name: mstorage-v1alpha1.kb.io
+  rules:
+  - apiGroups:
+    - supabase.k8s.icb4dc0.de
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storages
+  sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -129,4 +149,24 @@ webhooks:
     - UPDATE
     resources:
     - dashboards
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-supabase-k8s-icb4dc0-de-v1alpha1-storage
+  failurePolicy: Fail
+  name: vstorage-v1alpha1.kb.io
+  rules:
+  - apiGroups:
+    - supabase.k8s.icb4dc0.de
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - storages
   sideEffects: None

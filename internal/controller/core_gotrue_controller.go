@@ -115,7 +115,7 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: core.Spec.Database.Roles.Secrets.AuthAdmin.Name,
+							Name: core.Spec.Database.Roles.Secrets.AuthAdmin,
 						},
 						Key: corev1.BasicAuthPasswordKey,
 					},

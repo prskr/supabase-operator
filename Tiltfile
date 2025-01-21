@@ -78,3 +78,11 @@ k8s_resource(
         'supabase-controller-manager'
     ],
 )
+
+k8s_resource(
+    objects=["core-sample:Storage:supabase-demo"],
+    new_name='Storage',
+    resource_deps=[
+        'supabase-controller-manager'
+    ],
+)

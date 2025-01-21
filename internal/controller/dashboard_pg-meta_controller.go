@@ -90,7 +90,7 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
 
 	dsnSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dashboard.Spec.DBSpec.DBCredentialsRef.Name,
+			Name:      dashboard.Spec.DBSpec.DBCredentialsRef.SecretName,
 			Namespace: dashboard.Namespace,
 		},
 	}

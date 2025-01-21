@@ -4,6 +4,14 @@ metadata:
   labels:
     app.kubernetes.io/name: supabase-operator
     app.kubernetes.io/managed-by: kustomize
-  name: storage-sample
+  name: core-sample
 spec:
-  # TODO(user): Add fields here
+  backendType: file
+  db:
+    host: cluster-example-rw.supabase-demo.svc
+    dbName: app
+    dbCredentialsRef:
+      secretName: core-sample-db-creds-supabase-storage-admin
+  enableImageTransformation: true
+  jwtAuth:
+    secretName: core-sample-jwt

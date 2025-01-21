@@ -46,17 +46,19 @@ spec:
                       DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from
                       Credentials need to be stored in basic auth form
                     properties:
-                      name:
-                        default: ""
-                        description: |-
-                          Name of the referent.
-                          This field is effectively required, but due to backwards compatibility is
-                          allowed to be empty. Instances of this type with an empty value here are
-                          almost certainly wrong.
-                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      passwordKey:
+                        default: password
+                        description: PasswordKey
                         type: string
+                      secretName:
+                        type: string
+                      usernameKey:
+                        default: username
+                        description: UsernameKey
+                        type: string
+                    required:
+                    - secretName
                     type: object
-                    x-kubernetes-map-type: atomic
                   dbName:
                     type: string
                   host:
@@ -814,26 +816,20 @@ spec:
                         description: AnonKey - key in secret where to read the anon
                           JWT from
                         type: string
+                      jwksKey:
+                        default: jwks.json
+                        description: JwksKey - key in secret where to read the JWKS
+                          from
+                        type: string
                       secretKey:
                         default: secret
                         description: SecretKey - key in secret where to read the JWT
                           HMAC secret from
                         type: string
-                      secretRef:
+                      secretName:
                         description: SecretRef - object reference to the Secret where
                           JWT values are stored
-                        properties:
-                          name:
-                            default: ""
-                            description: |-
-                              Name of the referent.
-                              This field is effectively required, but due to backwards compatibility is
-                              allowed to be empty. Instances of this type with an empty value here are
-                              almost certainly wrong.
-                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            type: string
-                        type: object
-                        x-kubernetes-map-type: atomic
+                        type: string
                       serviceKey:
                         default: service_key
                         description: ServiceKey - key in secret where to read the
