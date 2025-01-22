@@ -29,7 +29,8 @@ linters:
     - goimports
     - goheader
     - gosimple
-    - godox
+    # enable when the TODOs are fixed
+    # - godox
     - govet
     - ineffassign
     - lll

@@ -32,6 +32,10 @@ var (
 	templates   *template.Template
 )
 
+const (
+	k8sVersion = "1.31.0"
+)
+
 func init() {
 	logLevel := new(slog.LevelVar)
 
