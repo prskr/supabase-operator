@@ -4,7 +4,7 @@ kind: Kustomization
 images:
 - name: supabase-operator
   newName: code.icb4dc0.de/prskr/supabase-operator
-  newTag: 0.0.0-SNAPSHOT-03270ec
+  newTag: 0.1.0-SNAPSHOT-e6c7d68
 
 resources:
 - ../../default

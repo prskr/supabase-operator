@@ -19,6 +19,12 @@ jobs:
           cache-dependency-path: go.sum
           check-latest: true
 
+      - id: govulncheck
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-file: go.mod
+          go-package: ./...
+
       - name: Run linter
         uses: golangci/golangci-lint-action@v6
         with:
