@@ -53,5 +53,5 @@ jobs:
           version: latest
           args: release --clean
         env:
-          GITHUB_TOKEN: ""
+          GORELEASER_FORCE_TOKEN: gitea
           GITEA_TOKEN: ${{ secrets.RELEASE_TOKEN }}
