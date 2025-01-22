@@ -13,19 +13,27 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: core-sample
 spec:
+  # public URL of the Supabase instance (API)
+  # normally the Ingress/HTTPRoute endpoint
   externalUrl: http://localhost:8000/
+
+  # public URL of the frontend
+  # could be the same as the externalUrl if you're using one Ingress/HTTPRoute for both
+  # or a different one if you prefer to separate API and frontend URLs
+  # will be used by Supabase Auth to redirect users after login
   siteUrl: http://localhost:3000/
   database:
-    dsnFrom:
+    dsnSecretRef:
       name: supabase-demo-credentials
       key: url
   auth:
-    disableSignup: true
+    disableSignup: false
     enableEmailAutoconfirm: true
     providers: {}
   postgrest:
     maxRows: 1000
   jwt:
     expiry: 3600
-    secretRef:
-      name: core-sample-jwt
+    # name of the secret containing the JWT secret
+    # will be created if not found, make sure to refernce this secret in the APIGateway, Dashboard and Storage
+    secretName: core-sample-jwt

@@ -59,7 +59,7 @@ type DatabaseRoles struct {
 
 type Database struct {
 	DSN          *string                   `json:"dsn,omitempty"`
-	DSNSecretRef *corev1.SecretKeySelector `json:"dsnFrom,omitempty"`
+	DSNSecretRef *corev1.SecretKeySelector `json:"dsnSecretRef,omitempty"`
 	Roles        DatabaseRoles             `json:"roles,omitempty"`
 }
 

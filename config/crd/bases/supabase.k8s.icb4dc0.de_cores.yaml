@@ -905,7 +905,7 @@ spec:
                 properties:
                   dsn:
                     type: string
-                  dsnFrom:
+                  dsnSecretRef:
                     description: SecretKeySelector selects a key of a Secret.
                     properties:
                       key:

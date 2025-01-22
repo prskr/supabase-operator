@@ -4,14 +4,19 @@ metadata:
   labels:
     app.kubernetes.io/name: supabase-operator
     app.kubernetes.io/managed-by: kustomize
-  name: core-sample
+  name: storage-sample
 spec:
   backendType: file
   db:
     host: cluster-example-rw.supabase-demo.svc
     dbName: app
     dbCredentialsRef:
+      # will be created by Core resource operator if not present
+      # just make sure the secret name is either based on the name of the core resource or explicitly set
+      # format <core-resource-name>-db-creds-supabase-storage-admin
       secretName: core-sample-db-creds-supabase-storage-admin
   enableImageTransformation: true
   jwtAuth:
+    # will be created by Core resource operator if not present
+    # just make sure the secret name is either based on the name of the core resource or explicitly set
     secretName: core-sample-jwt

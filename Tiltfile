@@ -59,7 +59,7 @@ k8s_resource(
 )
 
 k8s_resource(
-    objects=["core-sample:APIGateway:supabase-demo"],
+    objects=["gateway-sample:APIGateway:supabase-demo"],
     extra_pod_selectors={"app.kubernetes.io/component": "api-gateway"},
     port_forwards=[8000, 19000],
     new_name='API Gateway',
@@ -69,7 +69,7 @@ k8s_resource(
 )
 
 k8s_resource(
-    objects=["core-sample:Dashboard:supabase-demo"],
+    objects=["dashboard-sample:Dashboard:supabase-demo"],
     extra_pod_selectors={"app.kubernetes.io/component": "dashboard", "app.kubernetes.io/name": "studio"},
     discovery_strategy="selectors-only",
     port_forwards=[3000],
@@ -80,7 +80,7 @@ k8s_resource(
 )
 
 k8s_resource(
-    objects=["core-sample:Storage:supabase-demo"],
+    objects=["storage-sample:Storage:supabase-demo"],
     new_name='Storage',
     resource_deps=[
         'supabase-controller-manager'

@@ -1,8 +1,10 @@
-name: Deploy pages
+name: Docs
 on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
 
 jobs:
   deploy:
