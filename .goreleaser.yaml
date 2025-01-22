@@ -60,3 +60,8 @@ release:
     ---
 
     Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
+
+gitea_urls:
+  api: https://code.icb4dc0.de/api/v1
+  download: https://code.icb4dc0.de
+  skip_tls_verify: false
