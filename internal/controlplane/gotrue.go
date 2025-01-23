@@ -36,7 +36,9 @@ func (c *GoTrueCluster) Cluster(instance string) []*clusterv3.Cluster {
 		return nil
 	}
 
-	return []*clusterv3.Cluster{c.ServiceCluster.Cluster(fmt.Sprintf("auth@%s", instance), 9999)}
+	serviceCfg := supabase.ServiceConfig.Auth
+
+	return []*clusterv3.Cluster{c.ServiceCluster.Cluster(fmt.Sprintf("%s@%s", serviceCfg.Name, instance), uint32(serviceCfg.Defaults.APIPort))}
 }
 
 func (c *GoTrueCluster) Routes(instance string) []*routev3.Route {

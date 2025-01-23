@@ -18,14 +18,17 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
 )
 
-type StorageBackend string
+type BackendStorageType string
 
 const (
-	StorageBackendFile StorageBackend = "file"
-	StorageBackendS3   StorageBackend = "s3"
+	BackendStorageTypeFile BackendStorageType = "file"
+	BackendStorageTypeS3   BackendStorageType = "s3"
 )
 
 type StorageApiDbSpec struct {
@@ -67,11 +70,25 @@ type S3CredentialsRef struct {
 	AccessSecretKeyKey string `json:"accessSecretKeyKey,omitempty"`
 }
 
-type S3ProtocolSpec struct {
-	// Region - S3 region to use in the API
-	// +kubebuilder:default="us-east-1"
-	Region string `json:"region,omitempty"`
+func (r S3CredentialsRef) AccessKeyIdSelector() *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: r.SecretName,
+		},
+		Key: r.AccessKeyIdKey,
+	}
+}
 
+func (r S3CredentialsRef) AccessSecretKeySelector() *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: r.SecretName,
+		},
+		Key: r.AccessSecretKeyKey,
+	}
+}
+
+type S3ProtocolSpec struct {
 	// AllowForwardedHeader
 	// +kubebuilder:default=true
 	AllowForwardedHeader bool `json:"allowForwardedHeader,omitempty"`
@@ -80,11 +97,85 @@ type S3ProtocolSpec struct {
 	CredentialsSecretRef *S3CredentialsRef `json:"credentialsSecretRef,omitempty"`
 }
 
-// StorageSpec defines the desired state of Storage.
-type StorageSpec struct {
-	// BackendType - backend storage type to use
-	// +kubebuilder:validation:Enum={s3,file}
-	BackendType StorageBackend `json:"backendType"`
+type FileBackendSpec struct {
+	// Path - path to where files will be stored
+	Path string `json:"path"`
+}
+
+func (s *FileBackendSpec) Env() []corev1.EnvVar {
+	if s == nil {
+		return nil
+	}
+
+	svcCfg := supabase.ServiceConfig.Storage
+
+	return []corev1.EnvVar{
+		svcCfg.EnvKeys.StorageBackend.Var("file"),
+		svcCfg.EnvKeys.TenantID.Var(),
+		svcCfg.EnvKeys.FileStorageBackendPath.Var(s.Path),
+		svcCfg.EnvKeys.StorageS3Region.Var("local"),
+		svcCfg.EnvKeys.StorageS3Bucket.Var("stub"),
+	}
+}
+
+type S3BackendSpec struct {
+	// Region - S3 region of the backend
+	Region string `json:"region"`
+	// Endpoint - hostname and port **with** http/https
+	Endpoint string `json:"endpoint"`
+	// ForcePathStyle - whether to use path style (e.g. for MinIO) or domain style
+	// for bucket addressing
+	ForcePathStyle bool `json:"forcePathStyle,omitempty"`
+	// Bucket - bucke to use, if file backend is used, default value is sufficient
+	// +kubebuilder:default="stub"
+	Bucket string `json:"bucket"`
+
+	// CredentialsSecretRef - reference to the Secret where access key id and access secret key are stored
+	CredentialsSecretRef *S3CredentialsRef `json:"credentialsSecretRef"`
+}
+
+func (s *S3BackendSpec) Env() []corev1.EnvVar {
+	if s == nil {
+		return nil
+	}
+
+	svcCfg := supabase.ServiceConfig.Storage
+
+	return []corev1.EnvVar{
+		svcCfg.EnvKeys.StorageBackend.Var("s3"),
+		svcCfg.EnvKeys.StorageS3Endpoint.Var(s.Endpoint),
+		svcCfg.EnvKeys.StorageS3ForcePathStyle.Var(s.ForcePathStyle),
+		svcCfg.EnvKeys.StorageS3Bucket.Var(s.Bucket),
+		svcCfg.EnvKeys.StorageS3Region.Var(s.Region),
+		svcCfg.EnvKeys.StorageS3AccessKeyId.Var(s.CredentialsSecretRef.AccessKeyIdSelector()),
+		svcCfg.EnvKeys.StorageS3AccessSecretKey.Var(s.CredentialsSecretRef.AccessSecretKeySelector()),
+	}
+}
+
+type UploadTempSpec struct {
+	// Medium of the empty dir to cache uploads
+	Medium    corev1.StorageMedium `json:"medium,omitempty"`
+	SizeLimit *resource.Quantity   `json:"sizeLimit,omitempty"`
+}
+
+func (s *UploadTempSpec) VolumeSource() *corev1.EmptyDirVolumeSource {
+	if s == nil {
+		return &corev1.EmptyDirVolumeSource{
+			Medium: corev1.StorageMediumDefault,
+		}
+	}
+
+	return &corev1.EmptyDirVolumeSource{
+		Medium:    s.Medium,
+		SizeLimit: s.SizeLimit,
+	}
+}
+
+type StorageApiSpec struct {
+	S3Backend *S3BackendSpec `json:"s3Backend,omitempty"`
+	// FileBackend - configure the file backend
+	// either S3 or file backend **MUST** be configured
+	FileBackend *FileBackendSpec `json:"fileBackend,omitempty"`
 	// FileSizeLimit - maximum file upload size in bytes
 	// +kubebuilder:default=52428800
 	FileSizeLimit uint64 `json:"fileSizeLimit,omitempty"`
@@ -95,11 +186,30 @@ type StorageSpec struct {
 	// DBSpec - Configure access to the Postgres database
 	// In most cases this will reference the supabase-storage-admin credentials secret provided by the Core resource
 	DBSpec StorageApiDbSpec `json:"db"`
-	// S3 - Configure S3 protocol
-	S3 *S3ProtocolSpec `json:"s3,omitempty"`
-	// EnableImageTransformation - whether to deploy the image proxy
+	// S3Protocol - Configure S3 access to the Storage API allowing clients to use any S3 client
+	S3Protocol *S3ProtocolSpec `json:"s3,omitempty"`
+	// UploadTemp - configure the emptyDir for storing intermediate files during uploads
+	UploadTemp *UploadTempSpec `json:"uploadTemp,omitempty"`
+	// WorkloadTemplate - customize the Storage API workload
+	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+}
+
+type ImageProxySpec struct {
+	// Enable - whether to deploy the image proxy or not
+	Enable               bool `json:"enable,omitempty"`
+	EnabledWebPDetection bool `json:"enableWebPDetection,omitempty"`
+	// WorkloadTemplate - customize the image proxy workload
+	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+}
+
+// StorageSpec defines the desired state of Storage.
+type StorageSpec struct {
+	// Api - configure the Storage API
+	Api StorageApiSpec `json:"api,omitempty"`
+
+	// ImageProxy - optionally enable and configure the image proxy
 	// the image proxy scale images to lower resolutions on demand to reduce traffic for instance for mobile devices
-	EnableImageTransformation bool `json:"enableImageTransformation,omitempty"`
+	ImageProxy *ImageProxySpec `json:"imageProxy,omitempty"`
 }
 
 // StorageStatus defines the observed state of Storage.

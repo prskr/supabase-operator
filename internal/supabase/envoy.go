@@ -14,28 +14,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package supabase
 
 import (
-	"os"
-	"strings"
+	"fmt"
 
-	"github.com/magefile/mage/sh"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Test() error {
-	out, err := OutTool(tools[Envtest], "use", k8sVersion, "--bin-dir", "bin", "-p", "path")
-	if err != nil {
-		return err
+func newEnvoyServiceConfig() envoyServiceConfig {
+	return envoyServiceConfig{
+		Defaults: envoyDefaults{
+			ConfigKey: "config.yaml",
+			UID:       65532,
+			GID:       65532,
+		},
 	}
+}
 
-	testEnv := map[string]string{
-		"PATH": strings.Join([]string{os.Getenv("PATH"), out}, string(os.PathListSeparator)),
-	}
+type envoyDefaults struct {
+	ConfigKey string
+	UID, GID  int64
+}
 
-	return sh.RunWithV(
-		testEnv,
-		"go", "run", "-modfile=tools/go.mod",
-		tools[Gotestsum], "-f", "pkgname-and-test-fails", "--", "-race", "-shuffle=on", "./...",
-	)
+type envoyServiceConfig struct {
+	Defaults envoyDefaults
+}
+
+func (envoyServiceConfig) ObjectName(obj metav1.Object) string {
+	return fmt.Sprintf("%s-envoy", obj.GetName())
 }

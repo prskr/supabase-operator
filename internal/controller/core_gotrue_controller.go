@@ -71,7 +71,7 @@ func (r *CoreAuthReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CoreAuthReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// TODO watch changes in DB credentials secret
+	// TODO watch changes in DB credentials secret & JWT secret
 	return ctrl.NewControllerManagedBy(mgr).
 		For(new(supabasev1alpha1.Core)).
 		Owns(new(appsv1.Deployment)).

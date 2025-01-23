@@ -35,8 +35,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/meta"
@@ -129,12 +131,23 @@ func (r *APIGatewayReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 		return fmt.Errorf("constructor selector for watching secrets: %w", err)
 	}
 
+	apiGatewayTargetSelector, err := predicate.LabelSelectorPredicate(metav1.LabelSelector{
+		MatchExpressions: []metav1.LabelSelectorRequirement{{
+			Key:      meta.SupabaseLabel.ApiGatewayTarget,
+			Operator: metav1.LabelSelectorOpExists,
+		}},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to build selector for watching API target services: %w", err)
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&supabasev1alpha1.APIGateway{}).
 		Named("apigateway").
 		Owns(new(corev1.ConfigMap)).
 		Owns(new(appsv1.Deployment)).
 		Owns(new(corev1.Service)).
+		// watch JWKS secret
 		Watches(
 			new(corev1.Secret),
 			FieldSelectorEventHandler[*supabasev1alpha1.APIGateway, *supabasev1alpha1.APIGatewayList](r.Client,
@@ -145,7 +158,47 @@ func (r *APIGatewayReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 				reloadSelector,
 			),
 		).
+		Watches(
+			new(corev1.Service),
+			r.apiTargetServiceEventHandler(),
+			builder.WithPredicates(apiGatewayTargetSelector),
+		).
 		Complete(r)
+}
+
+func (r *APIGatewayReconciler) apiTargetServiceEventHandler() handler.TypedEventHandler[client.Object, reconcile.Request] {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
+		var (
+			list   supabasev1alpha1.APIGatewayList
+			logger = log.FromContext(ctx, "object", obj.GetName(), "namespace", obj.GetNamespace())
+		)
+
+		targetName, ok := obj.GetLabels()[meta.SupabaseLabel.ApiGatewayTarget]
+		if !ok {
+			logger.Info("Service is not APIGateway target")
+			return nil
+		}
+
+		if err := r.Client.List(ctx, &list, client.InNamespace(obj.GetNamespace())); err != nil {
+			logger.Error(err, "Failed to list Services to map updates to APIGateway reconciliation requests")
+			return nil
+		}
+
+		if targetName != "" {
+			for gw := range list.Iter() {
+				if gw.Name == targetName {
+					return []reconcile.Request{{NamespacedName: client.ObjectKeyFromObject(gw)}}
+				}
+			}
+		} else {
+			requests := make([]reconcile.Request, 0, len(list.Items))
+			for gw := range list.Iter() {
+				requests = append(requests, reconcile.Request{NamespacedName: client.ObjectKeyFromObject(gw)})
+			}
+		}
+
+		return nil
+	})
 }
 
 func (r *APIGatewayReconciler) reconcileJwksSecret(

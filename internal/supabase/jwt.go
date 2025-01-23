@@ -19,7 +19,40 @@ package supabase
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+type jwtDefaults struct {
+	SecretKey    string
+	JwksKey      string
+	AnonKey      string
+	ServiceKey   string
+	SecretLength int
+	Expiry       int
+}
+
+type jwtConfig struct {
+	Defaults jwtDefaults
+}
+
+func newJwtConfig() jwtConfig {
+	return jwtConfig{
+		Defaults: jwtDefaults{
+			SecretKey:    "secret",
+			JwksKey:      "jwks.json",
+			AnonKey:      "anon_key",
+			ServiceKey:   "service_key",
+			SecretLength: 40,
+			Expiry:       3600,
+		},
+	}
+}
+
+func (jwtConfig) ObjectName(obj metav1.Object) string {
+	return fmt.Sprintf("%s-jwt", obj.GetName())
+}
 
 func RandomJWTSecret() ([]byte, error) {
 	jwtSecretBytes := make([]byte, ServiceConfig.JWT.Defaults.SecretLength)

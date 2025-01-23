@@ -3,7 +3,6 @@ load('ext://restart_process', 'docker_build_with_restart')
 
 allow_k8s_contexts('kind-kind')
 
-local('./dev/prepare-dev-cluster.sh')
 k8s_yaml(kustomize('config/dev'))
 k8s_yaml(kustomize('config/samples'))
 
@@ -48,6 +47,8 @@ k8s_resource(
     new_name='Postgres cluster',
     port_forwards=5432
 )
+
+k8s_resource(workload='minio', port_forwards=[9000,9090])
 
 k8s_resource(
     objects=["core-sample:Core:supabase-demo"],

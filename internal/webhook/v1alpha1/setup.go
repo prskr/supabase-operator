@@ -57,7 +57,7 @@ func SetupDashboardWebhookWithManager(mgr ctrl.Manager) error {
 // SetupStorageWebhookWithManager registers the webhook for Storage in the manager.
 func SetupStorageWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&supabasev1alpha1.Storage{}).
-		WithValidator(&StorageCustomValidator{}).
+		WithValidator(&StorageCustomValidator{Client: mgr.GetClient()}).
 		WithDefaulter(&StorageCustomDefaulter{Client: mgr.GetClient()}).
 		Complete()
 }

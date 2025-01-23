@@ -48,6 +48,15 @@ func (s JwtSpec) SecretKeySelector() *corev1.SecretKeySelector {
 	}
 }
 
+func (s JwtSpec) JwksKeySelector() *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: s.SecretName,
+		},
+		Key: s.JwksKey,
+	}
+}
+
 func (s JwtSpec) AnonKeySelector() *corev1.SecretKeySelector {
 	return &corev1.SecretKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
@@ -74,7 +83,8 @@ type ImageSpec struct {
 type ContainerTemplate struct {
 	ImageSpec        `json:",inline"`
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-	// SecurityContext -
+	// SecurityContext - override the container SecurityContext
+	// use with caution, by default the operator already uses sane defaults
 	SecurityContext *corev1.SecurityContext     `json:"securityContext,omitempty"`
 	Resources       corev1.ResourceRequirements `json:"resources,omitempty"`
 	VolumeMounts    []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
@@ -83,10 +93,11 @@ type ContainerTemplate struct {
 
 type WorkloadTemplate struct {
 	Replicas         *int32                     `json:"replicas,omitempty"`
-	SecurityContext  *corev1.PodSecurityContext `json:"securityContext"`
+	SecurityContext  *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 	AdditionalLabels map[string]string          `json:"additionalLabels,omitempty"`
 	// Workload - customize the container template of the workload
-	Workload *ContainerTemplate `json:"workload,omitempty"`
+	Workload          *ContainerTemplate `json:"workload,omitempty"`
+	AdditionalVolumes []corev1.Volume    `json:"additionalVolumes,omitempty"`
 }
 
 func (t *WorkloadTemplate) ReplicaCount() *int32 {
@@ -183,6 +194,14 @@ func (t *WorkloadTemplate) AdditionalVolumeMounts(defaultMounts ...corev1.Volume
 	}
 
 	return defaultMounts
+}
+
+func (t *WorkloadTemplate) Volumes(defaultVolumes ...corev1.Volume) []corev1.Volume {
+	if t == nil {
+		return defaultVolumes
+	}
+
+	return append(defaultVolumes, t.AdditionalVolumes...)
 }
 
 func (t *WorkloadTemplate) PodSecurityContext() *corev1.PodSecurityContext {

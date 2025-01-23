@@ -1,0 +1,52 @@
+# Deploys a new Namespace for the MinIO Pod
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio-dev
+  labels:
+    name: minio-dev
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/managed-by: tilt
+  name: minio
+  namespace: minio-dev # Change this value to match the namespace metadata.name
+spec:
+  containers:
+    - name: minio
+      image: quay.io/minio/minio:latest
+      command:
+        - /bin/bash
+        - -c
+      env:
+        - name: MINIO_ROOT_USER
+          value: minio
+        - name: MINIO_ROOT_PASSWORD
+          value: 1n1t-R00t!
+      args:
+        - minio server /data --console-address :9090 --json
+      volumeMounts:
+        - mountPath: /data
+          name: localvolume # Corresponds to the `spec.volumes` Persistent Volume
+  volumes:
+    - name: localvolume
+      hostPath: # MinIO generally recommends using locally-attached volumes
+        path: /mnt/disk1/data # Specify a path to a local drive or volume on the Kubernetes worker node
+        type: DirectoryOrCreate # The path to the last directory must exist
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: minio-dev
+spec:
+  selector:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/managed-by: tilt
+  ports:
+    - protocol: TCP
+      port: 9000
+      targetPort: 9000

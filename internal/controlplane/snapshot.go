@@ -36,11 +36,12 @@ import (
 )
 
 type EnvoyServices struct {
-	ServiceLabelKey string            `json:"-"`
-	Postgrest       *PostgrestCluster `json:"postgrest,omitempty"`
-	GoTrue          *GoTrueCluster    `json:"auth,omitempty"`
-	PGMeta          *PGMetaCluster    `json:"pgmeta,omitempty"`
-	Studio          *StudioCluster    `json:"studio,omitempty"`
+	ServiceLabelKey string             `json:"-"`
+	Postgrest       *PostgrestCluster  `json:"postgrest,omitempty"`
+	GoTrue          *GoTrueCluster     `json:"auth,omitempty"`
+	StorageApi      *StorageApiCluster `json:"storageApi,omitempty"`
+	PGMeta          *PGMetaCluster     `json:"pgmeta,omitempty"`
+	Studio          *StudioCluster     `json:"studio,omitempty"`
 }
 
 func (s *EnvoyServices) UpsertEndpointSlices(endpointSlices ...discoveryv1.EndpointSlice) {
@@ -56,6 +57,11 @@ func (s *EnvoyServices) UpsertEndpointSlices(endpointSlices ...discoveryv1.Endpo
 				s.GoTrue = new(GoTrueCluster)
 			}
 			s.GoTrue.AddOrUpdateEndpoints(eps)
+		case supabase.ServiceConfig.Storage.Name:
+			if s.StorageApi == nil {
+				s.StorageApi = new(StorageApiCluster)
+			}
+			s.StorageApi.AddOrUpdateEndpoints(eps)
 		case supabase.ServiceConfig.PGMeta.Name:
 			if s.PGMeta == nil {
 				s.PGMeta = new(PGMetaCluster)
@@ -74,6 +80,10 @@ func (s EnvoyServices) Targets() map[string][]string {
 
 	if s.GoTrue != nil {
 		targets[supabase.ServiceConfig.Auth.Name] = s.GoTrue.Targets()
+	}
+
+	if s.StorageApi != nil {
+		targets[supabase.ServiceConfig.Storage.Name] = s.StorageApi.Targets()
 	}
 
 	if s.PGMeta != nil {
@@ -179,6 +189,7 @@ func (s *EnvoyServices) snapshot(ctx context.Context, instance, version string) 
 			Routes: slices.Concat(
 				s.Postgrest.Routes(instance),
 				s.GoTrue.Routes(instance),
+				s.StorageApi.Routes(instance),
 				s.PGMeta.Routes(instance),
 			),
 		}},
@@ -252,6 +263,7 @@ func (s *EnvoyServices) snapshot(ctx context.Context, instance, version string) 
 			slices.Concat(
 				s.Postgrest.Cluster(instance),
 				s.GoTrue.Cluster(instance),
+				s.StorageApi.Cluster(instance),
 				s.PGMeta.Cluster(instance),
 			)...),
 		resource.RouteType:    {apiRouteCfg},

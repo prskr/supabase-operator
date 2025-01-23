@@ -18,7 +18,7 @@ package controller
 
 import (
 	"context"
-	"crypto/sha256"
+	"hash/fnv"
 	"maps"
 	"reflect"
 
@@ -93,7 +93,7 @@ func ValueOrFallback[T any](value, fallback T) T {
 }
 
 func HashStrings(vals ...string) []byte {
-	h := sha256.New()
+	h := fnv.New64a()
 
 	for _, v := range vals {
 		h.Write([]byte(v))
@@ -103,7 +103,7 @@ func HashStrings(vals ...string) []byte {
 }
 
 func HashBytes(vals ...[]byte) []byte {
-	h := sha256.New()
+	h := fnv.New64a()
 
 	for _, v := range vals {
 		h.Write(v)

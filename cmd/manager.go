@@ -149,6 +149,27 @@ func (m manager) Run(ctx context.Context) error {
 		return fmt.Errorf("unable to create controller APIGateway: %w", err)
 	}
 
+	if err = (&controller.StorageApiReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("unable to create controller APIGateway: %w", err)
+	}
+
+	if err = (&controller.StorageImgProxyReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("unable to create controller APIGateway: %w", err)
+	}
+
+	if err = (&controller.StorageS3CredentialsReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("unable to create controller APIGateway: %w", err)
+	}
+
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = webhooksupabasev1alpha1.SetupCoreWebhookWithManager(mgr); err != nil {

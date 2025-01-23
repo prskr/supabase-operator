@@ -34,8 +34,11 @@ func (c *PostgrestCluster) Cluster(instance string) []*clusterv3.Cluster {
 	if c == nil {
 		return nil
 	}
+
+	serviceCfg := supabase.ServiceConfig.Postgrest
+
 	return []*clusterv3.Cluster{
-		c.ServiceCluster.Cluster(fmt.Sprintf("%s@%s", supabase.ServiceConfig.Postgrest.Name, instance), 3000),
+		c.ServiceCluster.Cluster(fmt.Sprintf("%s@%s", serviceCfg.Name, instance), uint32(serviceCfg.Defaults.ServerPort)),
 	}
 }
 
@@ -43,6 +46,8 @@ func (c *PostgrestCluster) Routes(instance string) []*routev3.Route {
 	if c == nil {
 		return nil
 	}
+
+	serviceCfg := supabase.ServiceConfig.Postgrest
 
 	return []*routev3.Route{
 		{
@@ -55,7 +60,7 @@ func (c *PostgrestCluster) Routes(instance string) []*routev3.Route {
 			Action: &routev3.Route_Route{
 				Route: &routev3.RouteAction{
 					ClusterSpecifier: &routev3.RouteAction_Cluster{
-						Cluster: fmt.Sprintf("%s@%s", supabase.ServiceConfig.Postgrest.Name, instance),
+						Cluster: fmt.Sprintf("%s@%s", serviceCfg.Name, instance),
 					},
 					PrefixRewrite: "/",
 				},
@@ -71,7 +76,7 @@ func (c *PostgrestCluster) Routes(instance string) []*routev3.Route {
 			Action: &routev3.Route_Route{
 				Route: &routev3.RouteAction{
 					ClusterSpecifier: &routev3.RouteAction_Cluster{
-						Cluster: fmt.Sprintf("%s@%s", supabase.ServiceConfig.Postgrest.Name, instance),
+						Cluster: fmt.Sprintf("%s@%s", serviceCfg.Name, instance),
 					},
 					PrefixRewrite: "/rpc/graphql",
 				},

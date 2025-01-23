@@ -1,5 +1,13 @@
 site_name: Supabase Operator
+site_author: Peter Kurfer
 site_url: https://docs.supabase-operator.icb4dc0.de/
+site_description: |
+  Documentation for the Supabase Operator, a Kubernetes operator for managing Supabase instances.
+repo_name: prskr/supabase-operator
+repo_url: https://code.icb4dc0.de/prskr/supabase-operator
+
+dev_addr: "127.0.0.1:8001"
+
 theme:
   name: material
   custom_dir: docs/overrides

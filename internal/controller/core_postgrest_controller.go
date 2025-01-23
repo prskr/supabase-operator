@@ -91,10 +91,7 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 		postgrestDeployment = &appsv1.Deployment{
 			ObjectMeta: serviceCfg.ObjectMeta(core),
 		}
-		postgrestSpec = core.Spec.Postgrest
-	)
-
-	var (
+		postgrestSpec    = core.Spec.Postgrest
 		anonRole         = ValueOrFallback(postgrestSpec.AnonRole, serviceCfg.Defaults.AnonRole)
 		postgrestSchemas = ValueOrFallback(postgrestSpec.Schemas, serviceCfg.Defaults.Schemas)
 		jwtSecretHash    string
@@ -178,12 +175,12 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 						Env:             postgrestSpec.WorkloadTemplate.MergeEnv(postgrestEnv),
 						Ports: []corev1.ContainerPort{
 							{
-								Name:          "rest",
+								Name:          serviceCfg.Defaults.ServerPortName,
 								ContainerPort: serviceCfg.Defaults.ServerPort,
 								Protocol:      corev1.ProtocolTCP,
 							},
 							{
-								Name:          "admin",
+								Name:          serviceCfg.Defaults.AdminPortName,
 								ContainerPort: serviceCfg.Defaults.AdminPort,
 								Protocol:      corev1.ProtocolTCP,
 							},
@@ -234,13 +231,16 @@ func (r *CorePostgrestReconiler) reconcilePostgrestService(
 	ctx context.Context,
 	core *supabasev1alpha1.Core,
 ) error {
-	postgrestService := &corev1.Service{
-		ObjectMeta: supabase.ServiceConfig.Postgrest.ObjectMeta(core),
-	}
+	var (
+		serviceCfg       = supabase.ServiceConfig.Postgrest
+		postgrestService = &corev1.Service{
+			ObjectMeta: supabase.ServiceConfig.Postgrest.ObjectMeta(core),
+		}
+	)
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, postgrestService, func() error {
 		postgrestService.Labels = core.Spec.Postgrest.WorkloadTemplate.MergeLabels(
-			objectLabels(core, supabase.ServiceConfig.Postgrest.Name, "core", supabase.Images.Postgrest.Tag),
+			objectLabels(core, serviceCfg.Name, "core", supabase.Images.Postgrest.Tag),
 			core.Labels,
 		)
 
@@ -249,14 +249,14 @@ func (r *CorePostgrestReconiler) reconcilePostgrestService(
 		}
 
 		postgrestService.Spec = corev1.ServiceSpec{
-			Selector: selectorLabels(core, supabase.ServiceConfig.Postgrest.Name),
+			Selector: selectorLabels(core, serviceCfg.Name),
 			Ports: []corev1.ServicePort{
 				{
-					Name:        "rest",
+					Name:        serviceCfg.Defaults.ServerPortName,
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: ptrOf("http"),
-					Port:        3000,
-					TargetPort:  intstr.IntOrString{IntVal: 3000},
+					Port:        serviceCfg.Defaults.ServerPort,
+					TargetPort:  intstr.IntOrString{IntVal: serviceCfg.Defaults.ServerPort},
 				},
 			},
 		}

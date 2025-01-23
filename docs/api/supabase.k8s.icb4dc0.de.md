@@ -156,6 +156,8 @@ _Appears in:_
 | `url` _string_ |  |  |  |
 
 
+
+
 #### ContainerTemplate
 
 
@@ -172,7 +174,7 @@ _Appears in:_
 | `image` _string_ |  |  |  |
 | `pullPolicy` _[PullPolicy](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#pullpolicy-v1-core)_ |  |  |  |
 | `imagePullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#localobjectreference-v1-core) array_ |  |  |  |
-| `securityContext` _[SecurityContext](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#securitycontext-v1-core)_ | SecurityContext - |  |  |
+| `securityContext` _[SecurityContext](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#securitycontext-v1-core)_ | SecurityContext - override the container SecurityContext<br />use with caution, by default the operator already uses sane defaults |  |  |
 | `resources` _[ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#resourcerequirements-v1-core)_ |  |  |  |
 | `volumeMounts` _[VolumeMount](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#volumemount-v1-core) array_ |  |  |  |
 | `additionalEnv` _[EnvVar](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#envvar-v1-core) array_ |  |  |  |
@@ -522,6 +524,22 @@ _Appears in:_
 | `resourceHash` _integer array_ |  |  |  |
 
 
+#### FileBackendSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [StorageApiSpec](#storageapispec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `path` _string_ | Path - path to where files will be stored |  |  |
+
+
 #### GithubAuthProvider
 
 
@@ -539,6 +557,24 @@ _Appears in:_
 | `clientID` _string_ |  |  |  |
 | `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ |  |  |  |
 | `url` _string_ |  |  |  |
+
+
+#### ImageProxySpec
+
+
+
+
+
+
+
+_Appears in:_
+- [StorageSpec](#storagespec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `enable` _boolean_ | Enable - whether to deploy the image proxy or not |  |  |
+| `enableWebPDetection` _boolean_ |  |  |  |
+| `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the image proxy workload |  |  |
 
 
 #### ImageSpec
@@ -568,7 +604,7 @@ _Appears in:_
 
 _Appears in:_
 - [CoreJwtSpec](#corejwtspec)
-- [StorageSpec](#storagespec)
+- [StorageApiSpec](#storageapispec)
 - [StudioSpec](#studiospec)
 
 | Field | Description | Default | Validation |
@@ -664,6 +700,26 @@ _Appears in:_
 | `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the PostgREST workload |  |  |
 
 
+#### S3BackendSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [StorageApiSpec](#storageapispec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `region` _string_ | Region - S3 region of the backend |  |  |
+| `endpoint` _string_ | Endpoint - hostname and port **with** http/https |  |  |
+| `forcePathStyle` _boolean_ | ForcePathStyle - whether to use path style (e.g. for MinIO) or domain style<br />for bucket addressing |  |  |
+| `bucket` _string_ | Bucket - bucke to use, if file backend is used, default value is sufficient | stub |  |
+| `credentialsSecretRef` _[S3CredentialsRef](#s3credentialsref)_ | CredentialsSecretRef - reference to the Secret where access key id and access secret key are stored |  |  |
+
+
 #### S3CredentialsRef
 
 
@@ -673,6 +729,7 @@ _Appears in:_
 
 
 _Appears in:_
+- [S3BackendSpec](#s3backendspec)
 - [S3ProtocolSpec](#s3protocolspec)
 
 | Field | Description | Default | Validation |
@@ -691,11 +748,10 @@ _Appears in:_
 
 
 _Appears in:_
-- [StorageSpec](#storagespec)
+- [StorageApiSpec](#storageapispec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `region` _string_ | Region - S3 region to use in the API | us-east-1 |  |
 | `allowForwardedHeader` _boolean_ | AllowForwardedHeader | true |  |
 | `credentialsSecretRef` _[S3CredentialsRef](#s3credentialsref)_ | CredentialsSecretRef - reference to the Secret where access key id and access secret key are stored |  |  |
 
@@ -746,7 +802,7 @@ _Appears in:_
 
 
 _Appears in:_
-- [StorageSpec](#storagespec)
+- [StorageApiSpec](#storageapispec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -756,9 +812,9 @@ _Appears in:_
 | `dbCredentialsRef` _[DbCredentialsReference](#dbcredentialsreference)_ | DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from<br />Credentials need to be stored in basic auth form |  |  |
 
 
-#### StorageBackend
+#### StorageApiSpec
 
-_Underlying type:_ _string_
+
 
 
 
@@ -767,10 +823,16 @@ _Underlying type:_ _string_
 _Appears in:_
 - [StorageSpec](#storagespec)
 
-| Field | Description |
-| --- | --- |
-| `file` |  |
-| `s3` |  |
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `s3Backend` _[S3BackendSpec](#s3backendspec)_ |  |  |  |
+| `fileBackend` _[FileBackendSpec](#filebackendspec)_ | FileBackend - configure the file backend<br />either S3 or file backend **MUST** be configured |  |  |
+| `fileSizeLimit` _integer_ | FileSizeLimit - maximum file upload size in bytes | 52428800 |  |
+| `jwtAuth` _[JwtSpec](#jwtspec)_ | JwtAuth - Configure the JWT authentication parameters.<br />This includes where to retrieve anon and service key from as well as JWT secret and JWKS references<br />needed to validate JWTs send to the API |  |  |
+| `db` _[StorageApiDbSpec](#storageapidbspec)_ | DBSpec - Configure access to the Postgres database<br />In most cases this will reference the supabase-storage-admin credentials secret provided by the Core resource |  |  |
+| `s3` _[S3ProtocolSpec](#s3protocolspec)_ | S3Protocol - Configure S3 access to the Storage API allowing clients to use any S3 client |  |  |
+| `uploadTemp` _[UploadTempSpec](#uploadtempspec)_ | UploadTemp - configure the emptyDir for storing intermediate files during uploads |  |  |
+| `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the Storage API workload |  |  |
 
 
 #### StorageList
@@ -804,12 +866,8 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `backendType` _[StorageBackend](#storagebackend)_ | BackendType - backend storage type to use |  | Enum: [s3 file] <br /> |
-| `fileSizeLimit` _integer_ | FileSizeLimit - maximum file upload size in bytes | 52428800 |  |
-| `jwtAuth` _[JwtSpec](#jwtspec)_ | JwtAuth - Configure the JWT authentication parameters.<br />This includes where to retrieve anon and service key from as well as JWT secret and JWKS references<br />needed to validate JWTs send to the API |  |  |
-| `db` _[StorageApiDbSpec](#storageapidbspec)_ | DBSpec - Configure access to the Postgres database<br />In most cases this will reference the supabase-storage-admin credentials secret provided by the Core resource |  |  |
-| `s3` _[S3ProtocolSpec](#s3protocolspec)_ | S3 - Configure S3 protocol |  |  |
-| `enableImageTransformation` _boolean_ | EnableImageTransformation - whether to deploy the image proxy<br />the image proxy scale images to lower resolutions on demand to reduce traffic for instance for mobile devices |  |  |
+| `api` _[StorageApiSpec](#storageapispec)_ | Api - configure the Storage API |  |  |
+| `imageProxy` _[ImageProxySpec](#imageproxyspec)_ | ImageProxy - optionally enable and configure the image proxy<br />the image proxy scale images to lower resolutions on demand to reduce traffic for instance for mobile devices |  |  |
 
 
 
@@ -833,6 +891,23 @@ _Appears in:_
 | `externalUrl` _string_ | APIExternalURL is referring to the URL where Supabase API will be available<br />Typically this is the ingress of the API gateway |  |  |
 
 
+#### UploadTempSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [StorageApiSpec](#storageapispec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `medium` _[StorageMedium](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#storagemedium-v1-core)_ | Medium of the empty dir to cache uploads |  |  |
+| `sizeLimit` _[Quantity](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#quantity-resource-api)_ |  |  |  |
+
+
 #### WorkloadTemplate
 
 
@@ -844,8 +919,10 @@ _Appears in:_
 _Appears in:_
 - [AuthSpec](#authspec)
 - [EnvoySpec](#envoyspec)
+- [ImageProxySpec](#imageproxyspec)
 - [PGMetaSpec](#pgmetaspec)
 - [PostgrestSpec](#postgrestspec)
+- [StorageApiSpec](#storageapispec)
 - [StudioSpec](#studiospec)
 
 | Field | Description | Default | Validation |
@@ -854,5 +931,6 @@ _Appears in:_
 | `securityContext` _[PodSecurityContext](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#podsecuritycontext-v1-core)_ |  |  |  |
 | `additionalLabels` _object (keys:string, values:string)_ |  |  |  |
 | `workload` _[ContainerTemplate](#containertemplate)_ | Workload - customize the container template of the workload |  |  |
+| `additionalVolumes` _[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#volume-v1-core) array_ |  |  |  |
 
 

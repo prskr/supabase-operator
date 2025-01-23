@@ -19,9 +19,9 @@ package controlplane
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"strconv"
 	"strings"
 	"time"
@@ -87,7 +87,7 @@ func (r *APIGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, fmt.Errorf("failed to prepare config hash: %w", err)
 	}
 
-	serviceHash := sha256.New().Sum(rawServices)
+	serviceHash := fnv.New64a().Sum(rawServices)
 	if bytes.Equal(serviceHash, gateway.Status.Envoy.ResourceHash) {
 		logger.Info("Resource hash did not change - skipping reconciliation")
 		return ctrl.Result{}, nil

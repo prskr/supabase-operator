@@ -19,7 +19,7 @@ package controller
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
+	"hash/fnv"
 	"maps"
 	"net/url"
 	"time"
@@ -173,7 +173,7 @@ func (r *CoreDbReconciler) ensureDbRolesSecrets(
 		core.Status.Database.Roles = make(map[string][]byte)
 	}
 
-	hash := sha256.New()
+	hash := fnv.New64a()
 
 	for secretName, role := range roles {
 		secretLogger := logger.WithValues("secret_name", secretName, "role_name", role.String())
