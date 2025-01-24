@@ -53,7 +53,7 @@ var (
 )
 
 const (
-	jwksSecretNameField = ".spec.jwks.name"
+	jwksSecretNameField = ".spec.apiEndpoint.jwks.name"
 )
 
 func init() {
@@ -116,7 +116,7 @@ func (r *APIGatewayReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 			return nil
 		}
 
-		return []string{gw.Spec.JWKSSelector.Name}
+		return []string{gw.Spec.ApiEndpoint.JWKSSelector.Name}
 	})
 	if err != nil {
 		return fmt.Errorf("setting up field index for JWKS secret name: %w", err)
@@ -211,7 +211,7 @@ func (r *APIGatewayReconciler) reconcileJwksSecret(
 		return "", err
 	}
 
-	jwksRaw, ok := jwksSecret.Data[gateway.Spec.JWKSSelector.Key]
+	jwksRaw, ok := jwksSecret.Data[gateway.Spec.ApiEndpoint.JWKSSelector.Key]
 	if !ok {
 		return "", fmt.Errorf("%w in secret %s", ErrNoJwksConfigured, jwksSecret.Name)
 	}
@@ -401,10 +401,10 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 									{
 										Secret: &corev1.SecretProjection{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: gateway.Spec.JWKSSelector.Name,
+												Name: gateway.Spec.ApiEndpoint.JWKSSelector.Name,
 											},
 											Items: []corev1.KeyToPath{{
-												Key:  gateway.Spec.JWKSSelector.Key,
+												Key:  gateway.Spec.ApiEndpoint.JWKSSelector.Key,
 												Path: "jwks.json",
 											}},
 										},

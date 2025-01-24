@@ -48,12 +48,23 @@ type EnvoySpec struct {
 	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
 }
 
+type ApiEndpointSpec struct {
+	// JWKSSelector - selector where the JWKS can be retrieved from to enable the API gateway to validate JWTs
+	JWKSSelector *corev1.SecretKeySelector `json:"jwks"`
+}
+
+type DashboardEndpointSpec struct{}
+
 // APIGatewaySpec defines the desired state of APIGateway.
 type APIGatewaySpec struct {
 	// Envoy - configure the envoy instance and most importantly the control-plane
 	Envoy *EnvoySpec `json:"envoy"`
-	// JWKSSelector - selector where the JWKS can be retrieved from to enable the API gateway to validate JWTs
-	JWKSSelector *corev1.SecretKeySelector `json:"jwks"`
+	// ApiEndpoint - Configure the endpoint for all API routes
+	// this includes the JWT configuration
+	ApiEndpoint *ApiEndpointSpec `json:"apiEndpoint,omitempty"`
+	// DashboardEndpoint - Configure the endpoint for the Supabase dashboard (studio)
+	// this includes optional authentication (basic or Oauth2) for the dashboard
+	DashboardEndpoint *DashboardEndpointSpec `json:"dashboardEndpoint,omitempty"`
 	// ServiceSelector - selector to match all Supabase services (or in fact EndpointSlices) that should be considered for this APIGateway
 	// +kubebuilder:default={"matchExpressions":{{"key": "app.kubernetes.io/part-of", "operator":"In", "values":{"supabase"}},{"key":"supabase.k8s.icb4dc0.de/api-gateway-target","operator":"Exists"}}}
 	ServiceSelector *metav1.LabelSelector `json:"serviceSelector"`
@@ -88,7 +99,7 @@ type APIGateway struct {
 
 func (g APIGateway) JwksSecretMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
-		Name:      g.Spec.JWKSSelector.Name,
+		Name:      g.Spec.ApiEndpoint.JWKSSelector.Name,
 		Namespace: g.Namespace,
 		Labels:    maps.Clone(g.Labels),
 	}

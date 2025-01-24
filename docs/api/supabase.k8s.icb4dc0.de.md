@@ -71,11 +71,28 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `envoy` _[EnvoySpec](#envoyspec)_ | Envoy - configure the envoy instance and most importantly the control-plane |  |  |
-| `jwks` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ | JWKSSelector - selector where the JWKS can be retrieved from to enable the API gateway to validate JWTs |  |  |
+| `apiEndpoint` _[ApiEndpointSpec](#apiendpointspec)_ | ApiEndpoint - Configure the endpoint for all API routes<br />this includes the JWT configuration |  |  |
+| `dashboardEndpoint` _[DashboardEndpointSpec](#dashboardendpointspec)_ | DashboardEndpoint - Configure the endpoint for the Supabase dashboard (studio)<br />this includes optional authentication (basic or Oauth2) for the dashboard |  |  |
 | `serviceSelector` _[LabelSelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#labelselector-v1-meta)_ | ServiceSelector - selector to match all Supabase services (or in fact EndpointSlices) that should be considered for this APIGateway | \{ matchExpressions:[map[key:app.kubernetes.io/part-of operator:In values:[supabase]] map[key:supabase.k8s.icb4dc0.de/api-gateway-target operator:Exists]] \} |  |
 | `componentTypeLabel` _string_ | ComponentTypeLabel - Label to identify which Supabase component a Service represents (e.g. auth, postgrest, ...) | app.kubernetes.io/name |  |
 
 
+
+
+#### ApiEndpointSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [APIGatewaySpec](#apigatewayspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `jwks` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ | JWKSSelector - selector where the JWKS can be retrieved from to enable the API gateway to validate JWTs |  |  |
 
 
 #### AuthProviderMeta
@@ -317,6 +334,19 @@ _Appears in:_
 | `port` _integer_ | Port - Database port, typically 5432 | 5432 |  |
 | `dbName` _string_ |  |  |  |
 | `dbCredentialsRef` _[DbCredentialsReference](#dbcredentialsreference)_ | DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from<br />Credentials need to be stored in basic auth form |  |  |
+
+
+#### DashboardEndpointSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [APIGatewaySpec](#apigatewayspec)
+
 
 
 #### DashboardList

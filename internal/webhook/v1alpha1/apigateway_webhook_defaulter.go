@@ -56,8 +56,12 @@ func (d *APIGatewayCustomDefaulter) Default(ctx context.Context, obj runtime.Obj
 	}
 	apigatewaylog.Info("Defaulting for APIGateway", "name", apiGateway.GetName())
 
-	if apiGateway.Spec.JWKSSelector == nil {
-		apiGateway.Spec.JWKSSelector = &corev1.SecretKeySelector{
+	if apiGateway.Spec.ApiEndpoint == nil {
+		apiGateway.Spec.ApiEndpoint = new(supabasev1alpha1.ApiEndpointSpec)
+	}
+
+	if apiGateway.Spec.ApiEndpoint.JWKSSelector == nil {
+		apiGateway.Spec.ApiEndpoint.JWKSSelector = &corev1.SecretKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: supabase.ServiceConfig.JWT.ObjectName(apiGateway),
 			},

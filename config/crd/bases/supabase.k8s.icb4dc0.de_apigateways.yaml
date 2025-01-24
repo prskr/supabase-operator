@@ -43,11 +43,49 @@ spec:
           spec:
             description: APIGatewaySpec defines the desired state of APIGateway.
             properties:
+              apiEndpoint:
+                description: |-
+                  ApiEndpoint - Configure the endpoint for all API routes
+                  this includes the JWT configuration
+                properties:
+                  jwks:
+                    description: JWKSSelector - selector where the JWKS can be retrieved
+                      from to enable the API gateway to validate JWTs
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        type: string
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                      optional:
+                        description: Specify whether the Secret or its key must be
+                          defined
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
+                required:
+                - jwks
+                type: object
               componentTypeLabel:
                 default: app.kubernetes.io/name
                 description: ComponentTypeLabel - Label to identify which Supabase
                   component a Service represents (e.g. auth, postgrest, ...)
                 type: string
+              dashboardEndpoint:
+                description: |-
+                  DashboardEndpoint - Configure the endpoint for the Supabase dashboard (studio)
+                  this includes optional authentication (basic or Oauth2) for the dashboard
+                type: object
               envoy:
                 description: Envoy - configure the envoy instance and most importantly
                   the control-plane
@@ -2593,30 +2631,6 @@ spec:
                 required:
                 - controlPlane
                 type: object
-              jwks:
-                description: JWKSSelector - selector where the JWKS can be retrieved
-                  from to enable the API gateway to validate JWTs
-                properties:
-                  key:
-                    description: The key of the secret to select from.  Must be a
-                      valid secret key.
-                    type: string
-                  name:
-                    default: ""
-                    description: |-
-                      Name of the referent.
-                      This field is effectively required, but due to backwards compatibility is
-                      allowed to be empty. Instances of this type with an empty value here are
-                      almost certainly wrong.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    type: string
-                  optional:
-                    description: Specify whether the Secret or its key must be defined
-                    type: boolean
-                required:
-                - key
-                type: object
-                x-kubernetes-map-type: atomic
               serviceSelector:
                 default:
                   matchExpressions:
@@ -2674,7 +2688,6 @@ spec:
                 x-kubernetes-map-type: atomic
             required:
             - envoy
-            - jwks
             - serviceSelector
             type: object
           status:
