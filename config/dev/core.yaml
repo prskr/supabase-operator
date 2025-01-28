@@ -1,11 +1,17 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: supabase-demo-credentials
+stringData:
+  url: postgresql://supabase_admin:1n1t-R00t!@cluster-example-rw.supabase-demo:5432/app
 ---
 apiVersion: supabase.k8s.icb4dc0.de/v1alpha1
 kind: Core
 metadata:
-  name: core-sample
   labels:
     app.kubernetes.io/name: supabase-operator
     app.kubernetes.io/managed-by: kustomize
+  name: core-sample
 spec:
   # public URL of the Supabase instance (API)
   # normally the Ingress/HTTPRoute endpoint
@@ -18,10 +24,10 @@ spec:
   siteUrl: http://localhost:3000/
   database:
     dsnSecretRef:
-      # name of the secret containing the database DSN
       name: supabase-demo-credentials
       key: url
   auth:
+    disableSignup: false
     enableEmailAutoconfirm: true
     providers: {}
   postgrest:
@@ -29,8 +35,5 @@ spec:
   jwt:
     expiry: 3600
     # name of the secret containing the JWT secret
-    # will be created if not found, make sure to refernce this secret in:
-    # - APIGateway
-    # - Dashboard-
-    # - Storage
+    # will be created if not found, make sure to refernce this secret in the APIGateway, Dashboard and Storage
     secretName: core-sample-jwt

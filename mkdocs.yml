@@ -16,6 +16,8 @@ theme:
     - search.suggest
     - search.highlight
     - toc.integrate
+    - content.code.copy
+    - content.footnote.tooltips
 
 plugins:
   - search
@@ -29,4 +31,22 @@ nav:
   - Components:
       - Overview: components/overview.md
       - Core: components/core.md
+      - APIGateway: components/apigateway.md
+  - Auth:
+      - Overview: auth/overview.md
+      - Email: auth/email.md
+      - Social Providers:
+          - Azure: auth/providers/azure.md
   - API Reference: api/supabase.k8s.icb4dc0.de.md
+  - Development:
+      - Tools: development/tools.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - footnotes

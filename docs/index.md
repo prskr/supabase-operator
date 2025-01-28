@@ -9,7 +9,7 @@ This project is not affiliated with the Supabase project or company in any way.
 This is currently a work-in-progress experiment to replace existing Helm charts for Supabase as they tend to be hard to deploy and to manage and the default Supabase stack - although working great as a single instance or in their SaaS instances - isn't a perfect fit for Kubernetes.
 This operator replaces tedious Helm values files with a small set of custom resources that allow an user to quickly deploy a Supabase instance without having to know much (if anything) of the Supabase internals.
 
-## Targets
+## Goals
 
 - Make it as easy as possible to deploy Supabase on a Kubernetes cluster
 - Manage updates of components
@@ -23,7 +23,7 @@ This operator replaces tedious Helm values files with a small set of custom reso
   - ConfigMaps
   - *soon*: NetworkPolicies
 
-## Non-Targets
+## Non-Goals
 
 - Manage **all** Kubernetes aspects, it does **not** create:
   - PodDisruptionBudgets

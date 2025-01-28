@@ -4,7 +4,6 @@ load('ext://restart_process', 'docker_build_with_restart')
 allow_k8s_contexts('kind-kind')
 
 k8s_yaml(kustomize('config/dev'))
-k8s_yaml(kustomize('config/samples'))
 
 compile_cmd = 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o out/supabase-operator ./cmd/'
 

@@ -42,7 +42,7 @@ var Images = struct {
 }{
 	EdgeRuntime: ImageRef{
 		Repository: "supabase/edge-runtime",
-		Tag:        "v1.66.4",
+		Tag:        "v1.66.5",
 	},
 	Envoy: ImageRef{
 		Repository: "envoyproxy/envoy",
@@ -66,7 +66,7 @@ var Images = struct {
 	},
 	Realtime: ImageRef{
 		Repository: "supabase/realtime",
-		Tag:        "v2.33.70",
+		Tag:        "v2.34.7",
 	},
 	Storage: ImageRef{
 		Repository: "supabase/storage-api",

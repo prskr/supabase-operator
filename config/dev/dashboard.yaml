@@ -1,0 +1,18 @@
+---
+apiVersion: supabase.k8s.icb4dc0.de/v1alpha1
+kind: Dashboard
+metadata:
+  labels:
+    app.kubernetes.io/name: supabase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: dashboard-sample
+spec:
+  db:
+    host: cluster-example-rw.supabase-demo.svc
+    dbName: app
+    dbCredentialsRef:
+      secretName: core-sample-db-creds-supabase-admin
+  studio:
+    externalUrl: http://localhost:8000
+    jwt:
+      secretName: core-sample-jwt

@@ -1,0 +1,12 @@
+apiVersion: supabase.k8s.icb4dc0.de/v1alpha1
+kind: APIGateway
+metadata:
+  labels:
+    app.kubernetes.io/name: supabase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: gateway-sample
+spec:
+  apiEndpoint:
+    jwks:
+      name: core-sample-jwt
+      key: jwks.json
