@@ -93,6 +93,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `jwks` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ | JWKSSelector - selector where the JWKS can be retrieved from to enable the API gateway to validate JWTs |  |  |
+| `tls` _[EndpointTlsSpec](#endpointtlsspec)_ | TLS - enable and configure TLS for the API endpoint |  |  |
 
 
 #### AuthProviderMeta
@@ -317,6 +318,38 @@ _Appears in:_
 | `spec` _[DashboardSpec](#dashboardspec)_ |  |  |  |
 
 
+#### DashboardAuthSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [DashboardEndpointSpec](#dashboardendpointspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `oauth2` _[DashboardOAuth2Spec](#dashboardoauth2spec)_ |  |  |  |
+| `basic` _[DashboardBasicAuthSpec](#dashboardbasicauthspec)_ |  |  |  |
+
+
+
+
+#### DashboardBasicAuthSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [DashboardAuthSpec](#dashboardauthspec)
+
+
+
 #### DashboardDbSpec
 
 
@@ -347,6 +380,10 @@ _Appears in:_
 _Appears in:_
 - [APIGatewaySpec](#apigatewayspec)
 
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `auth` _[DashboardAuthSpec](#dashboardauthspec)_ | Auth - configure authentication for the dashboard endpoint |  |  |
+| `tls` _[EndpointTlsSpec](#endpointtlsspec)_ | TLS - enable and configure TLS for the Dashboard endpoint |  |  |
 
 
 #### DashboardList
@@ -365,6 +402,27 @@ DashboardList contains a list of Dashboard.
 | `kind` _string_ | `DashboardList` | | |
 | `metadata` _[ListMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#listmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
 | `items` _[Dashboard](#dashboard) array_ |  |  |  |
+
+
+#### DashboardOAuth2Spec
+
+
+
+
+
+
+
+_Appears in:_
+- [DashboardAuthSpec](#dashboardauthspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `tokenEndpoint` _string_ | TokenEndpoint - endpoint where Envoy will retrieve the OAuth2 access and identity token from |  |  |
+| `authorizationEndpoint` _string_ | AuthorizationEndpoint - endpoint where the user will be redirected to authenticate |  |  |
+| `clientId` _string_ | ClientID - client ID to authenticate with the OAuth2 provider |  |  |
+| `scopes` _string array_ | Scopes - scopes to request from the OAuth2 provider (e.g. "openid", "profile", ...) - optional |  |  |
+| `resources` _string array_ | Resources - resources to request from the OAuth2 provider (e.g. "user", "email", ...) - optional |  |  |
+| `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ | ClientSecretRef - reference to the secret that contains the client secret |  |  |
 
 
 #### DashboardSpec
@@ -519,6 +577,23 @@ _Appears in:_
 | `credentialsRef` _[SmtpCredentialsReference](#smtpcredentialsreference)_ |  |  |  |
 
 
+#### EndpointTlsSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [ApiEndpointSpec](#apiendpointspec)
+- [DashboardEndpointSpec](#dashboardendpointspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `cert` _[TlsCertRef](#tlscertref)_ |  |  |  |
+
+
 #### EnvoySpec
 
 
@@ -535,6 +610,7 @@ _Appears in:_
 | `nodeName` _string_ | NodeName - identifies the Envoy cluster within the current namespace<br />if not set, the name of the APIGateway resource will be used<br />The primary use case is to make the assignment of multiple supabase instances in a single namespace explicit. |  |  |
 | `controlPlane` _[ControlPlaneSpec](#controlplanespec)_ | ControlPlane - configure the control plane where Envoy will retrieve its configuration from |  |  |
 | `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the Envoy deployment |  |  |
+| `disableIPv6` _boolean_ | DisableIPv6 - disable IPv6 for the Envoy instance<br />this will force Envoy to use IPv4 for upstream hosts (mostly for the OAuth2 token endpoint) |  |  |
 
 
 #### EnvoyStatus
@@ -550,7 +626,6 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `configVersion` _string_ |  |  |  |
 | `resourceHash` _integer array_ |  |  |  |
 
 
@@ -919,6 +994,25 @@ _Appears in:_
 | `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the studio deployment |  |  |
 | `gatewayServiceSelector` _object (keys:string, values:string)_ | GatewayServiceSelector - selector to find the service for the API gateway<br />Required to configure the API URL in the studio deployment<br />If you don't run multiple APIGateway instances in the same namespaces, the default will be fine | \{ app.kubernetes.io/component:api-gateway app.kubernetes.io/name:envoy \} |  |
 | `externalUrl` _string_ | APIExternalURL is referring to the URL where Supabase API will be available<br />Typically this is the ingress of the API gateway |  |  |
+
+
+#### TlsCertRef
+
+
+
+
+
+
+
+_Appears in:_
+- [EndpointTlsSpec](#endpointtlsspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `secretName` _string_ |  |  |  |
+| `serverCertKey` _string_ | ServerCertKey - key in the secret that contains the server certificate | tls.crt |  |
+| `serverKeyKey` _string_ | ServerKeyKey - key in the secret that contains the server private key | tls.key |  |
+| `caCertKey` _string_ | CaCertKey - key in the secret that contains the CA certificate | ca.crt |  |
 
 
 #### UploadTempSpec
