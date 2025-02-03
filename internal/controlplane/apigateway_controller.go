@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	cachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
@@ -45,7 +44,6 @@ import (
 
 // APIGatewayReconciler reconciles a APIGateway object
 type APIGatewayReconciler struct {
-	initialReconciliation atomic.Bool
 	client.Client
 	Scheme *runtime.Scheme
 	Cache  cachev3.SnapshotCache

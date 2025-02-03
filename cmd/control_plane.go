@@ -135,7 +135,7 @@ func (cp *controlPlane) Run(ctx context.Context, logger logr.Logger) error {
 	}
 
 	cacheLoggerInst := cacheLogger(logger.WithName("envoy-snapshot-cache"))
-	envoySnapshotCache := cachev3.NewSnapshotCache(true, cachev3.IDHash{}, cacheLoggerInst)
+	envoySnapshotCache := cachev3.NewSnapshotCache(false, cachev3.IDHash{}, cacheLoggerInst)
 
 	serverCert, err := cp.ensureControlPlaneTlsCert(ctx, bootstrapClient)
 	if err != nil {

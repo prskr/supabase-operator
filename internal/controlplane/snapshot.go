@@ -156,7 +156,7 @@ func (s *EnvoyServices) snapshot(ctx context.Context, instance, version string) 
 		},
 	}}
 
-	if studioListener := s.studioListener(); studioListener != nil {
+	if studioListener := s.studioListener(instance); studioListener != nil {
 		listeners = append(listeners, studioListener)
 	}
 
@@ -176,7 +176,7 @@ func (s *EnvoyServices) snapshot(ctx context.Context, instance, version string) 
 		)...)
 
 	if oauth2Spec := s.Gateway.Spec.DashboardEndpoint.OAuth2(); oauth2Spec != nil {
-		if oauth2TokenEndpointCluster, err := s.oauth2TokenEndpointCluster(); err != nil {
+		if oauth2TokenEndpointCluster, err := s.oauth2TokenEndpointCluster(instance); err != nil {
 			return nil, nil, err
 		} else {
 			clusters = append(clusters, oauth2TokenEndpointCluster)
@@ -350,7 +350,7 @@ func (s *EnvoyServices) apiRouteConfiguration(instance string) *routev3.RouteCon
 	}
 }
 
-func (s *EnvoyServices) studioListener() *listenerv3.Listener {
+func (s *EnvoyServices) studioListener(instance string) *listenerv3.Listener {
 	if s.Studio == nil {
 		return nil
 	}
@@ -367,7 +367,7 @@ func (s *EnvoyServices) studioListener() *listenerv3.Listener {
 				Config: &oauth2v3.OAuth2Config{
 					TokenEndpoint: &corev3.HttpUri{
 						HttpUpstreamType: &corev3.HttpUri_Cluster{
-							Cluster: dashboardOAuth2ClusterName,
+							Cluster: fmt.Sprintf("%s@%s", dashboardOAuth2ClusterName, instance),
 						},
 						Uri:     s.Gateway.Spec.DashboardEndpoint.Auth.OAuth2.TokenEndpoint,
 						Timeout: durationpb.New(3 * time.Second),
@@ -493,7 +493,7 @@ func (s *EnvoyServices) studioRoute(instance string) *routev3.RouteConfiguration
 	}
 }
 
-func (s *EnvoyServices) oauth2TokenEndpointCluster() (*clusterv3.Cluster, error) {
+func (s *EnvoyServices) oauth2TokenEndpointCluster(instance string) (*clusterv3.Cluster, error) {
 	oauth2Spec := s.Gateway.Spec.DashboardEndpoint.OAuth2()
 	parsedTokenEndpoint, err := url.Parse(oauth2Spec.TokenEndpoint)
 	if err != nil {
@@ -523,7 +523,7 @@ func (s *EnvoyServices) oauth2TokenEndpointCluster() (*clusterv3.Cluster, error)
 	}
 
 	cluster := &clusterv3.Cluster{
-		Name:           dashboardOAuth2ClusterName,
+		Name:           fmt.Sprintf("%s@%s", dashboardOAuth2ClusterName, instance),
 		ConnectTimeout: durationpb.New(3 * time.Second),
 		ClusterDiscoveryType: &clusterv3.Cluster_Type{
 			Type: clusterv3.Cluster_LOGICAL_DNS,

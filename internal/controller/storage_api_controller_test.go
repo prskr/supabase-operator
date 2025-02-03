@@ -68,7 +68,7 @@ var _ = Describe("Storage Controller", func() {
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			controllerReconciler := &StorageReconciler{
+			controllerReconciler := &StorageApiReconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
 			}

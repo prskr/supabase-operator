@@ -148,12 +148,6 @@ func RBACAllowAllConfig() *rbacv3.RBAC {
 }
 
 func RBACRequireAuthConfig() *rbacv3.RBAC {
-	/*
-		Identifier: &rbacv3cfg.Principal_SourcedMetadata{
-				SourcedMetadata: &rbacv3cfg.SourcedMetadata{
-					MetadataSource: rbacv3cfg.MetadataSource_DYNAMIC,
-					MetadataMatcher: &matcherv3.MetadataMatcher{
-	*/
 	return &rbacv3.RBAC{
 		Rules: &rbacv3cfg.RBAC{
 			Action: rbacv3cfg.RBAC_ALLOW,
@@ -167,48 +161,51 @@ func RBACRequireAuthConfig() *rbacv3.RBAC {
 							OrIds: &rbacv3cfg.Principal_Set{
 								Ids: []*rbacv3cfg.Principal{
 									{
-										Identifier: &rbacv3cfg.Principal_Metadata{
-											Metadata: &matcherv3.MetadataMatcher{
-												Filter: FilterNameJwtAuthn,
-												Path: []*matcherv3.MetadataMatcher_PathSegment{
-													{
-														Segment: &matcherv3.MetadataMatcher_PathSegment_Key{
-															Key: "jwt_payload",
+										Identifier: &rbacv3cfg.Principal_SourcedMetadata{
+											SourcedMetadata: &rbacv3cfg.SourcedMetadata{
+												MetadataSource: rbacv3cfg.MetadataSource_DYNAMIC,
+												MetadataMatcher: &matcherv3.MetadataMatcher{
+													Filter: FilterNameJwtAuthn,
+													Path: []*matcherv3.MetadataMatcher_PathSegment{
+														{
+															Segment: &matcherv3.MetadataMatcher_PathSegment_Key{
+																Key: "jwt_payload",
+															},
+														},
+														{
+															Segment: &matcherv3.MetadataMatcher_PathSegment_Key{
+																Key: "role",
+															},
 														},
 													},
-													{
-														Segment: &matcherv3.MetadataMatcher_PathSegment_Key{
-															Key: "role",
-														},
-													},
-												},
-												Value: &matcherv3.ValueMatcher{
-													MatchPattern: &matcherv3.ValueMatcher_OrMatch{
-														OrMatch: &matcherv3.OrMatcher{
-															ValueMatchers: []*matcherv3.ValueMatcher{
-																{
-																	MatchPattern: &matcherv3.ValueMatcher_StringMatch{
-																		StringMatch: &matcherv3.StringMatcher{
-																			MatchPattern: &matcherv3.StringMatcher_Exact{
-																				Exact: "anon",
+													Value: &matcherv3.ValueMatcher{
+														MatchPattern: &matcherv3.ValueMatcher_OrMatch{
+															OrMatch: &matcherv3.OrMatcher{
+																ValueMatchers: []*matcherv3.ValueMatcher{
+																	{
+																		MatchPattern: &matcherv3.ValueMatcher_StringMatch{
+																			StringMatch: &matcherv3.StringMatcher{
+																				MatchPattern: &matcherv3.StringMatcher_Exact{
+																					Exact: "anon",
+																				},
 																			},
 																		},
 																	},
-																},
-																{
-																	MatchPattern: &matcherv3.ValueMatcher_StringMatch{
-																		StringMatch: &matcherv3.StringMatcher{
-																			MatchPattern: &matcherv3.StringMatcher_Exact{
-																				Exact: "authenticated",
+																	{
+																		MatchPattern: &matcherv3.ValueMatcher_StringMatch{
+																			StringMatch: &matcherv3.StringMatcher{
+																				MatchPattern: &matcherv3.StringMatcher_Exact{
+																					Exact: "authenticated",
+																				},
 																			},
 																		},
 																	},
-																},
-																{
-																	MatchPattern: &matcherv3.ValueMatcher_StringMatch{
-																		StringMatch: &matcherv3.StringMatcher{
-																			MatchPattern: &matcherv3.StringMatcher_Exact{
-																				Exact: "admin",
+																	{
+																		MatchPattern: &matcherv3.ValueMatcher_StringMatch{
+																			StringMatch: &matcherv3.StringMatcher{
+																				MatchPattern: &matcherv3.StringMatcher_Exact{
+																					Exact: "admin",
+																				},
 																			},
 																		},
 																	},
