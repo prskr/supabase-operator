@@ -15,7 +15,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.envoy.configVersion
+    - jsonPath: .status.envoy.resourceHash
       name: EnvoyConfigVersion
       type: string
     name: v1alpha1
@@ -2826,8 +2826,6 @@ spec:
             properties:
               envoy:
                 properties:
-                  configVersion:
-                    type: string
                   resourceHash:
                     format: byte
                     type: string

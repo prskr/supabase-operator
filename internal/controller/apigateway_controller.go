@@ -419,8 +419,6 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 	const (
 		configVolumeName          = "config"
 		controlPlaneTlsVolumeName = "cp-tls"
-		dashboardTlsVolumeName    = "dashboard-tls"
-		apiTlsVolumeName          = "api-tls"
 	)
 	envoyDeployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -447,131 +445,6 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 		}
 
 		envoyDeployment.Spec.Replicas = envoySpec.WorkloadTemplate.ReplicaCount()
-
-		configVolumeProjectionSources := []corev1.VolumeProjection{
-			{
-				ConfigMap: &corev1.ConfigMapProjection{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: supabase.ServiceConfig.Envoy.ObjectName(gateway),
-					},
-					Items: []corev1.KeyToPath{
-						{
-							Key:  "config.yaml",
-							Path: "config.yaml",
-						},
-					},
-				},
-			},
-			{
-				Secret: &corev1.SecretProjection{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: gateway.Spec.ApiEndpoint.JWKSSelector.Name,
-					},
-					Items: []corev1.KeyToPath{{
-						Key:  gateway.Spec.ApiEndpoint.JWKSSelector.Key,
-						Path: "jwks.json",
-					}},
-				},
-			},
-			{
-				Secret: &corev1.SecretProjection{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: serviceCfg.ControlPlaneClientCertSecretName(gateway),
-					},
-					Items: []corev1.KeyToPath{
-						{
-							Key:  "ca.crt",
-							Path: "certs/cp/ca.crt",
-						},
-						{
-							Key:  "tls.crt",
-							Path: "certs/cp/tls.crt",
-						},
-						{
-							Key:  "tls.key",
-							Path: "certs/cp/tls.key",
-						},
-					},
-				},
-			},
-		}
-
-		if oauth2Spec := gateway.Spec.DashboardEndpoint.OAuth2(); oauth2Spec != nil {
-			configVolumeProjectionSources = append(configVolumeProjectionSources, corev1.VolumeProjection{
-				Secret: &corev1.SecretProjection{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: oauth2Spec.ClientSecretRef.Name,
-					},
-					Items: []corev1.KeyToPath{{
-						Key:  oauth2Spec.ClientSecretRef.Key,
-						Path: serviceCfg.Defaults.OAuth2ClientSecretKey,
-					}},
-				},
-			})
-		}
-
-		volumeMounts := []corev1.VolumeMount{
-			{
-				Name:      configVolumeName,
-				ReadOnly:  true,
-				MountPath: "/etc/envoy",
-			},
-		}
-
-		volumes := []corev1.Volume{
-			{
-				Name: configVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Projected: &corev1.ProjectedVolumeSource{
-						Sources: configVolumeProjectionSources,
-					},
-				},
-			},
-			{
-				Name: controlPlaneTlsVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: serviceCfg.ControlPlaneClientCertSecretName(gateway),
-					},
-				},
-			},
-		}
-
-		if tlsSpec := gateway.Spec.ApiEndpoint.TLSSpec(); tlsSpec != nil {
-			volumes = append(volumes, corev1.Volume{
-				Name: apiTlsVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: tlsSpec.Cert.SecretName,
-					},
-				},
-			})
-
-			volumeMounts = append(volumeMounts, corev1.VolumeMount{
-				Name:      dashboardTlsVolumeName,
-				ReadOnly:  true,
-				MountPath: "/etc/envoy/certs/api",
-				SubPath:   "certs/api",
-			})
-		}
-
-		if tlsSpec := gateway.Spec.DashboardEndpoint.TLSSpec(); tlsSpec != nil {
-			volumes = append(volumes, corev1.Volume{
-				Name: dashboardTlsVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: tlsSpec.Cert.SecretName,
-					},
-				},
-			})
-
-			volumeMounts = append(volumeMounts, corev1.VolumeMount{
-				Name:      dashboardTlsVolumeName,
-				ReadOnly:  true,
-				MountPath: "/etc/envoy/certs/dashboard",
-				SubPath:   "certs/dashboard",
-			})
-		}
 
 		envoyDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
@@ -632,11 +505,78 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 						},
 						SecurityContext: envoySpec.WorkloadTemplate.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
 						Resources:       envoySpec.WorkloadTemplate.Resources(),
-						VolumeMounts:    envoySpec.WorkloadTemplate.AdditionalVolumeMounts(volumeMounts...),
+						VolumeMounts: envoySpec.WorkloadTemplate.AdditionalVolumeMounts(corev1.VolumeMount{
+							Name:      configVolumeName,
+							ReadOnly:  true,
+							MountPath: "/etc/envoy",
+						}),
 					},
 				},
 				SecurityContext: envoySpec.WorkloadTemplate.PodSecurityContext(),
-				Volumes:         volumes,
+				Volumes: []corev1.Volume{
+					{
+						Name: configVolumeName,
+						VolumeSource: corev1.VolumeSource{
+							Projected: &corev1.ProjectedVolumeSource{
+								Sources: []corev1.VolumeProjection{
+									{
+										ConfigMap: &corev1.ConfigMapProjection{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: supabase.ServiceConfig.Envoy.ObjectName(gateway),
+											},
+											Items: []corev1.KeyToPath{
+												{
+													Key:  "config.yaml",
+													Path: "config.yaml",
+												},
+											},
+										},
+									},
+									{
+										Secret: &corev1.SecretProjection{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: gateway.Spec.ApiEndpoint.JWKSSelector.Name,
+											},
+											Items: []corev1.KeyToPath{{
+												Key:  gateway.Spec.ApiEndpoint.JWKSSelector.Key,
+												Path: "jwks.json",
+											}},
+										},
+									},
+									{
+										Secret: &corev1.SecretProjection{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: serviceCfg.ControlPlaneClientCertSecretName(gateway),
+											},
+											Items: []corev1.KeyToPath{
+												{
+													Key:  "ca.crt",
+													Path: "certs/cp/ca.crt",
+												},
+												{
+													Key:  "tls.crt",
+													Path: "certs/cp/tls.crt",
+												},
+												{
+													Key:  "tls.key",
+													Path: "certs/cp/tls.key",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: controlPlaneTlsVolumeName,
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: serviceCfg.ControlPlaneClientCertSecretName(gateway),
+							},
+						},
+					},
+				},
 			},
 		}
 

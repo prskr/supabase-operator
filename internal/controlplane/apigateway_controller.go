@@ -17,7 +17,6 @@ limitations under the License.
 package controlplane
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"strconv"
@@ -87,23 +86,19 @@ func (r *APIGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 	services.UpsertEndpointSlices(endpointSliceList.Items...)
 
-	instance := fmt.Sprintf("%s:%s", gateway.Spec.Envoy.NodeName, gateway.Namespace)
+	var (
+		instance        = fmt.Sprintf("%s:%s", gateway.Spec.Envoy.NodeName, gateway.Namespace)
+		snapshotVersion = strconv.FormatInt(time.Now().UTC().UnixMilli(), 10)
+	)
 
-	logger.Info("Computing Envoy snapshot for current service targets", "version", gateway.Status.Envoy.ConfigVersion)
-	snapshot, snapshotHash, err := services.snapshot(ctx, instance, gateway.Status.Envoy.ConfigVersion)
+	logger.Info("Computing Envoy snapshot for current service targets", "version", snapshotVersion)
+	snapshot, snapshotHash, err := services.snapshot(ctx, instance, snapshotVersion)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to prepare snapshot: %w", err)
 	}
 
-	if !r.initialReconciliation.CompareAndSwap(false, true) && bytes.Equal(gateway.Status.Envoy.ResourceHash, snapshotHash) {
-		logger.Info("No changes detected, skipping update")
-		return ctrl.Result{}, nil
-	}
-
-	logger.Info("Updating service targets")
-	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, &gateway, func() error {
+	opResult, err := controllerutil.CreateOrUpdate(ctx, r.Client, &gateway, func() error {
 		gateway.Status.ServiceTargets = services.Targets()
-		gateway.Status.Envoy.ConfigVersion = strconv.FormatInt(time.Now().UTC().UnixMilli(), 10)
 		gateway.Status.Envoy.ResourceHash = snapshotHash
 
 		return nil
@@ -112,10 +107,26 @@ func (r *APIGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	logger.Info("Propagating Envoy snapshot", "version", gateway.Status.Envoy.ConfigVersion)
+	if opResult == controllerutil.OperationResultNone {
+		logger.Info("No changes detected in APIGateway object")
+		return ctrl.Result{}, nil
+	}
+
+	logger.Info("Propagating Envoy snapshot", "version", snapshotVersion)
 	if err := r.Cache.SetSnapshot(ctx, instance, snapshot); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to propagate snapshot: %w", err)
 	}
+
+	if info := r.Cache.GetStatusInfo(instance); info != nil {
+		node := info.GetNode()
+		logger = logger.WithValues(
+			"node.id", node.Id,
+			"node.cluster", node.Cluster,
+			"node.num_watches", info.GetNumWatches(),
+		)
+	}
+
+	logger.Info("Envoy snapshot propagated successfully")
 
 	return ctrl.Result{}, nil
 }

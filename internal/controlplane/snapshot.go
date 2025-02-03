@@ -46,7 +46,6 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
@@ -130,8 +129,6 @@ func (s EnvoyServices) Targets() map[string][]string {
 }
 
 func (s *EnvoyServices) snapshot(ctx context.Context, instance, version string) (snapshot *cache.Snapshot, snapshotHash []byte, err error) {
-	logger := log.FromContext(ctx)
-
 	listeners := []*listenerv3.Listener{{
 		Name: apilistenerName,
 		Address: &corev3.Address{
@@ -160,14 +157,12 @@ func (s *EnvoyServices) snapshot(ctx context.Context, instance, version string) 
 	}}
 
 	if studioListener := s.studioListener(); studioListener != nil {
-		logger.Info("Adding studio listener")
 		listeners = append(listeners, studioListener)
 	}
 
 	routes := []types.Resource{s.apiRouteConfiguration(instance)}
 
 	if studioRouteCfg := s.studioRoute(instance); studioRouteCfg != nil {
-		logger.Info("Adding studio route")
 		routes = append(routes, studioRouteCfg)
 	}
 
@@ -184,7 +179,6 @@ func (s *EnvoyServices) snapshot(ctx context.Context, instance, version string) 
 		if oauth2TokenEndpointCluster, err := s.oauth2TokenEndpointCluster(); err != nil {
 			return nil, nil, err
 		} else {
-			logger.Info("Adding OAuth2 token endpoint cluster")
 			clusters = append(clusters, oauth2TokenEndpointCluster)
 		}
 	}

@@ -148,6 +148,12 @@ func RBACAllowAllConfig() *rbacv3.RBAC {
 }
 
 func RBACRequireAuthConfig() *rbacv3.RBAC {
+	/*
+		Identifier: &rbacv3cfg.Principal_SourcedMetadata{
+				SourcedMetadata: &rbacv3cfg.SourcedMetadata{
+					MetadataSource: rbacv3cfg.MetadataSource_DYNAMIC,
+					MetadataMatcher: &matcherv3.MetadataMatcher{
+	*/
 	return &rbacv3.RBAC{
 		Rules: &rbacv3cfg.RBAC{
 			Action: rbacv3cfg.RBAC_ALLOW,

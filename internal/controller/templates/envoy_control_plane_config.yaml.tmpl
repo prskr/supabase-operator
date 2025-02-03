@@ -17,7 +17,7 @@ static_resources:
   clusters:
     - name: {{ .ControlPlane.Name }}
       type: STRICT_DNS
-      connect_timeout: 1s
+      connect_timeout: 5s
       load_assignment:
         cluster_name: {{ .ControlPlane.Name }}
         endpoints:

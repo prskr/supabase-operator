@@ -171,8 +171,7 @@ type APIGatewaySpec struct {
 }
 
 type EnvoyStatus struct {
-	ConfigVersion string `json:"configVersion,omitempty"`
-	ResourceHash  []byte `json:"resourceHash,omitempty"`
+	ResourceHash []byte `json:"resourceHash,omitempty"`
 }
 
 // APIGatewayStatus defines the observed state of APIGateway.
@@ -185,7 +184,7 @@ type APIGatewayStatus struct {
 // +kubebuilder:subresource:status
 
 // APIGateway is the Schema for the apigateways API.
-// +kubebuilder:printcolumn:name="EnvoyConfigVersion",type=string,JSONPath=`.status.envoy.configVersion`
+// +kubebuilder:printcolumn:name="EnvoyConfigVersion",type=string,JSONPath=`.status.envoy.resourceHash`
 type APIGateway struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
