@@ -4,8 +4,11 @@ kind: Kustomization
 resources:
   - https://github.com/cert-manager/cert-manager/releases/download/v1.16.3/cert-manager.yaml
   - https://github.com/cloudnative-pg/cloudnative-pg/releases/download/v1.25.0/cnpg-1.25.0.yaml
+  - namespace.yaml
+  - cnpg-cluster.yaml
   - minio.yaml
   - ../default
+  - studio-credentials-secret.yaml
   - core.yaml
   - apigateway.yaml
   - dashboard.yaml

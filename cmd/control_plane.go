@@ -19,8 +19,10 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	clusterservice "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
@@ -32,30 +34,52 @@ import (
 	secretservice "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	cachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	"google.golang.org/grpc/credentials"
+
+	"github.com/go-logr/logr"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"google.golang.org/grpc"
 	grpchealth "google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	mgr "sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	"code.icb4dc0.de/prskr/supabase-operator/internal/certs"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/controlplane"
+	"code.icb4dc0.de/prskr/supabase-operator/internal/health"
 )
 
 //nolint:lll // flag declaration with struct tags is as long as it is
 type controlPlane struct {
-	ListenAddr           string `name:"listen-address" default:":18000" help:"The address the control plane binds to."`
+	caCert tls.Certificate `kong:"-"`
+
+	ListenAddr string `name:"listen-address" default:":18000" help:"The address the control plane binds to."`
+	Tls        struct {
+		CA struct {
+			Cert FileContent `env:"CERT" name:"server-cert" required:"" help:"The path to the server certificate file."`
+			Key  FileContent `env:"KEY" name:"server-key" required:"" help:"The path to the server key file."`
+		} `embed:"" prefix:"ca." envprefix:"CA_"`
+		ServerSecretName string `name:"server-secret-name" help:"The name of the secret containing the server certificate and key." default:"control-plane-xds-tls"`
+	} `embed:"" prefix:"tls." envprefix:"TLS_"`
 	MetricsAddr          string `name:"metrics-bind-address" default:"0" help:"The address the metrics endpoint binds to. Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service."`
 	EnableLeaderElection bool   `name:"leader-elect" default:"false" help:"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager."`
 	ProbeAddr            string `name:"health-probe-bind-address" default:":8081" help:"The address the probe endpoint binds to."`
 	SecureMetrics        bool   `name:"metrics-secure" default:"true" help:"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead."`
 	EnableHTTP2          bool   `name:"enable-http2" default:"false" help:"If set, HTTP/2 will be enabled for the metrics and webhook servers"`
+	ServiceName          string `name:"service-name" env:"CONTROL_PLANE_SERVICE_NAME" default:"" required:"" help:"The name of the control plane service."`
+	Namespace            string `name:"namespace" env:"CONTROL_PLANE_NAMESPACE" default:"" required:"" help:"Namespace where the controller is running, ideally set via downward API"`
 }
 
-func (cp controlPlane) Run(ctx context.Context) error {
+func (cp *controlPlane) Run(ctx context.Context) error {
 	var tlsOpts []func(*tls.Config)
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
@@ -91,6 +115,11 @@ func (cp controlPlane) Run(ctx context.Context) error {
 		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 	}
 
+	bootstrapClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
+	if err != nil {
+		return fmt.Errorf("unable to create bootstrap client: %w", err)
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                        scheme,
 		Metrics:                       metricsServerOptions,
@@ -106,7 +135,12 @@ func (cp controlPlane) Run(ctx context.Context) error {
 
 	envoySnapshotCache := cachev3.NewSnapshotCache(false, cachev3.IDHash{}, nil)
 
-	envoySrv, err := cp.envoyServer(ctx, envoySnapshotCache)
+	serverCert, err := cp.ensureControlPlaneTlsCert(ctx, bootstrapClient)
+	if err != nil {
+		return fmt.Errorf("failed to ensure control plane TLS cert: %w", err)
+	}
+
+	envoySrv, err := cp.envoyServer(ctx, envoySnapshotCache, serverCert)
 	if err != nil {
 		return err
 	}
@@ -123,6 +157,18 @@ func (cp controlPlane) Run(ctx context.Context) error {
 		return fmt.Errorf("unable to create controller Core DB: %w", err)
 	}
 
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		return fmt.Errorf("unable to set up health check: %w", err)
+	}
+
+	if err := mgr.AddHealthzCheck("server-cert", health.CertValidCheck(serverCert)); err != nil {
+		return fmt.Errorf("unable to set up health check: %w", err)
+	}
+
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		return fmt.Errorf("unable to set up ready check: %w", err)
+	}
+
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctx); err != nil {
 		return fmt.Errorf("problem running manager: %w", err)
@@ -131,9 +177,19 @@ func (cp controlPlane) Run(ctx context.Context) error {
 	return nil
 }
 
-func (cp controlPlane) envoyServer(
+func (cp *controlPlane) AfterApply() (err error) {
+	cp.caCert, err = tls.X509KeyPair(cp.Tls.CA.Cert, cp.Tls.CA.Key)
+	if err != nil {
+		return fmt.Errorf("failed to parse server certificate: %w", err)
+	}
+
+	return nil
+}
+
+func (cp *controlPlane) envoyServer(
 	ctx context.Context,
 	cache cachev3.SnapshotCache,
+	serverCert tls.Certificate,
 ) (runnable mgr.Runnable, err error) {
 	const (
 		grpcKeepaliveTime        = 30 * time.Second
@@ -153,7 +209,17 @@ func (cp controlPlane) envoyServer(
 	// availability problems. Keepalive timeouts based on connection_keepalive parameter
 	// https://www.envoyproxy.io/docs/envoy/latest/configuration/overview/examples#dynamic
 
+	tlsCfg, err := cp.tlsConfig(serverCert)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create TLS config: %w", err)
+	}
+
+	loggingOpts := []logging.Option{
+		logging.WithLogOnEvents(logging.StartCall, logging.FinishCall),
+	}
+
 	grpcOptions := append(make([]grpc.ServerOption, 0, 4),
+		grpc.Creds(credentials.NewTLS(tlsCfg)),
 		grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time:    grpcKeepaliveTime,
@@ -163,6 +229,12 @@ func (cp controlPlane) envoyServer(
 			MinTime:             grpcKeepaliveMinTime,
 			PermitWithoutStream: true,
 		}),
+		grpc.ChainUnaryInterceptor(
+			logging.UnaryServerInterceptor(InterceptorLogger(ctrl.Log), loggingOpts...),
+		),
+		grpc.ChainStreamInterceptor(
+			logging.StreamServerInterceptor(InterceptorLogger(ctrl.Log), loggingOpts...),
+		),
 	)
 	grpcServer := grpc.NewServer(grpcOptions...)
 
@@ -194,4 +266,91 @@ func (cp controlPlane) envoyServer(
 		}(ctx)
 		return grpcServer.Serve(lis)
 	}), nil
+}
+
+func (cp *controlPlane) ensureControlPlaneTlsCert(ctx context.Context, k8sClient client.Client) (tls.Certificate, error) {
+	var (
+		controlPlaneServerCert = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cp.Tls.ServerSecretName,
+				Namespace: cp.Namespace,
+			},
+		}
+		serverCert tls.Certificate
+	)
+
+	_, err := controllerutil.CreateOrUpdate(ctx, k8sClient, controlPlaneServerCert, func() (err error) {
+		controlPlaneServerCert.Type = corev1.SecretTypeTLS
+
+		if controlPlaneServerCert.Data == nil {
+			controlPlaneServerCert.Data = make(map[string][]byte, 3)
+		}
+
+		var (
+			cert       = controlPlaneServerCert.Data[corev1.TLSCertKey]
+			privateKey = controlPlaneServerCert.Data[corev1.TLSPrivateKeyKey]
+		)
+
+		var requireRenewal bool
+		if cert != nil && privateKey != nil {
+			if serverCert, err = tls.X509KeyPair(cert, privateKey); err != nil {
+				return fmt.Errorf("failed to parse server certificate: %w", err)
+			}
+
+			renewGracePeriod := time.Duration(float64(serverCert.Leaf.NotAfter.Sub(serverCert.Leaf.NotBefore)) * 0.1)
+			if serverCert.Leaf.NotAfter.Before(time.Now().Add(-renewGracePeriod)) {
+				requireRenewal = true
+			}
+		} else {
+			requireRenewal = true
+		}
+
+		if requireRenewal {
+			dnsNames := []string{
+				strings.Join([]string{cp.ServiceName, cp.Namespace, "svc"}, "."),
+				strings.Join([]string{cp.ServiceName, cp.Namespace, "svc", "cluster", "local"}, "."),
+			}
+			if certResult, err := certs.ServerCert("supabase-control-plane", dnsNames, cp.caCert); err != nil {
+				return fmt.Errorf("failed to generate server certificate: %w", err)
+			} else {
+				serverCert = certResult.ServerCert
+				controlPlaneServerCert.Data[corev1.TLSCertKey] = certResult.PublicKey
+				controlPlaneServerCert.Data[corev1.TLSPrivateKeyKey] = certResult.PrivateKey
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return tls.Certificate{}, fmt.Errorf("failed to create or update control plane server certificate: %w", err)
+	}
+
+	return serverCert, nil
+}
+
+func (cp *controlPlane) tlsConfig(serverCert tls.Certificate) (*tls.Config, error) {
+	tlsCfg := &tls.Config{
+		RootCAs:    x509.NewCertPool(),
+		ClientCAs:  x509.NewCertPool(),
+		ClientAuth: tls.RequireAndVerifyClientCert,
+	}
+
+	tlsCfg.Certificates = append(tlsCfg.Certificates, serverCert)
+	if !tlsCfg.RootCAs.AppendCertsFromPEM(cp.Tls.CA.Cert) {
+		return nil, fmt.Errorf("failed to parse CA certificate")
+	}
+
+	if !tlsCfg.ClientCAs.AppendCertsFromPEM(cp.Tls.CA.Cert) {
+		return nil, fmt.Errorf("failed to parse client CA certificate")
+	}
+
+	return tlsCfg, nil
+}
+
+// InterceptorLogger adapts slog logger to interceptor logger.
+// This code is simple enough to be copied and not imported.
+func InterceptorLogger(l logr.Logger) logging.Logger {
+	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
+		l.Info(msg, fields...)
+	})
 }

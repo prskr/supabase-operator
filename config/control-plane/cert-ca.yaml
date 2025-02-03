@@ -1,0 +1,33 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/name: supabase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: cp-selfsigned-issuer
+  namespace: system
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/instance: serving-cert
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: supabase-operator
+    app.kubernetes.io/part-of: supabase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: cp-ca-cert
+  namespace: supabase-system
+spec:
+  commonName: control-plane-ca
+  privateKey:
+    algorithm: ECDSA
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: control-plane-ca-cert-tls
+  isCA: true

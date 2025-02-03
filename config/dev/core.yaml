@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: supabase-demo-credentials
+  namespace: supabase-demo
 stringData:
   url: postgresql://supabase_admin:1n1t-R00t!@cluster-example-rw.supabase-demo:5432/app
 ---
@@ -12,6 +13,7 @@ metadata:
     app.kubernetes.io/name: supabase-operator
     app.kubernetes.io/managed-by: kustomize
   name: core-sample
+  namespace: supabase-demo
 spec:
   # public URL of the Supabase instance (API)
   # normally the Ingress/HTTPRoute endpoint

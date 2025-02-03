@@ -4,7 +4,6 @@ namespace: supabase-demo
 
 resources:
   - namespace.yaml
-  - cnpg-cluster.yaml
   - supabase_v1alpha1_core.yaml
   - supabase_v1alpha1_apigateway.yaml
   - supabase_v1alpha1_dashboard.yaml

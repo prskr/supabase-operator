@@ -36,7 +36,8 @@ type studioDefaults struct {
 
 func studioServiceConfig() serviceConfig[studioEnvKeys, studioDefaults] {
 	return serviceConfig[studioEnvKeys, studioDefaults]{
-		Name: "studio",
+		Name:              "studio",
+		LivenessProbePath: "/api/profile",
 		EnvKeys: studioEnvKeys{
 			PGMetaURL:      "STUDIO_PG_META_URL",
 			DBPassword:     "POSTGRES_PASSWORD",

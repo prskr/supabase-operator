@@ -46,14 +46,111 @@ type EnvoySpec struct {
 	ControlPlane *ControlPlaneSpec `json:"controlPlane"`
 	// WorkloadTemplate - customize the Envoy deployment
 	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+	// DisableIPv6 - disable IPv6 for the Envoy instance
+	// this will force Envoy to use IPv4 for upstream hosts (mostly for the OAuth2 token endpoint)
+	DisableIPv6 bool `json:"disableIPv6,omitempty"`
+}
+
+type TlsCertRef struct {
+	SecretName string `json:"secretName"`
+	// ServerCertKey - key in the secret that contains the server certificate
+	// +kubebuilder:default="tls.crt"
+	ServerCertKey string `json:"serverCertKey"`
+	// ServerKeyKey - key in the secret that contains the server private key
+	// +kubebuilder:default="tls.key"
+	ServerKeyKey string `json:"serverKeyKey"`
+	// CaCertKey - key in the secret that contains the CA certificate
+	// +kubebuilder:default="ca.crt"
+	CaCertKey string `json:"caCertKey,omitempty"`
+}
+
+type EndpointTlsSpec struct {
+	Cert *TlsCertRef `json:"cert"`
 }
 
 type ApiEndpointSpec struct {
 	// JWKSSelector - selector where the JWKS can be retrieved from to enable the API gateway to validate JWTs
 	JWKSSelector *corev1.SecretKeySelector `json:"jwks"`
+	// TLS - enable and configure TLS for the API endpoint
+	TLS *EndpointTlsSpec `json:"tls,omitempty"`
 }
 
-type DashboardEndpointSpec struct{}
+func (s *ApiEndpointSpec) TLSSpec() *EndpointTlsSpec {
+	if s == nil {
+		return nil
+	}
+
+	return s.TLS
+}
+
+type DashboardAuthType string
+
+const (
+	DashboardAuthTypeNone   DashboardAuthType = "none"
+	DashboardAuthTypeOAuth2 DashboardAuthType = "oauth2"
+	DashboardAuthTypeBasic  DashboardAuthType = "basic"
+)
+
+type DashboardOAuth2Spec struct {
+	// TokenEndpoint - endpoint where Envoy will retrieve the OAuth2 access and identity token from
+	TokenEndpoint string `json:"tokenEndpoint"`
+	// AuthorizationEndpoint - endpoint where the user will be redirected to authenticate
+	AuthorizationEndpoint string `json:"authorizationEndpoint"`
+	// ClientID - client ID to authenticate with the OAuth2 provider
+	ClientID string `json:"clientId"`
+	// Scopes - scopes to request from the OAuth2 provider (e.g. "openid", "profile", ...) - optional
+	Scopes []string `json:"scopes,omitempty"`
+	// Resources - resources to request from the OAuth2 provider (e.g. "user", "email", ...) - optional
+	Resources []string `json:"resources,omitempty"`
+	// ClientSecretRef - reference to the secret that contains the client secret
+	ClientSecretRef *corev1.SecretKeySelector `json:"clientSecretRef"`
+}
+
+type DashboardBasicAuthSpec struct{}
+
+type DashboardAuthSpec struct {
+	OAuth2 *DashboardOAuth2Spec    `json:"oauth2,omitempty"`
+	Basic  *DashboardBasicAuthSpec `json:"basic,omitempty"`
+}
+
+type DashboardEndpointSpec struct {
+	// Auth - configure authentication for the dashboard endpoint
+	Auth *DashboardAuthSpec `json:"auth,omitempty"`
+	// TLS - enable and configure TLS for the Dashboard endpoint
+	TLS *EndpointTlsSpec `json:"tls,omitempty"`
+}
+
+func (s *DashboardEndpointSpec) TLSSpec() *EndpointTlsSpec {
+	if s == nil {
+		return nil
+	}
+
+	return s.TLS
+}
+
+func (s *DashboardEndpointSpec) AuthType() DashboardAuthType {
+	if s == nil || s.Auth == nil {
+		return DashboardAuthTypeNone
+	}
+
+	if s.Auth.OAuth2 != nil {
+		return DashboardAuthTypeOAuth2
+	}
+
+	if s.Auth.Basic != nil {
+		return DashboardAuthTypeBasic
+	}
+
+	return DashboardAuthTypeNone
+}
+
+func (s *DashboardEndpointSpec) OAuth2() *DashboardOAuth2Spec {
+	if s == nil || s.Auth == nil {
+		return nil
+	}
+
+	return s.Auth.OAuth2
+}
 
 // APIGatewaySpec defines the desired state of APIGateway.
 type APIGatewaySpec struct {

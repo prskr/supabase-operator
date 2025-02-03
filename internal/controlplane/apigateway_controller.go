@@ -19,14 +19,14 @@ package controlplane
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	cachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,6 +46,7 @@ import (
 
 // APIGatewayReconciler reconciles a APIGateway object
 type APIGatewayReconciler struct {
+	initialReconciliation atomic.Bool
 	client.Client
 	Scheme *runtime.Scheme
 	Cache  cachev3.SnapshotCache
@@ -63,7 +64,7 @@ func (r *APIGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		endpointSliceList discoveryv1.EndpointSliceList
 	)
 
-	logger.Info("Reconciling APIGateway")
+	logger.Info("Reconciling Envoy control-plane config")
 
 	if err := r.Get(ctx, req.NamespacedName, &gateway); client.IgnoreNotFound(err) != nil {
 		logger.Error(err, "unable to fetch Gateway")
@@ -79,38 +80,36 @@ func (r *APIGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	services := EnvoyServices{ServiceLabelKey: gateway.Spec.ComponentTypeLabel}
+	services := EnvoyServices{
+		ServiceLabelKey: gateway.Spec.ComponentTypeLabel,
+		Gateway:         &gateway,
+		Client:          r.Client,
+	}
 	services.UpsertEndpointSlices(endpointSliceList.Items...)
 
-	rawServices, err := json.Marshal(services)
+	instance := fmt.Sprintf("%s:%s", gateway.Spec.Envoy.NodeName, gateway.Namespace)
+
+	logger.Info("Computing Envoy snapshot for current service targets", "version", gateway.Status.Envoy.ConfigVersion)
+	snapshot, snapshotHash, err := services.snapshot(ctx, instance, gateway.Status.Envoy.ConfigVersion)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to prepare config hash: %w", err)
+		return ctrl.Result{}, fmt.Errorf("failed to prepare snapshot: %w", err)
 	}
 
-	serviceHash := fnv.New64a().Sum(rawServices)
-	if bytes.Equal(serviceHash, gateway.Status.Envoy.ResourceHash) {
-		logger.Info("Resource hash did not change - skipping reconciliation")
+	if !r.initialReconciliation.CompareAndSwap(false, true) && bytes.Equal(gateway.Status.Envoy.ResourceHash, snapshotHash) {
+		logger.Info("No changes detected, skipping update")
 		return ctrl.Result{}, nil
 	}
 
 	logger.Info("Updating service targets")
-	_, err = controllerutil.CreateOrPatch(ctx, r.Client, &gateway, func() error {
+	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, &gateway, func() error {
 		gateway.Status.ServiceTargets = services.Targets()
 		gateway.Status.Envoy.ConfigVersion = strconv.FormatInt(time.Now().UTC().UnixMilli(), 10)
-		gateway.Status.Envoy.ResourceHash = serviceHash
+		gateway.Status.Envoy.ResourceHash = snapshotHash
 
 		return nil
 	})
 	if err != nil {
 		return ctrl.Result{}, err
-	}
-
-	instance := fmt.Sprintf("%s:%s", gateway.Spec.Envoy.NodeName, gateway.Namespace)
-
-	logger.Info("Computing Envoy snapshot for current service targets", "version", gateway.Status.Envoy.ConfigVersion)
-	snapshot, err := services.snapshot(ctx, instance, gateway.Status.Envoy.ConfigVersion)
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to prepare snapshot: %w", err)
 	}
 
 	logger.Info("Propagating Envoy snapshot", "version", gateway.Status.Envoy.ConfigVersion)
@@ -133,7 +132,8 @@ func (r *APIGatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(new(supabasev1alpha1.APIGateway)).
+		For(new(supabasev1alpha1.APIGateway), builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(new(corev1.Secret), builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Watches(
 			new(discoveryv1.EndpointSlice),
 			r.endpointSliceEventHandler(),
@@ -156,6 +156,7 @@ func (r *APIGatewayReconciler) endpointSliceEventHandler() handler.TypedEventHan
 			return nil
 		}
 
+		logger.Info("Triggering APIGateway reconciliation", "obj_name", obj.GetName(), "obj_namespace", obj.GetNamespace())
 		if err := r.Client.List(ctx, &apiGatewayList, client.InNamespace(endpointSlice.Namespace)); err != nil {
 			logger.Error(err, "failed to list APIGateways to determine reconcile targets")
 			return nil

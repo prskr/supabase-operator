@@ -6,6 +6,7 @@ metadata:
     app.kubernetes.io/name: supabase-operator
     app.kubernetes.io/managed-by: kustomize
   name: dashboard-sample
+  namespace: supabase-demo
 spec:
   db:
     host: cluster-example-rw.supabase-demo.svc

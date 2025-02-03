@@ -53,7 +53,8 @@ type storageApiDefaults struct {
 
 func storageServiceConfig() serviceConfig[storageEnvApiKeys, storageApiDefaults] {
 	return serviceConfig[storageEnvApiKeys, storageApiDefaults]{
-		Name: "storage-api",
+		Name:              "storage-api",
+		LivenessProbePath: "/status",
 		EnvKeys: storageEnvApiKeys{
 			AnonKey:                        "ANON_KEY",
 			ServiceKey:                     "SERVICE_KEY",

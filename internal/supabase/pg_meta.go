@@ -34,7 +34,8 @@ type pgMetaDefaults struct {
 
 func pgMetaServiceConfig() serviceConfig[pgMetaEnvKeys, pgMetaDefaults] {
 	return serviceConfig[pgMetaEnvKeys, pgMetaDefaults]{
-		Name: "pg-meta",
+		Name:              "pg-meta",
+		LivenessProbePath: "/health",
 		EnvKeys: pgMetaEnvKeys{
 			APIPort:    "PG_META_PORT",
 			DBHost:     "PG_META_DB_HOST",

@@ -15,13 +15,9 @@ dynamic_resources:
 
 static_resources:
   clusters:
-    - type: STRICT_DNS
-      typed_extension_protocol_options:
-        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
-          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
-          explicit_http_config:
-            http2_protocol_options: {}
-      name: {{ .ControlPlane.Name }}
+    - name: {{ .ControlPlane.Name }}
+      type: STRICT_DNS
+      connect_timeout: 1s
       load_assignment:
         cluster_name: {{ .ControlPlane.Name }}
         endpoints:
@@ -31,9 +27,38 @@ static_resources:
                     socket_address:
                       address: {{ .ControlPlane.Host }}
                       port_value: {{ .ControlPlane.Port }}
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
+      transport_socket:
+        name: "envoy.transport_sockets.tls"
+        typed_config:
+          "@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext"
+          sni: {{ .ControlPlane.Host }}
+          common_tls_context:
+            tls_certificates:
+              - certificate_chain:
+                  filename: /etc/envoy/certs/cp/tls.crt
+                private_key:
+                  filename: /etc/envoy/certs/cp/tls.key
+            validation_context:
+              trusted_ca:
+                filename: /etc/envoy/certs/cp/ca.crt
+
 
 admin:
   address:
     socket_address:
       address: 0.0.0.0
       port_value: 19000
+
+application_log_config:
+  log_format:
+    json_format:
+      type: "app"
+      name: "%n"
+      timestamp: "%Y-%m-%dT%T.%F"
+      level: "%l"
+      message: "%j"

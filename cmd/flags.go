@@ -14,14 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controlplane
+package main
 
-const (
-	FilterNameJwtAuthn              = "envoy.filters.http.jwt_authn"
-	FilterNameRBAC                  = "envoy.filters.http.rbac"
-	FilterNameCORS                  = "envoy.filters.http.cors"
-	FilterNameHttpRouter            = "envoy.filters.http.router"
-	FilterNameHttpConnectionManager = "envoy.filters.network.http_connection_manager"
-	FilterNameBasicAuth             = "envoy.filters.http.basic_auth"
-	FilterNameOAuth2                = "envoy.filters.http.oauth2"
+import (
+	"fmt"
+	"os"
+
+	"github.com/alecthomas/kong"
 )
+
+var _ kong.MapperValue = (*FileContent)(nil)
+
+type FileContent []byte
+
+func (f *FileContent) Decode(ctx *kong.DecodeContext) (err error) {
+	var filePath string
+	if err := ctx.Scan.PopValueInto("file-content", &filePath); err != nil {
+		return err
+	}
+
+	if *f, err = os.ReadFile(filePath); err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	return nil
+}

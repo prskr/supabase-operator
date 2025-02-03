@@ -17,9 +17,7 @@ limitations under the License.
 package controlplane
 
 import (
-	"encoding/json"
 	"fmt"
-	"slices"
 	"strings"
 	"time"
 
@@ -30,25 +28,8 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 )
 
-var _ json.Marshaler = (*ServiceCluster)(nil)
-
 type ServiceCluster struct {
 	ServiceEndpoints map[string]Endpoints
-}
-
-// MarshalJSON implements json.Marshaler.
-func (c *ServiceCluster) MarshalJSON() ([]byte, error) {
-	tmp := struct {
-		Endpoints []string `json:"endpoints"`
-	}{}
-
-	for _, endpoints := range c.ServiceEndpoints {
-		tmp.Endpoints = append(tmp.Endpoints, endpoints.Targets...)
-	}
-
-	slices.Sort(tmp.Endpoints)
-
-	return json.Marshal(tmp)
 }
 
 func (c *ServiceCluster) AddOrUpdateEndpoints(eps discoveryv1.EndpointSlice) {

@@ -195,7 +195,7 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 							SuccessThreshold:    2,
 							ProbeHandler: corev1.ProbeHandler{
 								HTTPGet: &corev1.HTTPGetAction{
-									Path: "/ready",
+									Path: serviceCfg.LivenessProbePath,
 									Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.AdminPort},
 								},
 							},

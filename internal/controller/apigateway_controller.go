@@ -19,10 +19,13 @@ package controller
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/tls"
 	"embed"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"text/template"
 	"time"
 
@@ -41,6 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
+	"code.icb4dc0.de/prskr/supabase-operator/internal/certs"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/meta"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
 )
@@ -64,6 +68,7 @@ func init() {
 type APIGatewayReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	CACert tls.Certificate
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -83,6 +88,14 @@ func (r *APIGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	if err := r.Get(ctx, req.NamespacedName, &gateway); client.IgnoreNotFound(err) != nil {
 		logger.Error(err, "unable to fetch Gateway")
 		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcileHmacSecret(ctx, &gateway); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to ensure HMAC token secret: %w", err)
+	}
+
+	if err := r.reconcileClientCertSecret(ctx, &gateway); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to ensure client certificate: %w", err)
 	}
 
 	if jwksHash, err = r.reconcileJwksSecret(ctx, &gateway); err != nil {
@@ -105,7 +118,8 @@ func (r *APIGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{}, nil
+	// requeue after 15 minutes to watch for expiring certificates
+	return ctrl.Result{RequeueAfter: 15 * time.Minute}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -144,6 +158,8 @@ func (r *APIGatewayReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&supabasev1alpha1.APIGateway{}).
 		Named("apigateway").
+		// watch for the HMAC & client cert secrets
+		Owns(new(corev1.Secret)).
 		Owns(new(corev1.ConfigMap)).
 		Owns(new(appsv1.Deployment)).
 		Owns(new(corev1.Service)).
@@ -219,6 +235,115 @@ func (r *APIGatewayReconciler) reconcileJwksSecret(
 	return hex.EncodeToString(HashBytes(jwksRaw)), nil
 }
 
+func (r *APIGatewayReconciler) reconcileHmacSecret(
+	ctx context.Context,
+	gateway *supabasev1alpha1.APIGateway,
+) error {
+	const hmacSecretLength = 32
+
+	serviceCfg := supabase.ServiceConfig.Envoy
+
+	hmacSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      serviceCfg.HmacSecretName(gateway),
+			Namespace: gateway.Namespace,
+		},
+	}
+
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, hmacSecret, func() error {
+		if hmacSecret.Data == nil {
+			hmacSecret.Data = make(map[string][]byte)
+		}
+
+		if _, ok := hmacSecret.Data[serviceCfg.Defaults.HmacSecretKey]; !ok {
+			secret := make([]byte, hmacSecretLength)
+			if n, err := rand.Read(secret); err != nil {
+				return fmt.Errorf("failed to generate HMAC token secret: %w", err)
+			} else if n != hmacSecretLength {
+				return fmt.Errorf("failed to generate HMAC token secret: not enough bytes generated")
+			}
+
+			hmacSecret.Data[serviceCfg.Defaults.HmacSecretKey] = secret
+		}
+
+		if err := controllerutil.SetControllerReference(gateway, hmacSecret, r.Scheme); err != nil {
+			return fmt.Errorf("failed to set controller reference: %w", err)
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func (r *APIGatewayReconciler) reconcileClientCertSecret(
+	ctx context.Context,
+	gateway *supabasev1alpha1.APIGateway,
+) error {
+	var (
+		logger           = log.FromContext(ctx)
+		clientCertSecret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      supabase.ServiceConfig.Envoy.ControlPlaneClientCertSecretName(gateway),
+				Namespace: gateway.Namespace,
+			},
+		}
+	)
+
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, clientCertSecret, func() (err error) {
+		clientCertSecret.Type = corev1.SecretTypeTLS
+		if clientCertSecret.Data == nil {
+			clientCertSecret.Data = make(map[string][]byte, 3)
+		}
+
+		caCertBytes := certs.EncodePublicKeyToPEM(r.CACert.Certificate[0])
+		clientCertSecret.Data["ca.crt"] = caCertBytes
+
+		var (
+			cert       = clientCertSecret.Data[corev1.TLSCertKey]
+			privateKey = clientCertSecret.Data[corev1.TLSPrivateKeyKey]
+			clientCert tls.Certificate
+		)
+
+		var requireRenewal bool
+		if cert != nil && privateKey != nil {
+			if clientCert, err = tls.X509KeyPair(cert, privateKey); err != nil {
+				return fmt.Errorf("failed to parse server certificate: %w", err)
+			}
+
+			renewGracePeriod := time.Duration(float64(clientCert.Leaf.NotAfter.Sub(clientCert.Leaf.NotBefore)) * 0.1)
+			if clientCert.Leaf.NotAfter.Before(time.Now().Add(-renewGracePeriod)) {
+				logger.Info("Envoy control-plane client certificate requires renewal",
+					"not_after", clientCert.Leaf.NotAfter,
+					"renew_grace_period", renewGracePeriod,
+				)
+				requireRenewal = true
+			}
+		} else {
+			logger.Info("Client cert is not set creating a new one")
+			requireRenewal = true
+		}
+
+		if requireRenewal {
+			if certResult, err := certs.ClientCert(strings.Join([]string{gateway.Name, gateway.Namespace}, ":"), r.CACert); err != nil {
+				return fmt.Errorf("failed to generate server certificate: %w", err)
+			} else {
+				clientCert = certResult.ServerCert
+				clientCertSecret.Data[corev1.TLSCertKey] = certResult.PublicKey
+				clientCertSecret.Data[corev1.TLSPrivateKeyKey] = certResult.PrivateKey
+			}
+		}
+
+		if err := controllerutil.SetControllerReference(gateway, clientCertSecret, r.Scheme); err != nil {
+			return fmt.Errorf("failed to set controller reference: %w", err)
+		}
+
+		return nil
+	})
+
+	return err
+}
+
 func (r *APIGatewayReconciler) reconcileEnvoyConfig(
 	ctx context.Context,
 	gateway *supabasev1alpha1.APIGateway,
@@ -291,6 +416,12 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 	gateway *supabasev1alpha1.APIGateway,
 	configHash, jwksHash string,
 ) error {
+	const (
+		configVolumeName          = "config"
+		controlPlaneTlsVolumeName = "cp-tls"
+		dashboardTlsVolumeName    = "dashboard-tls"
+		apiTlsVolumeName          = "api-tls"
+	)
 	envoyDeployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      supabase.ServiceConfig.Envoy.ObjectName(gateway),
@@ -317,6 +448,131 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 
 		envoyDeployment.Spec.Replicas = envoySpec.WorkloadTemplate.ReplicaCount()
 
+		configVolumeProjectionSources := []corev1.VolumeProjection{
+			{
+				ConfigMap: &corev1.ConfigMapProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: supabase.ServiceConfig.Envoy.ObjectName(gateway),
+					},
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "config.yaml",
+							Path: "config.yaml",
+						},
+					},
+				},
+			},
+			{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: gateway.Spec.ApiEndpoint.JWKSSelector.Name,
+					},
+					Items: []corev1.KeyToPath{{
+						Key:  gateway.Spec.ApiEndpoint.JWKSSelector.Key,
+						Path: "jwks.json",
+					}},
+				},
+			},
+			{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: serviceCfg.ControlPlaneClientCertSecretName(gateway),
+					},
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "ca.crt",
+							Path: "certs/cp/ca.crt",
+						},
+						{
+							Key:  "tls.crt",
+							Path: "certs/cp/tls.crt",
+						},
+						{
+							Key:  "tls.key",
+							Path: "certs/cp/tls.key",
+						},
+					},
+				},
+			},
+		}
+
+		if oauth2Spec := gateway.Spec.DashboardEndpoint.OAuth2(); oauth2Spec != nil {
+			configVolumeProjectionSources = append(configVolumeProjectionSources, corev1.VolumeProjection{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: oauth2Spec.ClientSecretRef.Name,
+					},
+					Items: []corev1.KeyToPath{{
+						Key:  oauth2Spec.ClientSecretRef.Key,
+						Path: serviceCfg.Defaults.OAuth2ClientSecretKey,
+					}},
+				},
+			})
+		}
+
+		volumeMounts := []corev1.VolumeMount{
+			{
+				Name:      configVolumeName,
+				ReadOnly:  true,
+				MountPath: "/etc/envoy",
+			},
+		}
+
+		volumes := []corev1.Volume{
+			{
+				Name: configVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: configVolumeProjectionSources,
+					},
+				},
+			},
+			{
+				Name: controlPlaneTlsVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: serviceCfg.ControlPlaneClientCertSecretName(gateway),
+					},
+				},
+			},
+		}
+
+		if tlsSpec := gateway.Spec.ApiEndpoint.TLSSpec(); tlsSpec != nil {
+			volumes = append(volumes, corev1.Volume{
+				Name: apiTlsVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: tlsSpec.Cert.SecretName,
+					},
+				},
+			})
+
+			volumeMounts = append(volumeMounts, corev1.VolumeMount{
+				Name:      dashboardTlsVolumeName,
+				ReadOnly:  true,
+				MountPath: "/etc/envoy/certs/api",
+				SubPath:   "certs/api",
+			})
+		}
+
+		if tlsSpec := gateway.Spec.DashboardEndpoint.TLSSpec(); tlsSpec != nil {
+			volumes = append(volumes, corev1.Volume{
+				Name: dashboardTlsVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: tlsSpec.Cert.SecretName,
+					},
+				},
+			})
+
+			volumeMounts = append(volumeMounts, corev1.VolumeMount{
+				Name:      dashboardTlsVolumeName,
+				ReadOnly:  true,
+				MountPath: "/etc/envoy/certs/dashboard",
+				SubPath:   "certs/dashboard",
+			})
+		}
+
 		envoyDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
@@ -333,16 +589,21 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 						Name:            "envoy-proxy",
 						Image:           envoySpec.WorkloadTemplate.Image(supabase.Images.Envoy.String()),
 						ImagePullPolicy: envoySpec.WorkloadTemplate.ImagePullPolicy(),
-						Args:            []string{"-c /etc/envoy/config.yaml"},
+						Args:            []string{"-c /etc/envoy/config.yaml"}, // , "--component-log-level", "upstream:debug,connection:debug"
 						Ports: []corev1.ContainerPort{
 							{
-								Name:          "http",
-								ContainerPort: 8000,
+								Name:          serviceCfg.Defaults.StudioPortName,
+								ContainerPort: serviceCfg.Defaults.StudioPort,
+								Protocol:      corev1.ProtocolTCP,
+							},
+							{
+								Name:          serviceCfg.Defaults.ApiPortName,
+								ContainerPort: serviceCfg.Defaults.ApiPort,
 								Protocol:      corev1.ProtocolTCP,
 							},
 							{
 								Name:          "admin",
-								ContainerPort: 19000,
+								ContainerPort: serviceCfg.Defaults.AdminPort,
 								Protocol:      corev1.ProtocolTCP,
 							},
 						},
@@ -371,49 +632,11 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 						},
 						SecurityContext: envoySpec.WorkloadTemplate.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
 						Resources:       envoySpec.WorkloadTemplate.Resources(),
-						VolumeMounts: envoySpec.WorkloadTemplate.AdditionalVolumeMounts(
-							corev1.VolumeMount{
-								Name:      "config",
-								ReadOnly:  true,
-								MountPath: "/etc/envoy",
-							},
-						),
+						VolumeMounts:    envoySpec.WorkloadTemplate.AdditionalVolumeMounts(volumeMounts...),
 					},
 				},
 				SecurityContext: envoySpec.WorkloadTemplate.PodSecurityContext(),
-				Volumes: []corev1.Volume{
-					{
-						Name: "config",
-						VolumeSource: corev1.VolumeSource{
-							Projected: &corev1.ProjectedVolumeSource{
-								Sources: []corev1.VolumeProjection{
-									{
-										ConfigMap: &corev1.ConfigMapProjection{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: supabase.ServiceConfig.Envoy.ObjectName(gateway),
-											},
-											Items: []corev1.KeyToPath{{
-												Key:  "config.yaml",
-												Path: "config.yaml",
-											}},
-										},
-									},
-									{
-										Secret: &corev1.SecretProjection{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: gateway.Spec.ApiEndpoint.JWKSSelector.Name,
-											},
-											Items: []corev1.KeyToPath{{
-												Key:  gateway.Spec.ApiEndpoint.JWKSSelector.Key,
-												Path: "jwks.json",
-											}},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
+				Volumes:         volumes,
 			},
 		}
 
@@ -431,12 +654,15 @@ func (r *APIGatewayReconciler) reconcileEnvoyService(
 	ctx context.Context,
 	gateway *supabasev1alpha1.APIGateway,
 ) error {
-	envoyService := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      supabase.ServiceConfig.Envoy.ObjectName(gateway),
-			Namespace: gateway.Namespace,
-		},
-	}
+	var (
+		serviceCfg   = supabase.ServiceConfig.Envoy
+		envoyService = &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      supabase.ServiceConfig.Envoy.ObjectName(gateway),
+				Namespace: gateway.Namespace,
+			},
+		}
+	)
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, envoyService, func() error {
 		envoyService.Labels = MergeLabels(objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Envoy.Tag), gateway.Labels)
@@ -445,11 +671,18 @@ func (r *APIGatewayReconciler) reconcileEnvoyService(
 			Selector: selectorLabels(gateway, "envoy"),
 			Ports: []corev1.ServicePort{
 				{
-					Name:        "rest",
+					Name:        serviceCfg.Defaults.StudioPortName,
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: ptrOf("http"),
-					Port:        8000,
-					TargetPort:  intstr.IntOrString{IntVal: 8000},
+					Port:        serviceCfg.Defaults.StudioPort,
+					TargetPort:  intstr.IntOrString{IntVal: serviceCfg.Defaults.StudioPort},
+				},
+				{
+					Name:        serviceCfg.Defaults.ApiPortName,
+					Protocol:    corev1.ProtocolTCP,
+					AppProtocol: ptrOf("http"),
+					Port:        serviceCfg.Defaults.ApiPort,
+					TargetPort:  intstr.IntOrString{IntVal: serviceCfg.Defaults.ApiPort},
 				},
 			},
 		}

@@ -192,7 +192,7 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 						SuccessThreshold:    2,
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path: "/health",
+								Path: svcCfg.LivenessProbePath,
 								Port: intstr.IntOrString{IntVal: svcCfg.Defaults.APIPort},
 							},
 						},
@@ -203,7 +203,7 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 						TimeoutSeconds:      3,
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path: "/health",
+								Path: svcCfg.LivenessProbePath,
 								Port: intstr.IntOrString{IntVal: svcCfg.Defaults.APIPort},
 							},
 						},

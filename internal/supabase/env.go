@@ -23,9 +23,22 @@ import (
 )
 
 type serviceConfig[TEnvKeys, TDefaults any] struct {
-	Name     string
-	EnvKeys  TEnvKeys
-	Defaults TDefaults
+	Name               string
+	LivenessProbePath  string
+	ReadinessProbePath string
+	EnvKeys            TEnvKeys
+	Defaults           TDefaults
+}
+
+func (cfg serviceConfig[TEnvKeys, TDefaults]) ReadinessPath() string {
+	return cfg.ReadinessProbePath
+}
+
+func (cfg serviceConfig[TEnvKeys, TDefaults]) LivenessPath() string {
+	if cfg.LivenessProbePath == "" {
+		return cfg.ReadinessProbePath
+	}
+	return cfg.LivenessProbePath
 }
 
 func (cfg serviceConfig[TEnvKeys, TDefaults]) ObjectName(obj metav1.Object) string {

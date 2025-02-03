@@ -50,7 +50,8 @@ type authConfigDefaults struct {
 
 func authServiceConfig() serviceConfig[authEnvKeys, authConfigDefaults] {
 	return serviceConfig[authEnvKeys, authConfigDefaults]{
-		Name: "auth",
+		Name:              "auth",
+		LivenessProbePath: "/health",
 		EnvKeys: authEnvKeys{
 			ApiHost:                    fixedEnvOf("GOTRUE_API_HOST", "0.0.0.0"),
 			ApiPort:                    fixedEnvOf("GOTRUE_API_PORT", "9999"),

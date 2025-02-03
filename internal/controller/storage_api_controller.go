@@ -225,7 +225,7 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 						SuccessThreshold:    2,
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path: "/status",
+								Path: serviceCfg.LivenessProbePath,
 								Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.ApiPort},
 							},
 						},
@@ -236,7 +236,7 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 						TimeoutSeconds:      3,
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path: "/status",
+								Path: serviceCfg.LivenessProbePath,
 								Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.ApiPort},
 							},
 						},

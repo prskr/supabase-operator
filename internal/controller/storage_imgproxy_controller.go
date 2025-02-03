@@ -184,7 +184,7 @@ func (r *StorageImgProxyReconciler) reconcileImgProxyService(
 	var (
 		serviceCfg      = supabase.ServiceConfig.ImgProxy
 		imgProxyService = &corev1.Service{
-			ObjectMeta: supabase.ServiceConfig.Storage.ObjectMeta(storage),
+			ObjectMeta: supabase.ServiceConfig.ImgProxy.ObjectMeta(storage),
 		}
 	)
 

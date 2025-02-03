@@ -161,7 +161,7 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 						SuccessThreshold:    2,
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path: "/api/profile",
+								Path: serviceCfg.LivenessProbePath,
 								Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.APIPort},
 							},
 						},
@@ -172,7 +172,7 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 						TimeoutSeconds:      3,
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path: "/api/profile",
+								Path: serviceCfg.LivenessProbePath,
 								Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.APIPort},
 							},
 						},

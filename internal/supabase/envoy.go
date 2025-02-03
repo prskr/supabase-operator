@@ -25,16 +25,27 @@ import (
 func newEnvoyServiceConfig() envoyServiceConfig {
 	return envoyServiceConfig{
 		Defaults: envoyDefaults{
-			ConfigKey: "config.yaml",
-			UID:       65532,
-			GID:       65532,
+			ConfigKey:             "config.yaml",
+			OAuth2ClientSecretKey: "oauth2_client_secret",
+			HmacSecretKey:         "oauth2_hmac_secret",
+			UID:                   65532,
+			GID:                   65532,
+			StudioPortName:        "studio",
+			ApiPortName:           "api",
+			StudioPort:            3000,
+			ApiPort:               8000,
+			AdminPort:             19000,
 		},
 	}
 }
 
 type envoyDefaults struct {
-	ConfigKey string
-	UID, GID  int64
+	ConfigKey                      string
+	HmacSecretKey                  string
+	OAuth2ClientSecretKey          string
+	UID, GID                       int64
+	StudioPortName, ApiPortName    string
+	StudioPort, ApiPort, AdminPort int32
 }
 
 type envoyServiceConfig struct {
@@ -43,4 +54,12 @@ type envoyServiceConfig struct {
 
 func (envoyServiceConfig) ObjectName(obj metav1.Object) string {
 	return fmt.Sprintf("%s-envoy", obj.GetName())
+}
+
+func (envoyServiceConfig) ControlPlaneClientCertSecretName(obj metav1.Object) string {
+	return fmt.Sprintf("%s-cp-client-cert", obj.GetName())
+}
+
+func (envoyServiceConfig) HmacSecretName(obj metav1.Object) string {
+	return fmt.Sprintf("%s-hmac-secret", obj.GetName())
 }

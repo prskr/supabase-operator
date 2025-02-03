@@ -42,7 +42,8 @@ type postgrestConfigDefaults struct {
 
 func postgrestServiceConfig() serviceConfig[postgrestEnvKeys, postgrestConfigDefaults] {
 	return serviceConfig[postgrestEnvKeys, postgrestConfigDefaults]{
-		Name: "postgrest",
+		Name:              "postgrest",
+		LivenessProbePath: "/ready",
 		EnvKeys: postgrestEnvKeys{
 			Host:                 fixedEnvOf("PGRST_SERVER_HOST", "*"),
 			DBUri:                "PGRST_DB_URI",

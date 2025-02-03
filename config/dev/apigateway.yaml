@@ -1,3 +1,4 @@
+---
 apiVersion: supabase.k8s.icb4dc0.de/v1alpha1
 kind: APIGateway
 metadata:
@@ -5,8 +6,44 @@ metadata:
     app.kubernetes.io/name: supabase-operator
     app.kubernetes.io/managed-by: kustomize
   name: gateway-sample
+  namespace: supabase-demo
 spec:
   apiEndpoint:
     jwks:
       name: core-sample-jwt
       key: jwks.json
+  dashboardEndpoint:
+    auth:
+      oauth2:
+        tokenEndpoint: "https://login.microsoftonline.com/f4e80111-1571-477a-b56d-c5fe517676b7/oauth2/token"
+        authorizationEndpoint: "https://login.microsoftonline.com/f4e80111-1571-477a-b56d-c5fe517676b7/oauth2/authorize"
+        clientId: 3528016b-f6e3-49be-8fb3-f9a9a2ab6c3f
+        scopes:
+          - openid
+          - profile
+          - email
+        clientSecretRef:
+          name: studio-sample-oauth2
+          key: clientSecret
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/instance: dashboard-tls
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: supabase-operator
+    app.kubernetes.io/part-of: supabase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: dashboard-tls
+  namespace: supabase-demo
+spec:
+  dnsNames:
+    - gateway-sample-envoy.supabase-demo.svc
+    - gateway-sample-envoy.supabase-demo.svc.cluster.local
+    - localhost:3000
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: dashboard-tls-cert
