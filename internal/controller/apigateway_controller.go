@@ -348,12 +348,15 @@ func (r *APIGatewayReconciler) reconcileEnvoyConfig(
 	ctx context.Context,
 	gateway *supabasev1alpha1.APIGateway,
 ) (configHash string, err error) {
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      supabase.ServiceConfig.Envoy.ObjectName(gateway),
-			Namespace: gateway.Namespace,
-		},
-	}
+	var (
+		envoySpec = gateway.Spec.Envoy
+		configMap = &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      supabase.ServiceConfig.Envoy.ObjectName(gateway),
+				Namespace: gateway.Namespace,
+			},
+		}
+	)
 
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, configMap, func() error {
 		configMap.Labels = MergeLabels(objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Envoy.Tag), gateway.Labels)
@@ -369,7 +372,7 @@ func (r *APIGatewayReconciler) reconcileEnvoyConfig(
 			Port uint16
 		}
 
-		instance := fmt.Sprintf("%s:%s", gateway.Spec.Envoy.NodeName, gateway.Namespace)
+		instance := fmt.Sprintf("%s:%s", envoySpec.NodeName, gateway.Namespace)
 
 		tmplData := struct {
 			Node         nodeSpec
@@ -381,8 +384,8 @@ func (r *APIGatewayReconciler) reconcileEnvoyConfig(
 			},
 			ControlPlane: controlPlaneSpec{
 				Name: "supabase-control-plane",
-				Host: gateway.Spec.Envoy.ControlPlane.Host,
-				Port: gateway.Spec.Envoy.ControlPlane.Port,
+				Host: envoySpec.ControlPlane.Host,
+				Port: envoySpec.ControlPlane.Port,
 			},
 		}
 
@@ -446,6 +449,12 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 
 		envoyDeployment.Spec.Replicas = envoySpec.WorkloadTemplate.ReplicaCount()
 
+		envoyArgs := []string{"-c /etc/envoy/config.yaml"}
+
+		if componentLogLevels := envoySpec.Debugging.DebugLogging(); len(componentLogLevels) > 0 {
+			envoyArgs = append(envoyArgs, "--component-log-level", componentLogLevels)
+		}
+
 		envoyDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
@@ -462,7 +471,7 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 						Name:            "envoy-proxy",
 						Image:           envoySpec.WorkloadTemplate.Image(supabase.Images.Envoy.String()),
 						ImagePullPolicy: envoySpec.WorkloadTemplate.ImagePullPolicy(),
-						Args:            []string{"-c /etc/envoy/config.yaml"}, // , "--component-log-level", "upstream:debug,connection:debug"
+						Args:            envoyArgs,
 						Ports: []corev1.ContainerPort{
 							{
 								Name:          serviceCfg.Defaults.StudioPortName,

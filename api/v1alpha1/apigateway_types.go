@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"iter"
 	"maps"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +38,40 @@ type ControlPlaneSpec struct {
 	Port uint16 `json:"port"`
 }
 
+type EnvoyLogLevel string
+
+type EnvoyComponentLogLevel struct {
+	// Component - the component to set the log level for
+	// the component IDs can be found [here](https://github.com/envoyproxy/envoy/blob/main/source/common/common/logger.h#L36)
+	Component string `json:"component"`
+	// Level - the log level to set for the component
+	// +kubebuilder:validation:Enum=trace;debug;info;warning;error;critical;off
+	Level EnvoyLogLevel `json:"level"`
+}
+
+type EnvoyDebuggingOptions struct {
+	ComponentLogLevels []EnvoyComponentLogLevel `json:"componentLogLevels,omitempty"`
+}
+
+func (o *EnvoyDebuggingOptions) DebugLogging() string {
+	if o == nil || len(o.ComponentLogLevels) == 0 {
+		return ""
+	}
+
+	var builder strings.Builder
+	for i, lvl := range o.ComponentLogLevels {
+		if i > 0 {
+			builder.WriteString(",")
+		}
+
+		builder.WriteString(lvl.Component)
+		builder.WriteRune(':')
+		builder.WriteString(string(lvl.Level))
+	}
+
+	return builder.String()
+}
+
 type EnvoySpec struct {
 	// NodeName - identifies the Envoy cluster within the current namespace
 	// if not set, the name of the APIGateway resource will be used
@@ -48,7 +83,8 @@ type EnvoySpec struct {
 	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
 	// DisableIPv6 - disable IPv6 for the Envoy instance
 	// this will force Envoy to use IPv4 for upstream hosts (mostly for the OAuth2 token endpoint)
-	DisableIPv6 bool `json:"disableIPv6,omitempty"`
+	DisableIPv6 bool                   `json:"disableIPv6,omitempty"`
+	Debugging   *EnvoyDebuggingOptions `json:"debugging,omitempty"`
 }
 
 type TlsCertRef struct {

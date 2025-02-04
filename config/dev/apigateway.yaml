@@ -8,6 +8,11 @@ metadata:
   name: gateway-sample
   namespace: supabase-demo
 spec:
+  envoy:
+    debugging:
+      componentLogLevels:
+        - component: oauth2
+          level: debug
   apiEndpoint:
     jwks:
       name: core-sample-jwt

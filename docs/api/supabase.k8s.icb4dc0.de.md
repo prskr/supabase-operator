@@ -594,6 +594,52 @@ _Appears in:_
 | `cert` _[TlsCertRef](#tlscertref)_ |  |  |  |
 
 
+#### EnvoyComponentLogLevel
+
+
+
+
+
+
+
+_Appears in:_
+- [EnvoyDebuggingOptions](#envoydebuggingoptions)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `component` _string_ | Component - the component to set the log level for<br />the component IDs can be found [here](https://github.com/envoyproxy/envoy/blob/main/source/common/common/logger.h#L36) |  |  |
+| `level` _[EnvoyLogLevel](#envoyloglevel)_ | Level - the log level to set for the component |  | Enum: [trace debug info warning error critical off] <br /> |
+
+
+#### EnvoyDebuggingOptions
+
+
+
+
+
+
+
+_Appears in:_
+- [EnvoySpec](#envoyspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `componentLogLevels` _[EnvoyComponentLogLevel](#envoycomponentloglevel) array_ |  |  |  |
+
+
+#### EnvoyLogLevel
+
+_Underlying type:_ _string_
+
+
+
+
+
+_Appears in:_
+- [EnvoyComponentLogLevel](#envoycomponentloglevel)
+
+
+
 #### EnvoySpec
 
 
@@ -611,6 +657,7 @@ _Appears in:_
 | `controlPlane` _[ControlPlaneSpec](#controlplanespec)_ | ControlPlane - configure the control plane where Envoy will retrieve its configuration from |  |  |
 | `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the Envoy deployment |  |  |
 | `disableIPv6` _boolean_ | DisableIPv6 - disable IPv6 for the Envoy instance<br />this will force Envoy to use IPv4 for upstream hosts (mostly for the OAuth2 token endpoint) |  |  |
+| `debugging` _[EnvoyDebuggingOptions](#envoydebuggingoptions)_ |  |  |  |
 
 
 #### EnvoyStatus

@@ -234,6 +234,33 @@ spec:
                     - host
                     - port
                     type: object
+                  debugging:
+                    properties:
+                      componentLogLevels:
+                        items:
+                          properties:
+                            component:
+                              description: |-
+                                Component - the component to set the log level for
+                                the component IDs can be found [here](https://github.com/envoyproxy/envoy/blob/main/source/common/common/logger.h#L36)
+                              type: string
+                            level:
+                              description: Level - the log level to set for the component
+                              enum:
+                              - trace
+                              - debug
+                              - info
+                              - warning
+                              - error
+                              - critical
+                              - "off"
+                              type: string
+                          required:
+                          - component
+                          - level
+                          type: object
+                        type: array
+                    type: object
                   disableIPv6:
                     description: |-
                       DisableIPv6 - disable IPv6 for the Envoy instance
