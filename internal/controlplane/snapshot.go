@@ -20,28 +20,20 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"net/url"
 	"slices"
-	"strconv"
-	"time"
 
 	accesslogv3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
-	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	corev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	endpointv3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	listenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	oauth2v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/oauth2/v3"
 	routerv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	tlsv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	matcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/durationpb"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,7 +86,7 @@ func (s *EnvoyServices) UpsertEndpointSlices(endpointSlices ...discoveryv1.Endpo
 			s.PGMeta.AddOrUpdateEndpoints(eps)
 		case supabase.ServiceConfig.Studio.Name:
 			if s.Studio == nil {
-				s.Studio = new(StudioCluster)
+				s.Studio = &StudioCluster{Client: s.Client}
 			}
 
 			s.Studio.AddOrUpdateEndpoints(eps)
@@ -128,7 +120,15 @@ func (s EnvoyServices) Targets() map[string][]string {
 	return targets
 }
 
-func (s *EnvoyServices) snapshot(ctx context.Context, instance, version string) (snapshot *cache.Snapshot, snapshotHash []byte, err error) {
+func (s *EnvoyServices) snapshot(
+	ctx context.Context,
+	instance, version string,
+) (snapshot *cache.Snapshot, snapshotHash []byte, err error) {
+	socket, err := s.apiTransportSocket(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to setup API TLS listener: %w", err)
+	}
+
 	listeners := []*listenerv3.Listener{{
 		Name: apilistenerName,
 		Address: &corev3.Address{
@@ -152,18 +152,26 @@ func (s *EnvoyServices) snapshot(ctx context.Context, instance, version string) 
 						},
 					},
 				},
+				TransportSocket: socket,
 			},
 		},
 	}}
 
-	if studioListener := s.studioListener(instance); studioListener != nil {
+	if studioListener, err := s.Studio.Listener(ctx, instance, s.Gateway); err != nil {
+		return nil, nil, err
+	} else if studioListener != nil {
 		listeners = append(listeners, studioListener)
 	}
 
 	routes := []types.Resource{s.apiRouteConfiguration(instance)}
 
-	if studioRouteCfg := s.studioRoute(instance); studioRouteCfg != nil {
+	if studioRouteCfg := s.Studio.RouteConfiguration(instance); studioRouteCfg != nil {
 		routes = append(routes, studioRouteCfg)
+	}
+
+	studioClusters, err := s.Studio.Cluster(instance, s.Gateway)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	clusters := castResources(
@@ -172,16 +180,8 @@ func (s *EnvoyServices) snapshot(ctx context.Context, instance, version string) 
 			s.GoTrue.Cluster(instance),
 			s.StorageApi.Cluster(instance),
 			s.PGMeta.Cluster(instance),
-			s.Studio.Cluster(instance),
+			studioClusters,
 		)...)
-
-	if oauth2Spec := s.Gateway.Spec.DashboardEndpoint.OAuth2(); oauth2Spec != nil {
-		if oauth2TokenEndpointCluster, err := s.oauth2TokenEndpointCluster(instance); err != nil {
-			return nil, nil, err
-		} else {
-			clusters = append(clusters, oauth2TokenEndpointCluster)
-		}
-	}
 
 	sdsSecrets, err := s.secrets(ctx)
 	if err != nil {
@@ -350,231 +350,57 @@ func (s *EnvoyServices) apiRouteConfiguration(instance string) *routev3.RouteCon
 	}
 }
 
-func (s *EnvoyServices) studioListener(instance string) *listenerv3.Listener {
-	if s.Studio == nil {
-		return nil
+func (s *EnvoyServices) apiTransportSocket(ctx context.Context) (*corev3.TransportSocket, error) {
+	tlsSpec := s.Gateway.Spec.ApiEndpoint.TLSSpec()
+	if tlsSpec == nil {
+		return nil, nil
 	}
 
-	var (
-		httpFilters []*hcm.HttpFilter
-		serviceCfg  = supabase.ServiceConfig.Envoy
-	)
-
-	if oauth2Spec := s.Gateway.Spec.DashboardEndpoint.OAuth2(); oauth2Spec != nil {
-		httpFilters = append(httpFilters, &hcm.HttpFilter{
-			Name: FilterNameOAuth2,
-			ConfigType: &hcm.HttpFilter_TypedConfig{TypedConfig: MustAny(&oauth2v3.OAuth2{
-				Config: &oauth2v3.OAuth2Config{
-					TokenEndpoint: &corev3.HttpUri{
-						HttpUpstreamType: &corev3.HttpUri_Cluster{
-							Cluster: fmt.Sprintf("%s@%s", dashboardOAuth2ClusterName, instance),
-						},
-						Uri:     s.Gateway.Spec.DashboardEndpoint.Auth.OAuth2.TokenEndpoint,
-						Timeout: durationpb.New(3 * time.Second),
-					},
-					AuthorizationEndpoint: s.Gateway.Spec.DashboardEndpoint.Auth.OAuth2.AuthorizationEndpoint,
-					RedirectUri:           "%REQ(x-forwarded-proto)%://%REQ(:authority)%/callback",
-					RedirectPathMatcher: &matcherv3.PathMatcher{
-						Rule: &matcherv3.PathMatcher_Path{
-							Path: &matcherv3.StringMatcher{
-								MatchPattern: &matcherv3.StringMatcher_Exact{
-									Exact: "/callback",
-								},
-							},
-						},
-					},
-					SignoutPath: &matcherv3.PathMatcher{
-						Rule: &matcherv3.PathMatcher_Path{
-							Path: &matcherv3.StringMatcher{
-								MatchPattern: &matcherv3.StringMatcher_Exact{
-									Exact: "/signout",
-								},
-							},
-						},
-					},
-					Credentials: &oauth2v3.OAuth2Credentials{
-						ClientId: oauth2Spec.ClientID,
-						TokenSecret: &tlsv3.SdsSecretConfig{
-							Name: serviceCfg.Defaults.OAuth2ClientSecretKey,
-							SdsConfig: &corev3.ConfigSource{
-								ConfigSourceSpecifier: &corev3.ConfigSource_Ads{
-									Ads: new(corev3.AggregatedConfigSource),
-								},
-							},
-						},
-						TokenFormation: &oauth2v3.OAuth2Credentials_HmacSecret{
-							HmacSecret: &tlsv3.SdsSecretConfig{
-								Name: serviceCfg.Defaults.HmacSecretKey,
-								SdsConfig: &corev3.ConfigSource{
-									ConfigSourceSpecifier: &corev3.ConfigSource_Ads{
-										Ads: new(corev3.AggregatedConfigSource),
-									},
-								},
-							},
-						},
-					},
-					AuthScopes: oauth2Spec.Scopes,
-					Resources:  oauth2Spec.Resources,
-				},
-			})},
-		})
-	}
-
-	studioConnetionManager := &hcm.HttpConnectionManager{
-		CodecType:  hcm.HttpConnectionManager_AUTO,
-		StatPrefix: "supbase_studio",
-		AccessLog:  []*accesslogv3.AccessLog{AccessLog("supbase_studio_access_log")},
-		RouteSpecifier: &hcm.HttpConnectionManager_Rds{
-			Rds: &hcm.Rds{
-				ConfigSource: &corev3.ConfigSource{
-					ResourceApiVersion: resource.DefaultAPIVersion,
-					ConfigSourceSpecifier: &corev3.ConfigSource_ApiConfigSource{
-						ApiConfigSource: &corev3.ApiConfigSource{
-							TransportApiVersion:       resource.DefaultAPIVersion,
-							ApiType:                   corev3.ApiConfigSource_GRPC,
-							SetNodeOnFirstMessageOnly: true,
-							GrpcServices: []*corev3.GrpcService{{
-								TargetSpecifier: &corev3.GrpcService_EnvoyGrpc_{
-									EnvoyGrpc: &corev3.GrpcService_EnvoyGrpc{ClusterName: "supabase-control-plane"},
-								},
-							}},
-						},
-					},
-				},
-				RouteConfigName: studioRouteName,
-			},
-		},
-		HttpFilters: append(httpFilters, &hcm.HttpFilter{
-			Name:       FilterNameHttpRouter,
-			ConfigType: &hcm.HttpFilter_TypedConfig{TypedConfig: MustAny(new(routerv3.Router))},
-		}),
-	}
-
-	return &listenerv3.Listener{
-		Name: "studio",
-		Address: &corev3.Address{
-			Address: &corev3.Address_SocketAddress{
-				SocketAddress: &corev3.SocketAddress{
-					Protocol: corev3.SocketAddress_TCP,
-					Address:  "0.0.0.0",
-					PortSpecifier: &corev3.SocketAddress_PortValue{
-						PortValue: 3000,
-					},
-				},
-			},
-		},
-		FilterChains: []*listenerv3.FilterChain{
-			{
-				Filters: []*listenerv3.Filter{
-					{
-						Name: FilterNameHttpConnectionManager,
-						ConfigType: &listenerv3.Filter_TypedConfig{
-							TypedConfig: MustAny(studioConnetionManager),
-						},
-					},
-				},
-			},
+	apiTlsSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tlsSpec.Cert.SecretName,
+			Namespace: s.Gateway.Namespace,
 		},
 	}
-}
 
-func (s *EnvoyServices) studioRoute(instance string) *routev3.RouteConfiguration {
-	if s.Studio == nil {
-		return nil
-	}
-
-	return &routev3.RouteConfiguration{
-		Name: studioRouteName,
-		VirtualHosts: []*routev3.VirtualHost{{
-			Name:    "supabase-studio",
-			Domains: []string{"*"},
-			Routes:  s.Studio.Routes(instance),
-		}},
-	}
-}
-
-func (s *EnvoyServices) oauth2TokenEndpointCluster(instance string) (*clusterv3.Cluster, error) {
-	oauth2Spec := s.Gateway.Spec.DashboardEndpoint.OAuth2()
-	parsedTokenEndpoint, err := url.Parse(oauth2Spec.TokenEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse token endpoint: %w", err)
-	}
-
-	var (
-		endpointPort uint32
-		tls          bool
-	)
-	switch parsedTokenEndpoint.Scheme {
-	case "http":
-		endpointPort = 80
-	case "https":
-		endpointPort = 443
-		tls = true
-	default:
-		return nil, fmt.Errorf("unsupported token endpoint scheme: %s", parsedTokenEndpoint.Scheme)
-	}
-
-	if tokenEndpointPort := parsedTokenEndpoint.Port(); tokenEndpointPort != "" {
-		if parsedPort, err := strconv.ParseUint(tokenEndpointPort, 10, 32); err != nil {
-			return nil, fmt.Errorf("failed to parse token endpoint port: %w", err)
-		} else {
-			endpointPort = uint32(parsedPort)
+	if err := s.Get(ctx, client.ObjectKeyFromObject(&apiTlsSecret), &apiTlsSecret); err != nil {
+		if client.IgnoreNotFound(err) == nil {
+			return nil, nil
 		}
+
+		return nil, err
 	}
 
-	cluster := &clusterv3.Cluster{
-		Name:           fmt.Sprintf("%s@%s", dashboardOAuth2ClusterName, instance),
-		ConnectTimeout: durationpb.New(3 * time.Second),
-		ClusterDiscoveryType: &clusterv3.Cluster_Type{
-			Type: clusterv3.Cluster_LOGICAL_DNS,
-		},
-		LbPolicy: clusterv3.Cluster_ROUND_ROBIN,
-		LoadAssignment: &endpointv3.ClusterLoadAssignment{
-			ClusterName: dashboardOAuth2ClusterName,
-			Endpoints: []*endpointv3.LocalityLbEndpoints{{
-				LbEndpoints: []*endpointv3.LbEndpoint{{
-					HostIdentifier: &endpointv3.LbEndpoint_Endpoint{
-						Endpoint: &endpointv3.Endpoint{
-							Address: &corev3.Address{
-								Address: &corev3.Address_SocketAddress{
-									SocketAddress: &corev3.SocketAddress{
-										Address: parsedTokenEndpoint.Hostname(),
-										PortSpecifier: &corev3.SocketAddress_PortValue{
-											PortValue: endpointPort,
-										},
-										Protocol: corev3.SocketAddress_TCP,
-									},
+	return &corev3.TransportSocket{
+		Name: SocketNameTLS,
+		ConfigType: &corev3.TransportSocket_TypedConfig{
+			TypedConfig: MustAny(&tlsv3.DownstreamTlsContext{
+				CommonTlsContext: &tlsv3.CommonTlsContext{
+					TlsCertificates: []*tlsv3.TlsCertificate{{
+						CertificateChain: &corev3.DataSource{
+							Specifier: &corev3.DataSource_InlineBytes{
+								InlineBytes: apiTlsSecret.Data[corev1.TLSCertKey],
+							},
+						},
+						PrivateKey: &corev3.DataSource{
+							Specifier: &corev3.DataSource_InlineBytes{
+								InlineBytes: apiTlsSecret.Data[corev1.TLSPrivateKeyKey],
+							},
+						},
+					}},
+					ValidationContextType: &tlsv3.CommonTlsContext_ValidationContext{
+						ValidationContext: &tlsv3.CertificateValidationContext{
+							TrustedCa: &corev3.DataSource{
+								Specifier: &corev3.DataSource_InlineBytes{
+									InlineBytes: apiTlsSecret.Data["ca.crt"],
 								},
 							},
 						},
 					},
-				}},
-			}},
+				},
+			}),
 		},
-	}
-
-	if s.Gateway.Spec.Envoy != nil && s.Gateway.Spec.Envoy.DisableIPv6 {
-		cluster.DnsLookupFamily = clusterv3.Cluster_V4_ONLY
-	}
-
-	if tls {
-		cluster.TransportSocket = &corev3.TransportSocket{
-			Name: "envoy.transport_sockets.tls",
-			ConfigType: &corev3.TransportSocket_TypedConfig{
-				TypedConfig: MustAny(&tlsv3.UpstreamTlsContext{
-					Sni:                parsedTokenEndpoint.Hostname(),
-					AllowRenegotiation: true,
-					CommonTlsContext: &tlsv3.CommonTlsContext{
-						TlsParams: &tlsv3.TlsParameters{
-							TlsMinimumProtocolVersion: tlsv3.TlsParameters_TLSv1_2,
-						},
-					},
-				}),
-			},
-		}
-	}
-
-	return cluster, nil
+	}, nil
 }
 
 func castResources[T types.Resource](from ...T) []types.Resource {

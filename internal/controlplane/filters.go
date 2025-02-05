@@ -24,4 +24,5 @@ const (
 	FilterNameHttpConnectionManager = "envoy.filters.network.http_connection_manager"
 	FilterNameBasicAuth             = "envoy.filters.http.basic_auth"
 	FilterNameOAuth2                = "envoy.filters.http.oauth2"
+	SocketNameTLS                   = "envoy.transport_sockets.tls"
 )

@@ -23,9 +23,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
+	"code.icb4dc0.de/prskr/supabase-operator/internal/oidc"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
 )
 
@@ -49,6 +51,7 @@ func (d *APIGatewayCustomDefaulter) Default(ctx context.Context, obj runtime.Obj
 		defaultManagerNamespace = "supabase-system"
 	)
 
+	logger := log.FromContext(ctx)
 	apiGateway, ok := obj.(*supabasev1alpha1.APIGateway)
 
 	if !ok {
@@ -103,6 +106,19 @@ func (d *APIGatewayCustomDefaulter) Default(ctx context.Context, obj runtime.Obj
 				Host: fmt.Sprintf("supabase-control-plane.%s.svc", d.CurrentNamespace),
 				Port: 18000,
 			}
+		}
+	}
+
+	if oauth2Spec := apiGateway.Spec.DashboardEndpoint.OAuth2(); oauth2Spec != nil {
+		if oauth2Spec.OpenIDIssuer != "" {
+			logger.Info("Fetching OIDC discovery document", "discovery_url", oauth2Spec.OpenIDIssuer)
+			discoveryDoc, err := oidc.IssuerConfiguration(ctx, oauth2Spec.OpenIDIssuer)
+			if err != nil {
+				return fmt.Errorf("failed to fetch OIDC configuration: %w", err)
+			}
+
+			oauth2Spec.TokenEndpoint = discoveryDoc.TokenEndpoint
+			oauth2Spec.AuthorizationEndpoint = discoveryDoc.AuthorizationEndpoint
 		}
 	}
 

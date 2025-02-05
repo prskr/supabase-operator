@@ -1,0 +1,36 @@
+---
+apiVersion: supabase.k8s.icb4dc0.de/v1alpha1
+kind: APIGateway
+metadata:
+  labels:
+    app.kubernetes.io/name: supabase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: gateway-sample
+spec:
+  apiEndpoint:
+    jwks:
+      # will be created by Core resource operator if not present
+      # just make sure the secret name is either based on the name of the core resource or explicitly set
+      name: core-sample-jwt
+      key: jwks.json
+  dashboardEndpoint:
+    auth:
+      oauth2:
+        openIdIssuer: "https://idp.your-domain.com/"
+        clientId: "<your-client-id>"
+        # if not set, 'user' will be used
+        scopes:
+          - openid
+          - profile
+          - email
+        clientSecretRef:
+          name: studio-sample-oauth2
+          key: clientSecret
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: studio-sample-oauth2
+  namespace: supabase-demo
+stringData:
+  clientSecret: "<your-client-secret>"

@@ -62,6 +62,11 @@ k8s_resource(
     objects=["gateway-sample:APIGateway:supabase-demo"],
     extra_pod_selectors={"app.kubernetes.io/component": "api-gateway"},
     port_forwards=[3000, 8000, 19000],
+    links=[
+        link("https://localhost:3000", "Studio"),
+        link("http://localhost:8000", "API"),
+        link("http://localhost:19000", "Envoy Admin Interface")
+    ],
     new_name='API Gateway',
     resource_deps=[
         'supabase-controller-manager'

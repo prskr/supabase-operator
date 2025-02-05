@@ -1,0 +1,36 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/name: supabase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: cluster-pki-bootstrapper
+  namespace: cert-manager
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cluster-pki-ca
+  namespace: cert-manager
+spec:
+  commonName: cluster-pki
+  isCA: true
+  issuerRef:
+    kind: Issuer
+    name: cluster-pki-bootstrapper
+  secretName: cluster-pki-ca-cert
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  labels:
+    app.kubernetes.io/name: supabase-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: cluster-pki
+  namespace: cert-manager
+spec:
+  ca:
+    secretName: cluster-pki-ca-cert

@@ -121,8 +121,28 @@ spec:
                       endpoint
                     properties:
                       basic:
+                        description: |-
+                          Basic - HTTP basic auth configuration, this should only be used in exceptions
+                          e.g. during evaluations or for local development
+                          only used if no other authentication is configured
+                        properties:
+                          plaintextUsersSecretRef:
+                            description: |-
+                              PlaintextUsersSecretRef - name of a secret that contains plaintext credentials in key-value form
+                              if not empty, credentials will be merged with inline users
+                            type: string
+                          usersInline:
+                            description: UsersInline - [htpasswd format](https://httpd.apache.org/docs/2.4/programs/htpasswd.html)
+                            items:
+                              pattern: ^[\w_.]+:\{SHA\}[A-z0-9]+=*$
+                              type: string
+                            type: array
                         type: object
                       oauth2:
+                        description: |-
+                          OAuth2 - configure oauth2 authentication for the dashhboard listener
+                          if configured, will be preferred over Basic authentication configuration
+                          effectively disabling basic auth
                         properties:
                           authorizationEndpoint:
                             description: AuthorizationEndpoint - endpoint where the
@@ -157,6 +177,11 @@ spec:
                             - key
                             type: object
                             x-kubernetes-map-type: atomic
+                          openIdIssuer:
+                            description: |-
+                              OpenIDIssuer - if set the defaulter will fetch the discovery document and fill
+                              TokenEndpoint and AuthorizationEndpoint based on the discovery document
+                            type: string
                           resources:
                             description: Resources - resources to request from the
                               OAuth2 provider (e.g. "user", "email", ...) - optional
@@ -174,10 +199,8 @@ spec:
                               retrieve the OAuth2 access and identity token from
                             type: string
                         required:
-                        - authorizationEndpoint
                         - clientId
                         - clientSecretRef
-                        - tokenEndpoint
                         type: object
                     type: object
                   tls:

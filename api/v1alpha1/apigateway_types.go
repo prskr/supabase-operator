@@ -128,10 +128,13 @@ const (
 )
 
 type DashboardOAuth2Spec struct {
+	// OpenIDIssuer - if set the defaulter will fetch the discovery document and fill
+	// TokenEndpoint and AuthorizationEndpoint based on the discovery document
+	OpenIDIssuer string `json:"openIdIssuer,omitempty"`
 	// TokenEndpoint - endpoint where Envoy will retrieve the OAuth2 access and identity token from
-	TokenEndpoint string `json:"tokenEndpoint"`
+	TokenEndpoint string `json:"tokenEndpoint,omitempty"`
 	// AuthorizationEndpoint - endpoint where the user will be redirected to authenticate
-	AuthorizationEndpoint string `json:"authorizationEndpoint"`
+	AuthorizationEndpoint string `json:"authorizationEndpoint,omitempty"`
 	// ClientID - client ID to authenticate with the OAuth2 provider
 	ClientID string `json:"clientId"`
 	// Scopes - scopes to request from the OAuth2 provider (e.g. "openid", "profile", ...) - optional
@@ -142,11 +145,24 @@ type DashboardOAuth2Spec struct {
 	ClientSecretRef *corev1.SecretKeySelector `json:"clientSecretRef"`
 }
 
-type DashboardBasicAuthSpec struct{}
+type DashboardBasicAuthSpec struct {
+	// UsersInline - [htpasswd format](https://httpd.apache.org/docs/2.4/programs/htpasswd.html)
+	// +kubebuilder:validation:items:Pattern="^[\\w_.]+:\\{SHA\\}[A-z0-9]+=*$"
+	UsersInline []string `json:"usersInline,omitempty"`
+	// PlaintextUsersSecretRef - name of a secret that contains plaintext credentials in key-value form
+	// if not empty, credentials will be merged with inline users
+	PlaintextUsersSecretRef string `json:"plaintextUsersSecretRef,omitempty"`
+}
 
 type DashboardAuthSpec struct {
-	OAuth2 *DashboardOAuth2Spec    `json:"oauth2,omitempty"`
-	Basic  *DashboardBasicAuthSpec `json:"basic,omitempty"`
+	// OAuth2 - configure oauth2 authentication for the dashhboard listener
+	// if configured, will be preferred over Basic authentication configuration
+	// effectively disabling basic auth
+	OAuth2 *DashboardOAuth2Spec `json:"oauth2,omitempty"`
+	// Basic - HTTP basic auth configuration, this should only be used in exceptions
+	// e.g. during evaluations or for local development
+	// only used if no other authentication is configured
+	Basic *DashboardBasicAuthSpec `json:"basic,omitempty"`
 }
 
 type DashboardEndpointSpec struct {

@@ -331,8 +331,8 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `oauth2` _[DashboardOAuth2Spec](#dashboardoauth2spec)_ |  |  |  |
-| `basic` _[DashboardBasicAuthSpec](#dashboardbasicauthspec)_ |  |  |  |
+| `oauth2` _[DashboardOAuth2Spec](#dashboardoauth2spec)_ | OAuth2 - configure oauth2 authentication for the dashhboard listener<br />if configured, will be preferred over Basic authentication configuration<br />effectively disabling basic auth |  |  |
+| `basic` _[DashboardBasicAuthSpec](#dashboardbasicauthspec)_ | Basic - HTTP basic auth configuration, this should only be used in exceptions<br />e.g. during evaluations or for local development<br />only used if no other authentication is configured |  |  |
 
 
 
@@ -348,6 +348,10 @@ _Appears in:_
 _Appears in:_
 - [DashboardAuthSpec](#dashboardauthspec)
 
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `usersInline` _string array_ | UsersInline - [htpasswd format](https://httpd.apache.org/docs/2.4/programs/htpasswd.html) |  | items:Pattern: ^[\w_.]+:\\{SHA\\}[A-z0-9]+=*$ <br /> |
+| `plaintextUsersSecretRef` _string_ | PlaintextUsersSecretRef - name of a secret that contains plaintext credentials in key-value form<br />if not empty, credentials will be merged with inline users |  |  |
 
 
 #### DashboardDbSpec
@@ -417,6 +421,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
+| `openIdIssuer` _string_ | OpenIDIssuer - if set the defaulter will fetch the discovery document and fill<br />TokenEndpoint and AuthorizationEndpoint based on the discovery document |  |  |
 | `tokenEndpoint` _string_ | TokenEndpoint - endpoint where Envoy will retrieve the OAuth2 access and identity token from |  |  |
 | `authorizationEndpoint` _string_ | AuthorizationEndpoint - endpoint where the user will be redirected to authenticate |  |  |
 | `clientId` _string_ | ClientID - client ID to authenticate with the OAuth2 provider |  |  |

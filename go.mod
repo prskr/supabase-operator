@@ -1,6 +1,6 @@
 module code.icb4dc0.de/prskr/supabase-operator
 
-go 1.23.5
+go 1.23.6
 
 require (
 	github.com/alecthomas/kong v1.7.0

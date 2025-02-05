@@ -9,19 +9,18 @@ metadata:
   namespace: supabase-demo
 spec:
   envoy:
-    debugging:
-      componentLogLevels:
-        - component: oauth2
-          level: debug
+    disableIPv6: true
   apiEndpoint:
     jwks:
       name: core-sample-jwt
       key: jwks.json
   dashboardEndpoint:
+    tls:
+      cert:
+        secretName: dashboard-tls-cert
     auth:
       oauth2:
-        tokenEndpoint: "https://login.microsoftonline.com/f4e80111-1571-477a-b56d-c5fe517676b7/oauth2/token"
-        authorizationEndpoint: "https://login.microsoftonline.com/f4e80111-1571-477a-b56d-c5fe517676b7/oauth2/authorize"
+        openIdIssuer: "https://login.microsoftonline.com/f4e80111-1571-477a-b56d-c5fe517676b7/"
         clientId: 3528016b-f6e3-49be-8fb3-f9a9a2ab6c3f
         scopes:
           - openid
@@ -49,6 +48,6 @@ spec:
     - gateway-sample-envoy.supabase-demo.svc.cluster.local
     - localhost:3000
   issuerRef:
-    kind: Issuer
-    name: selfsigned-issuer
+    kind: ClusterIssuer
+    name: cluster-pki
   secretName: dashboard-tls-cert
