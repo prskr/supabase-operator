@@ -204,6 +204,14 @@ func (s *DashboardEndpointSpec) OAuth2() *DashboardOAuth2Spec {
 	return s.Auth.OAuth2
 }
 
+func (s *DashboardEndpointSpec) Basic() *DashboardBasicAuthSpec {
+	if s == nil || s.Auth == nil {
+		return nil
+	}
+
+	return s.Auth.Basic
+}
+
 // APIGatewaySpec defines the desired state of APIGateway.
 type APIGatewaySpec struct {
 	// Envoy - configure the envoy instance and most importantly the control-plane

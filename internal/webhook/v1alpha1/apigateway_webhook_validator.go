@@ -36,6 +36,8 @@ var apigatewaylog = logf.Log.WithName("apigateway-resource")
 var (
 	ErrMissingEnvoySpec        = errors.New("envoy needs to be configured")
 	ErrMissingControlPlaneSpec = errors.New("envoy control plane needs to be configured")
+	ErrOAuth2EndpointsMissing  = errors.New("oauth2 endpoints missing")
+	ErrBasicAuthNoUsers        = errors.New("no users configured for basic auth")
 )
 
 // +kubebuilder:webhook:path=/validate-supabase-k8s-icb4dc0-de-v1alpha1-apigateway,mutating=false,failurePolicy=fail,sideEffects=None,groups=supabase.k8s.icb4dc0.de,resources=apigateways,verbs=create;update,versions=v1alpha1,name=vapigateway-v1alpha1.kb.io,admissionReviewVersions=v1
@@ -57,7 +59,18 @@ func (v *APIGatewayCustomValidator) ValidateCreate(ctx context.Context, obj runt
 	}
 	apigatewaylog.Info("Validation for APIGateway upon creation", "name", apigateway.GetName())
 
-	return validateEnvoyControlPlane(apigateway)
+	warnings, err := validateEnvoyControlPlane(apigateway)
+	if err != nil {
+		return warnings, err
+	}
+
+	if warns, err := validateDashboardEndpointSpec(apigateway); err != nil {
+		return append(warnings, warns...), err
+	} else {
+		warnings = append(warnings, warns...)
+	}
+
+	return warnings, nil
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type APIGateway.
@@ -68,7 +81,18 @@ func (v *APIGatewayCustomValidator) ValidateUpdate(ctx context.Context, oldObj, 
 	}
 	apigatewaylog.Info("Validation for APIGateway upon update", "name", apigateway.GetName())
 
-	return validateEnvoyControlPlane(apigateway)
+	warnings, err := validateEnvoyControlPlane(apigateway)
+	if err != nil {
+		return warnings, err
+	}
+
+	if warns, err := validateDashboardEndpointSpec(apigateway); err != nil {
+		return append(warnings, warns...), err
+	} else {
+		warnings = append(warnings, warns...)
+	}
+
+	return warnings, nil
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type APIGateway.
@@ -94,4 +118,30 @@ func validateEnvoyControlPlane(gateway *supabasev1alpha1.APIGateway) (admission.
 	}
 
 	return nil, nil
+}
+
+func validateDashboardEndpointSpec(gateway *supabasev1alpha1.APIGateway) (warnings admission.Warnings, err error) {
+	dashboardEndpointSpec := gateway.Spec.DashboardEndpoint
+	if dashboardEndpointSpec == nil {
+		return nil, nil
+	}
+
+	switch dashboardEndpointSpec.AuthType() {
+	case supabasev1alpha1.DashboardAuthTypeOAuth2:
+		oauth2Spec := dashboardEndpointSpec.OAuth2()
+		if oauth2Spec.OpenIDIssuer == "" && oauth2Spec.AuthorizationEndpoint == "" && oauth2Spec.TokenEndpoint == "" {
+			return nil, fmt.Errorf("%w: you have to either set the OpenID issuer or authorization and token endpoints for oauth2 authentication", ErrOAuth2EndpointsMissing)
+		}
+	case supabasev1alpha1.DashboardAuthTypeBasic:
+		basicAuthSpec := dashboardEndpointSpec.Basic()
+		if len(basicAuthSpec.UsersInline) == 0 && basicAuthSpec.PlaintextUsersSecretRef == "" {
+			return nil, fmt.Errorf("%w: neither inline users are specified nor a secret for plaintext credentials was referenced", ErrBasicAuthNoUsers)
+		}
+
+		if len(basicAuthSpec.UsersInline) == 0 {
+			warnings = append(warnings, "no inline users were specified, make sure to have at least one username - password pair in the referenced secret otherwise the setup will be skipped")
+		}
+	}
+
+	return warnings, nil
 }
