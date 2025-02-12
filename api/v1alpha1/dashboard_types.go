@@ -24,7 +24,7 @@ import (
 type StudioSpec struct {
 	JWT *JwtSpec `json:"jwt,omitempty"`
 	// WorkloadTemplate - customize the studio deployment
-	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+	WorkloadSpec *WorkloadSpec `json:"workloadSpec,omitempty"`
 	// GatewayServiceSelector - selector to find the service for the API gateway
 	// Required to configure the API URL in the studio deployment
 	// If you don't run multiple APIGateway instances in the same namespaces, the default will be fine
@@ -37,7 +37,7 @@ type StudioSpec struct {
 
 type PGMetaSpec struct {
 	// WorkloadTemplate - customize the pg-meta deployment
-	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+	WorkloadSpec *WorkloadSpec `json:"workloadSpec,omitempty"`
 }
 
 type DbCredentialsReference struct {

@@ -107,7 +107,7 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 	gatewayService := gatewayServiceList.Items[0]
 
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, studioDeployment, func() error {
-		studioDeployment.Labels = studioSpec.WorkloadTemplate.MergeLabels(
+		studioDeployment.Labels = studioSpec.WorkloadSpec.MergeLabels(
 			objectLabels(dashboard, serviceCfg.Name, "dashboard", supabase.Images.Studio.Tag),
 			dashboard.Labels,
 		)
@@ -118,7 +118,7 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 			}
 		}
 
-		studioDeployment.Spec.Replicas = studioSpec.WorkloadTemplate.ReplicaCount()
+		studioDeployment.Spec.Replicas = studioSpec.WorkloadSpec.ReplicaCount()
 
 		studioEnv := []corev1.EnvVar{
 			serviceCfg.EnvKeys.PGMetaURL.Var(fmt.Sprintf("http://%s.%s.svc:%d", supabase.ServiceConfig.PGMeta.ObjectName(dashboard), dashboard.Namespace, supabase.ServiceConfig.PGMeta.Defaults.APIPort)),
@@ -137,20 +137,20 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 				Labels: objectLabels(dashboard, serviceCfg.Name, "dashboard", supabase.Images.Studio.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: studioSpec.WorkloadTemplate.PullSecrets(),
+				ImagePullSecrets: studioSpec.WorkloadSpec.PullSecrets(),
 				Containers: []corev1.Container{{
 					Name:            "supabase-studio",
-					Image:           studioSpec.WorkloadTemplate.Image(supabase.Images.Studio.String()),
-					ImagePullPolicy: studioSpec.WorkloadTemplate.ImagePullPolicy(),
-					Env:             studioSpec.WorkloadTemplate.MergeEnv(studioEnv),
+					Image:           studioSpec.WorkloadSpec.Image(supabase.Images.Studio.String()),
+					ImagePullPolicy: studioSpec.WorkloadSpec.ImagePullPolicy(),
+					Env:             studioSpec.WorkloadSpec.MergeEnv(studioEnv),
 					Ports: []corev1.ContainerPort{{
 						Name:          "studio",
 						ContainerPort: serviceCfg.Defaults.APIPort,
 						Protocol:      corev1.ProtocolTCP,
 					}},
-					SecurityContext: studioSpec.WorkloadTemplate.ContainerSecurityContext(serviceCfg.Defaults.NodeUID, serviceCfg.Defaults.NodeGID),
-					Resources:       studioSpec.WorkloadTemplate.Resources(),
-					VolumeMounts: studioSpec.WorkloadTemplate.AdditionalVolumeMounts(corev1.VolumeMount{
+					SecurityContext: studioSpec.WorkloadSpec.ContainerSecurityContext(serviceCfg.Defaults.NodeUID, serviceCfg.Defaults.NodeGID),
+					Resources:       studioSpec.WorkloadSpec.Resources(),
+					VolumeMounts: studioSpec.WorkloadSpec.AdditionalVolumeMounts(corev1.VolumeMount{
 						Name:      "next-cache",
 						MountPath: "/app/apps/studio/.next/cache",
 					}),
@@ -178,7 +178,7 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 						},
 					},
 				}},
-				SecurityContext: studioSpec.WorkloadTemplate.PodSecurityContext(),
+				SecurityContext: studioSpec.WorkloadSpec.PodSecurityContext(),
 				Volumes: []corev1.Volume{{
 					Name: "next-cache",
 					VolumeSource: corev1.VolumeSource{
@@ -214,7 +214,7 @@ func (r *DashboardStudioReconciler) reconcileStudioService(
 	}
 
 	_, err := controllerutil.CreateOrPatch(ctx, r.Client, studioService, func() error {
-		studioService.Labels = dashboard.Spec.Studio.WorkloadTemplate.MergeLabels(
+		studioService.Labels = dashboard.Spec.Studio.WorkloadSpec.MergeLabels(
 			objectLabels(dashboard, supabase.ServiceConfig.Studio.Name, "dashboard", supabase.Images.Studio.Tag),
 			dashboard.Labels,
 		)

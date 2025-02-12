@@ -22,6 +22,7 @@ import (
 	"iter"
 
 	"github.com/jackc/pgx/v5"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
 	"code.icb4dc0.de/prskr/supabase-operator/assets/migrations"
@@ -32,6 +33,8 @@ type Migrator struct {
 }
 
 func (m Migrator) ApplyAll(ctx context.Context, status supabasev1alpha1.MigrationStatus, seq iter.Seq2[migrations.Script, error]) (appliedSomething bool, err error) {
+	logger := log.FromContext(ctx)
+
 	for s, err := range seq {
 		if err != nil {
 			return false, err
@@ -41,6 +44,7 @@ func (m Migrator) ApplyAll(ctx context.Context, status supabasev1alpha1.Migratio
 			continue
 		}
 
+		logger.Info("Applying missing migration", "filename", s.FileName)
 		if err := m.Apply(ctx, s.Content); err != nil {
 			return false, err
 		}

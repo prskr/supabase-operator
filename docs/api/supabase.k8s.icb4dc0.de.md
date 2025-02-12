@@ -151,7 +151,7 @@ _Appears in:_
 | `disableSignup` _boolean_ |  |  |  |
 | `anonymousUsersEnabled` _boolean_ |  |  |  |
 | `providers` _[AuthProviders](#authproviders)_ |  |  |  |
-| `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ |  |  |  |
+| `workloadTemplate` _[WorkloadSpec](#workloadspec)_ |  |  |  |
 | `emailSignupDisabled` _boolean_ |  |  |  |
 
 
@@ -185,7 +185,7 @@ _Appears in:_
 
 
 _Appears in:_
-- [WorkloadTemplate](#workloadtemplate)
+- [WorkloadSpec](#workloadspec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -660,7 +660,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `nodeName` _string_ | NodeName - identifies the Envoy cluster within the current namespace<br />if not set, the name of the APIGateway resource will be used<br />The primary use case is to make the assignment of multiple supabase instances in a single namespace explicit. |  |  |
 | `controlPlane` _[ControlPlaneSpec](#controlplanespec)_ | ControlPlane - configure the control plane where Envoy will retrieve its configuration from |  |  |
-| `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the Envoy deployment |  |  |
+| `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadTemplate - customize the Envoy deployment |  |  |
 | `disableIPv6` _boolean_ | DisableIPv6 - disable IPv6 for the Envoy instance<br />this will force Envoy to use IPv4 for upstream hosts (mostly for the OAuth2 token endpoint) |  |  |
 | `debugging` _[EnvoyDebuggingOptions](#envoydebuggingoptions)_ |  |  |  |
 
@@ -731,7 +731,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `enable` _boolean_ | Enable - whether to deploy the image proxy or not |  |  |
 | `enableWebPDetection` _boolean_ |  |  |  |
-| `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the image proxy workload |  |  |
+| `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadTemplate - customize the image proxy workload |  |  |
 
 
 #### ImageSpec
@@ -818,7 +818,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the pg-meta deployment |  |  |
+| `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadTemplate - customize the pg-meta deployment |  |  |
 
 
 #### PhoneAuthProvider
@@ -854,7 +854,7 @@ _Appears in:_
 | `extraSearchPath` _string array_ | ExtraSearchPath - Extra schemas to add to the search_path of every request.<br />These schemas tables, views and functions don’t get API endpoints, they can only be referred from the database objects inside your db-schemas. | [public extensions] |  |
 | `anonRole` _string_ | AnonRole - name of the anon role | anon |  |
 | `maxRows` _integer_ | MaxRows - maximum number of rows PostgREST will load at a time | 1000 |  |
-| `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the PostgREST workload |  |  |
+| `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadSpec - customize the PostgREST workload |  |  |
 
 
 #### S3BackendSpec
@@ -989,7 +989,7 @@ _Appears in:_
 | `db` _[StorageApiDbSpec](#storageapidbspec)_ | DBSpec - Configure access to the Postgres database<br />In most cases this will reference the supabase-storage-admin credentials secret provided by the Core resource |  |  |
 | `s3` _[S3ProtocolSpec](#s3protocolspec)_ | S3Protocol - Configure S3 access to the Storage API allowing clients to use any S3 client |  |  |
 | `uploadTemp` _[UploadTempSpec](#uploadtempspec)_ | UploadTemp - configure the emptyDir for storing intermediate files during uploads |  |  |
-| `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the Storage API workload |  |  |
+| `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadTemplate - customize the Storage API workload |  |  |
 
 
 #### StorageList
@@ -1043,7 +1043,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `jwt` _[JwtSpec](#jwtspec)_ |  |  |  |
-| `workloadTemplate` _[WorkloadTemplate](#workloadtemplate)_ | WorkloadTemplate - customize the studio deployment |  |  |
+| `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadTemplate - customize the studio deployment |  |  |
 | `gatewayServiceSelector` _object (keys:string, values:string)_ | GatewayServiceSelector - selector to find the service for the API gateway<br />Required to configure the API URL in the studio deployment<br />If you don't run multiple APIGateway instances in the same namespaces, the default will be fine | \{ app.kubernetes.io/component:api-gateway app.kubernetes.io/name:envoy \} |  |
 | `externalUrl` _string_ | APIExternalURL is referring to the URL where Supabase API will be available<br />Typically this is the ingress of the API gateway |  |  |
 
@@ -1084,7 +1084,7 @@ _Appears in:_
 | `sizeLimit` _[Quantity](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#quantity-resource-api)_ |  |  |  |
 
 
-#### WorkloadTemplate
+#### WorkloadSpec
 
 
 
@@ -1106,7 +1106,7 @@ _Appears in:_
 | `replicas` _integer_ |  |  |  |
 | `securityContext` _[PodSecurityContext](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#podsecuritycontext-v1-core)_ |  |  |  |
 | `additionalLabels` _object (keys:string, values:string)_ |  |  |  |
-| `workload` _[ContainerTemplate](#containertemplate)_ | Workload - customize the container template of the workload |  |  |
+| `container` _[ContainerTemplate](#containertemplate)_ | ContainerSpec - customize the container template of the workload |  |  |
 | `additionalVolumes` _[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#volume-v1-core) array_ |  |  |  |
 
 

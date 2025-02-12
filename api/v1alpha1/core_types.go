@@ -167,8 +167,8 @@ type PostgrestSpec struct {
 	// MaxRows - maximum number of rows PostgREST will load at a time
 	// +kubebuilder:default=1000
 	MaxRows int `json:"maxRows,omitempty"`
-	// WorkloadTemplate - customize the PostgREST workload
-	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+	// WorkloadSpec - customize the PostgREST workload
+	WorkloadSpec *WorkloadSpec `json:"workloadSpec,omitempty"`
 }
 
 type AuthProviderMeta struct {
@@ -365,12 +365,12 @@ func (p *AuthProviders) Vars(apiExternalURL string) []corev1.EnvVar {
 }
 
 type AuthSpec struct {
-	AdditionalRedirectUrls []string          `json:"additionalRedirectUrls,omitempty"`
-	DisableSignup          *bool             `json:"disableSignup,omitempty"`
-	AnonymousUsersEnabled  *bool             `json:"anonymousUsersEnabled,omitempty"`
-	Providers              *AuthProviders    `json:"providers,omitempty"`
-	WorkloadTemplate       *WorkloadTemplate `json:"workloadTemplate,omitempty"`
-	EmailSignupDisabled    *bool             `json:"emailSignupDisabled,omitempty"`
+	AdditionalRedirectUrls []string       `json:"additionalRedirectUrls,omitempty"`
+	DisableSignup          *bool          `json:"disableSignup,omitempty"`
+	AnonymousUsersEnabled  *bool          `json:"anonymousUsersEnabled,omitempty"`
+	Providers              *AuthProviders `json:"providers,omitempty"`
+	WorkloadTemplate       *WorkloadSpec  `json:"workloadTemplate,omitempty"`
+	EmailSignupDisabled    *bool          `json:"emailSignupDisabled,omitempty"`
 }
 
 // CoreSpec defines the desired state of Core.

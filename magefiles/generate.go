@@ -28,6 +28,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -40,6 +41,10 @@ import (
 const (
 	composeFileUrl = "https://raw.githubusercontent.com/supabase/supabase/refs/heads/master/docker/docker-compose.yml"
 )
+
+var ignoredMigrations = []string{
+	"10000000000000_demote-postgres.sql",
+}
 
 func GenerateAll(ctx context.Context) {
 	mg.CtxDeps(ctx, FetchImageMeta, FetchMigrations, CRDs, CRDDocs)
@@ -204,7 +209,13 @@ func FetchMigrations(ctx context.Context) (err error) {
 		if strings.HasPrefix(fileName, migrationsDirPath) {
 			fileName = strings.TrimPrefix(fileName, migrationsDirPath)
 
-			dir, _ := path.Split(fileName)
+			dir, migrationFileName := path.Split(fileName)
+
+			if slices.Contains(ignoredMigrations, migrationFileName) {
+				slog.Info("Skipping migration file", slog.String("name", migrationFileName))
+				continue
+			}
+
 			outDir := filepath.Join(workingDir, "assets", "migrations", filepath.FromSlash(dir))
 			if err := os.MkdirAll(outDir, 0o750); err != nil {
 				return err

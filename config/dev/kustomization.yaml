@@ -25,3 +25,6 @@ patches:
     target:
       kind: Deployment
       labelSelector: app.kubernetes.io/name=control-plane
+
+configurations:
+  - kustomizeconfig/cnpg-cluster.yaml

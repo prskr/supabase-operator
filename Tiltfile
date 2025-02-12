@@ -7,6 +7,13 @@ k8s_yaml(kustomize('config/dev'))
 
 compile_cmd = 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o out/supabase-operator ./cmd/'
 
+update_settings(suppress_unused_image_warnings=["localhost:5005/cnpg-postgres:17.2"])
+custom_build(
+    'localhost:5005/cnpg-postgres:17.2',
+    'docker build -t $EXPECTED_REF --push -f postgres/Dockerfile --build-arg POSTGRES_MAJOR=17 --build-arg=POSTGRES_MINOR=2 .',
+    ['postgres/Dockerfile']
+)
+
 local_resource(
   'manager-go-compile',
   compile_cmd,
@@ -21,6 +28,8 @@ local_resource(
   ],
   resource_deps=[]
 )
+
+k8s_kind('Cluster', api_version='postgresql.cnpg.io/v1')
 
 docker_build_with_restart(
   'supabase-operator',
@@ -39,10 +48,11 @@ k8s_resource('supabase-controller-manager')
 k8s_resource(
     workload='supabase-control-plane',
     port_forwards=18000,
+    resource_deps=[]
 )
 
 k8s_resource(
-    objects=["cluster-example:Cluster:supabase-demo"],
+    workload='cluster-example',
     new_name='Postgres cluster',
     port_forwards=5432
 )

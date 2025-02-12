@@ -436,7 +436,7 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 	)
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, envoyDeployment, func() error {
-		envoyDeployment.Labels = envoySpec.WorkloadTemplate.MergeLabels(
+		envoyDeployment.Labels = envoySpec.WorkloadSpec.MergeLabels(
 			objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Envoy.Tag),
 			gateway.Labels,
 		)
@@ -447,7 +447,7 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 			}
 		}
 
-		envoyDeployment.Spec.Replicas = envoySpec.WorkloadTemplate.ReplicaCount()
+		envoyDeployment.Spec.Replicas = envoySpec.WorkloadSpec.ReplicaCount()
 
 		envoyArgs := []string{"-c /etc/envoy/config.yaml"}
 
@@ -464,13 +464,13 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 				Labels: objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Envoy.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets:             envoySpec.WorkloadTemplate.PullSecrets(),
+				ImagePullSecrets:             envoySpec.WorkloadSpec.PullSecrets(),
 				AutomountServiceAccountToken: ptrOf(false),
 				Containers: []corev1.Container{
 					{
 						Name:            "envoy-proxy",
-						Image:           envoySpec.WorkloadTemplate.Image(supabase.Images.Envoy.String()),
-						ImagePullPolicy: envoySpec.WorkloadTemplate.ImagePullPolicy(),
+						Image:           envoySpec.WorkloadSpec.Image(supabase.Images.Envoy.String()),
+						ImagePullPolicy: envoySpec.WorkloadSpec.ImagePullPolicy(),
 						Args:            envoyArgs,
 						Ports: []corev1.ContainerPort{
 							{
@@ -512,16 +512,16 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 								},
 							},
 						},
-						SecurityContext: envoySpec.WorkloadTemplate.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
-						Resources:       envoySpec.WorkloadTemplate.Resources(),
-						VolumeMounts: envoySpec.WorkloadTemplate.AdditionalVolumeMounts(corev1.VolumeMount{
+						SecurityContext: envoySpec.WorkloadSpec.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
+						Resources:       envoySpec.WorkloadSpec.Resources(),
+						VolumeMounts: envoySpec.WorkloadSpec.AdditionalVolumeMounts(corev1.VolumeMount{
 							Name:      configVolumeName,
 							ReadOnly:  true,
 							MountPath: "/etc/envoy",
 						}),
 					},
 				},
-				SecurityContext: envoySpec.WorkloadTemplate.PodSecurityContext(),
+				SecurityContext: envoySpec.WorkloadSpec.PodSecurityContext(),
 				Volumes: []corev1.Volume{
 					{
 						Name: configVolumeName,

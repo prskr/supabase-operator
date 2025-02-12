@@ -91,16 +91,16 @@ type ContainerTemplate struct {
 	AdditionalEnv   []corev1.EnvVar             `json:"additionalEnv,omitempty"`
 }
 
-type WorkloadTemplate struct {
+type WorkloadSpec struct {
 	Replicas         *int32                     `json:"replicas,omitempty"`
 	SecurityContext  *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 	AdditionalLabels map[string]string          `json:"additionalLabels,omitempty"`
-	// Workload - customize the container template of the workload
-	Workload          *ContainerTemplate `json:"workload,omitempty"`
+	// ContainerSpec - customize the container template of the workload
+	ContainerSpec     *ContainerTemplate `json:"container,omitempty"`
 	AdditionalVolumes []corev1.Volume    `json:"additionalVolumes,omitempty"`
 }
 
-func (t *WorkloadTemplate) ReplicaCount() *int32 {
+func (t *WorkloadSpec) ReplicaCount() *int32 {
 	if t != nil && t.Replicas != nil {
 		return t.Replicas
 	}
@@ -108,20 +108,20 @@ func (t *WorkloadTemplate) ReplicaCount() *int32 {
 	return nil
 }
 
-func (t *WorkloadTemplate) MergeEnv(basicEnv []corev1.EnvVar) []corev1.EnvVar {
-	if t == nil || t.Workload == nil || len(t.Workload.AdditionalEnv) == 0 {
+func (t *WorkloadSpec) MergeEnv(basicEnv []corev1.EnvVar) []corev1.EnvVar {
+	if t == nil || t.ContainerSpec == nil || len(t.ContainerSpec.AdditionalEnv) == 0 {
 		return basicEnv
 	}
 
-	existingKeys := make(map[string]bool, len(basicEnv)+len(t.Workload.AdditionalEnv))
+	existingKeys := make(map[string]bool, len(basicEnv)+len(t.ContainerSpec.AdditionalEnv))
 
-	merged := append(make([]corev1.EnvVar, 0, len(basicEnv)+len(t.Workload.AdditionalEnv)), basicEnv...)
+	merged := append(make([]corev1.EnvVar, 0, len(basicEnv)+len(t.ContainerSpec.AdditionalEnv)), basicEnv...)
 
 	for _, v := range basicEnv {
 		existingKeys[v.Name] = true
 	}
 
-	for _, v := range t.Workload.AdditionalEnv {
+	for _, v := range t.ContainerSpec.AdditionalEnv {
 		if _, alreadyPresent := existingKeys[v.Name]; alreadyPresent {
 			continue
 		}
@@ -132,7 +132,7 @@ func (t *WorkloadTemplate) MergeEnv(basicEnv []corev1.EnvVar) []corev1.EnvVar {
 	return merged
 }
 
-func (t *WorkloadTemplate) MergeLabels(initial map[string]string, toAppend ...map[string]string) map[string]string {
+func (t *WorkloadSpec) MergeLabels(initial map[string]string, toAppend ...map[string]string) map[string]string {
 	result := make(map[string]string)
 
 	maps.Copy(result, initial)
@@ -156,47 +156,47 @@ func (t *WorkloadTemplate) MergeLabels(initial map[string]string, toAppend ...ma
 	return result
 }
 
-func (t *WorkloadTemplate) Image(defaultImage string) string {
-	if t != nil && t.Workload != nil && t.Workload.Image != "" {
-		return t.Workload.Image
+func (t *WorkloadSpec) Image(defaultImage string) string {
+	if t != nil && t.ContainerSpec != nil && t.ContainerSpec.Image != "" {
+		return t.ContainerSpec.Image
 	}
 
 	return defaultImage
 }
 
-func (t *WorkloadTemplate) ImagePullPolicy() corev1.PullPolicy {
-	if t != nil && t.Workload != nil && t.Workload.PullPolicy != "" {
-		return t.Workload.PullPolicy
+func (t *WorkloadSpec) ImagePullPolicy() corev1.PullPolicy {
+	if t != nil && t.ContainerSpec != nil && t.ContainerSpec.PullPolicy != "" {
+		return t.ContainerSpec.PullPolicy
 	}
 
 	return corev1.PullIfNotPresent
 }
 
-func (t *WorkloadTemplate) PullSecrets() []corev1.LocalObjectReference {
-	if t != nil && t.Workload != nil && len(t.Workload.ImagePullSecrets) > 0 {
-		return t.Workload.ImagePullSecrets
+func (t *WorkloadSpec) PullSecrets() []corev1.LocalObjectReference {
+	if t != nil && t.ContainerSpec != nil && len(t.ContainerSpec.ImagePullSecrets) > 0 {
+		return t.ContainerSpec.ImagePullSecrets
 	}
 
 	return nil
 }
 
-func (t *WorkloadTemplate) Resources() corev1.ResourceRequirements {
-	if t != nil && t.Workload != nil {
-		return t.Workload.Resources
+func (t *WorkloadSpec) Resources() corev1.ResourceRequirements {
+	if t != nil && t.ContainerSpec != nil {
+		return t.ContainerSpec.Resources
 	}
 
 	return corev1.ResourceRequirements{}
 }
 
-func (t *WorkloadTemplate) AdditionalVolumeMounts(defaultMounts ...corev1.VolumeMount) []corev1.VolumeMount {
-	if t != nil && t.Workload != nil {
-		return append(defaultMounts, t.Workload.VolumeMounts...)
+func (t *WorkloadSpec) AdditionalVolumeMounts(defaultMounts ...corev1.VolumeMount) []corev1.VolumeMount {
+	if t != nil && t.ContainerSpec != nil {
+		return append(defaultMounts, t.ContainerSpec.VolumeMounts...)
 	}
 
 	return defaultMounts
 }
 
-func (t *WorkloadTemplate) Volumes(defaultVolumes ...corev1.Volume) []corev1.Volume {
+func (t *WorkloadSpec) Volumes(defaultVolumes ...corev1.Volume) []corev1.Volume {
 	if t == nil {
 		return defaultVolumes
 	}
@@ -204,7 +204,7 @@ func (t *WorkloadTemplate) Volumes(defaultVolumes ...corev1.Volume) []corev1.Vol
 	return append(defaultVolumes, t.AdditionalVolumes...)
 }
 
-func (t *WorkloadTemplate) PodSecurityContext() *corev1.PodSecurityContext {
+func (t *WorkloadSpec) PodSecurityContext() *corev1.PodSecurityContext {
 	if t != nil && t.SecurityContext != nil {
 		return t.SecurityContext
 	}
@@ -214,9 +214,9 @@ func (t *WorkloadTemplate) PodSecurityContext() *corev1.PodSecurityContext {
 	}
 }
 
-func (t *WorkloadTemplate) ContainerSecurityContext(uid, gid int64) *corev1.SecurityContext {
-	if t != nil && t.Workload != nil && t.Workload.SecurityContext != nil {
-		return t.Workload.SecurityContext
+func (t *WorkloadSpec) ContainerSecurityContext(uid, gid int64) *corev1.SecurityContext {
+	if t != nil && t.ContainerSpec != nil && t.ContainerSpec.SecurityContext != nil {
+		return t.ContainerSpec.SecurityContext
 	}
 
 	return &corev1.SecurityContext{

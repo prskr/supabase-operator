@@ -80,7 +80,7 @@ type EnvoySpec struct {
 	// ControlPlane - configure the control plane where Envoy will retrieve its configuration from
 	ControlPlane *ControlPlaneSpec `json:"controlPlane"`
 	// WorkloadTemplate - customize the Envoy deployment
-	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+	WorkloadSpec *WorkloadSpec `json:"workloadSpec,omitempty"`
 	// DisableIPv6 - disable IPv6 for the Envoy instance
 	// this will force Envoy to use IPv4 for upstream hosts (mostly for the OAuth2 token endpoint)
 	DisableIPv6 bool                   `json:"disableIPv6,omitempty"`

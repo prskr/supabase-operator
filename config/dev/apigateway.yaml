@@ -10,6 +10,8 @@ metadata:
 spec:
   envoy:
     disableIPv6: true
+    workloadSpec:
+      replicas: 2
   apiEndpoint:
     jwks:
       name: core-sample-jwt

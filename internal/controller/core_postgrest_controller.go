@@ -115,7 +115,7 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 	}
 
 	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, postgrestDeployment, func() error {
-		postgrestDeployment.Labels = postgrestSpec.WorkloadTemplate.MergeLabels(
+		postgrestDeployment.Labels = postgrestSpec.WorkloadSpec.MergeLabels(
 			objectLabels(core, serviceCfg.Name, "core", supabase.Images.Postgrest.Tag),
 			core.Labels,
 		)
@@ -155,7 +155,7 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 			}
 		}
 
-		postgrestDeployment.Spec.Replicas = postgrestSpec.WorkloadTemplate.ReplicaCount()
+		postgrestDeployment.Spec.Replicas = postgrestSpec.WorkloadSpec.ReplicaCount()
 
 		postgrestDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
@@ -165,14 +165,14 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 				Labels: objectLabels(core, serviceCfg.Name, "core", supabase.Images.Postgrest.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: postgrestSpec.WorkloadTemplate.PullSecrets(),
+				ImagePullSecrets: postgrestSpec.WorkloadSpec.PullSecrets(),
 				Containers: []corev1.Container{
 					{
 						Name:            "supabase-rest",
-						Image:           postgrestSpec.WorkloadTemplate.Image(supabase.Images.Postgrest.String()),
-						ImagePullPolicy: postgrestSpec.WorkloadTemplate.ImagePullPolicy(),
+						Image:           postgrestSpec.WorkloadSpec.Image(supabase.Images.Postgrest.String()),
+						ImagePullPolicy: postgrestSpec.WorkloadSpec.ImagePullPolicy(),
 						Args:            []string{"postgrest"},
-						Env:             postgrestSpec.WorkloadTemplate.MergeEnv(postgrestEnv),
+						Env:             postgrestSpec.WorkloadSpec.MergeEnv(postgrestEnv),
 						Ports: []corev1.ContainerPort{
 							{
 								Name:          serviceCfg.Defaults.ServerPortName,
@@ -185,9 +185,9 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 								Protocol:      corev1.ProtocolTCP,
 							},
 						},
-						SecurityContext: postgrestSpec.WorkloadTemplate.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
-						Resources:       postgrestSpec.WorkloadTemplate.Resources(),
-						VolumeMounts:    postgrestSpec.WorkloadTemplate.AdditionalVolumeMounts(),
+						SecurityContext: postgrestSpec.WorkloadSpec.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
+						Resources:       postgrestSpec.WorkloadSpec.Resources(),
+						VolumeMounts:    postgrestSpec.WorkloadSpec.AdditionalVolumeMounts(),
 						ReadinessProbe: &corev1.Probe{
 							InitialDelaySeconds: 5,
 							PeriodSeconds:       3,
@@ -213,7 +213,7 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 						},
 					},
 				},
-				SecurityContext: postgrestSpec.WorkloadTemplate.PodSecurityContext(),
+				SecurityContext: postgrestSpec.WorkloadSpec.PodSecurityContext(),
 			},
 		}
 
@@ -239,7 +239,7 @@ func (r *CorePostgrestReconiler) reconcilePostgrestService(
 	)
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, postgrestService, func() error {
-		postgrestService.Labels = core.Spec.Postgrest.WorkloadTemplate.MergeLabels(
+		postgrestService.Labels = core.Spec.Postgrest.WorkloadSpec.MergeLabels(
 			objectLabels(core, serviceCfg.Name, "core", supabase.Images.Postgrest.Tag),
 			core.Labels,
 		)

@@ -191,7 +191,7 @@ type StorageApiSpec struct {
 	// UploadTemp - configure the emptyDir for storing intermediate files during uploads
 	UploadTemp *UploadTempSpec `json:"uploadTemp,omitempty"`
 	// WorkloadTemplate - customize the Storage API workload
-	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+	WorkloadSpec *WorkloadSpec `json:"workloadSpec,omitempty"`
 }
 
 type ImageProxySpec struct {
@@ -199,7 +199,7 @@ type ImageProxySpec struct {
 	Enable               bool `json:"enable,omitempty"`
 	EnabledWebPDetection bool `json:"enableWebPDetection,omitempty"`
 	// WorkloadTemplate - customize the image proxy workload
-	WorkloadTemplate *WorkloadTemplate `json:"workloadTemplate,omitempty"`
+	WorkloadSpec *WorkloadSpec `json:"workloadSpec,omitempty"`
 }
 
 // StorageSpec defines the desired state of Storage.

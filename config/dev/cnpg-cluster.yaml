@@ -44,14 +44,15 @@ metadata:
   namespace: supabase-demo
 spec:
   instances: 1
-  imageName: ghcr.io/supabase/postgres:15.8.1.021
-  postgresUID: 105
-  postgresGID: 106
+  imageName: localhost:5005/cnpg-postgres:17.2
+  imagePullPolicy: Always
+  postgresUID: 26
+  postgresGID: 102
 
   bootstrap:
     initdb:
       database: app
-      owner: setup
+      owner: supabase_admin
       postInitSQL:
         - drop publication if exists supabase_realtime;
 

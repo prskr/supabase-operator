@@ -232,7 +232,7 @@ func (r *CoreAuthReconciler) reconcileAuthService(
 	}
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, authService, func() error {
-		authService.Labels = core.Spec.Postgrest.WorkloadTemplate.MergeLabels(
+		authService.Labels = core.Spec.Postgrest.WorkloadSpec.MergeLabels(
 			objectLabels(core, "auth", "core", supabase.Images.Gotrue.Tag),
 			core.Labels,
 		)

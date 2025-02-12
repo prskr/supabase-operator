@@ -98,7 +98,7 @@ func (r *StorageImgProxyReconciler) reconcileImgProxyDeployment(
 	)
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, imgProxyDeployment, func() error {
-		imgProxyDeployment.Labels = imgProxySpec.WorkloadTemplate.MergeLabels(
+		imgProxyDeployment.Labels = imgProxySpec.WorkloadSpec.MergeLabels(
 			objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.ImgProxy.Tag),
 			storage.Labels,
 		)
@@ -119,27 +119,27 @@ func (r *StorageImgProxyReconciler) reconcileImgProxyDeployment(
 			}
 		}
 
-		imgProxyDeployment.Spec.Replicas = imgProxySpec.WorkloadTemplate.ReplicaCount()
+		imgProxyDeployment.Spec.Replicas = imgProxySpec.WorkloadSpec.ReplicaCount()
 
 		imgProxyDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.ImgProxy.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: imgProxySpec.WorkloadTemplate.PullSecrets(),
+				ImagePullSecrets: imgProxySpec.WorkloadSpec.PullSecrets(),
 				Containers: []corev1.Container{{
 					Name:            "supabase-imgproxy",
-					Image:           imgProxySpec.WorkloadTemplate.Image(supabase.Images.ImgProxy.String()),
-					ImagePullPolicy: imgProxySpec.WorkloadTemplate.ImagePullPolicy(),
-					Env:             imgProxySpec.WorkloadTemplate.MergeEnv(imgProxyEnv),
+					Image:           imgProxySpec.WorkloadSpec.Image(supabase.Images.ImgProxy.String()),
+					ImagePullPolicy: imgProxySpec.WorkloadSpec.ImagePullPolicy(),
+					Env:             imgProxySpec.WorkloadSpec.MergeEnv(imgProxyEnv),
 					Ports: []corev1.ContainerPort{{
 						Name:          serviceCfg.Defaults.ApiPortName,
 						ContainerPort: serviceCfg.Defaults.ApiPort,
 						Protocol:      corev1.ProtocolTCP,
 					}},
-					SecurityContext: imgProxySpec.WorkloadTemplate.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
-					Resources:       imgProxySpec.WorkloadTemplate.Resources(),
-					VolumeMounts:    imgProxySpec.WorkloadTemplate.AdditionalVolumeMounts(),
+					SecurityContext: imgProxySpec.WorkloadSpec.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
+					Resources:       imgProxySpec.WorkloadSpec.Resources(),
+					VolumeMounts:    imgProxySpec.WorkloadSpec.AdditionalVolumeMounts(),
 					ReadinessProbe: &corev1.Probe{
 						InitialDelaySeconds: 5,
 						PeriodSeconds:       3,
@@ -162,8 +162,8 @@ func (r *StorageImgProxyReconciler) reconcileImgProxyDeployment(
 						},
 					},
 				}},
-				SecurityContext: imgProxySpec.WorkloadTemplate.PodSecurityContext(),
-				Volumes:         imgProxySpec.WorkloadTemplate.Volumes(),
+				SecurityContext: imgProxySpec.WorkloadSpec.PodSecurityContext(),
+				Volumes:         imgProxySpec.WorkloadSpec.Volumes(),
 			},
 		}
 
@@ -189,7 +189,7 @@ func (r *StorageImgProxyReconciler) reconcileImgProxyService(
 	)
 
 	_, err := controllerutil.CreateOrPatch(ctx, r.Client, imgProxyService, func() error {
-		imgProxyService.Labels = storage.Spec.Api.WorkloadTemplate.MergeLabels(
+		imgProxyService.Labels = storage.Spec.Api.WorkloadSpec.MergeLabels(
 			objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.ImgProxy.Tag),
 			storage.Labels,
 		)

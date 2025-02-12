@@ -133,7 +133,7 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 	))
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, storageApiDeployment, func() error {
-		storageApiDeployment.Labels = apiSpec.WorkloadTemplate.MergeLabels(
+		storageApiDeployment.Labels = apiSpec.WorkloadSpec.MergeLabels(
 			objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.Storage.Tag),
 			storage.Labels,
 		)
@@ -188,7 +188,7 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 			}
 		}
 
-		storageApiDeployment.Spec.Replicas = apiSpec.WorkloadTemplate.ReplicaCount()
+		storageApiDeployment.Spec.Replicas = apiSpec.WorkloadSpec.ReplicaCount()
 
 		storageApiDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
@@ -199,20 +199,20 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 				Labels: objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.Storage.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: apiSpec.WorkloadTemplate.PullSecrets(),
+				ImagePullSecrets: apiSpec.WorkloadSpec.PullSecrets(),
 				Containers: []corev1.Container{{
 					Name:            "supabase-storage",
-					Image:           apiSpec.WorkloadTemplate.Image(supabase.Images.Storage.String()),
-					ImagePullPolicy: apiSpec.WorkloadTemplate.ImagePullPolicy(),
-					Env:             apiSpec.WorkloadTemplate.MergeEnv(append(storagApiEnv, slices.Concat(apiSpec.FileBackend.Env(), apiSpec.S3Backend.Env())...)),
+					Image:           apiSpec.WorkloadSpec.Image(supabase.Images.Storage.String()),
+					ImagePullPolicy: apiSpec.WorkloadSpec.ImagePullPolicy(),
+					Env:             apiSpec.WorkloadSpec.MergeEnv(append(storagApiEnv, slices.Concat(apiSpec.FileBackend.Env(), apiSpec.S3Backend.Env())...)),
 					Ports: []corev1.ContainerPort{{
 						Name:          serviceCfg.Defaults.ApiPortName,
 						ContainerPort: serviceCfg.Defaults.ApiPort,
 						Protocol:      corev1.ProtocolTCP,
 					}},
-					SecurityContext: apiSpec.WorkloadTemplate.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
-					Resources:       apiSpec.WorkloadTemplate.Resources(),
-					VolumeMounts: apiSpec.WorkloadTemplate.AdditionalVolumeMounts(
+					SecurityContext: apiSpec.WorkloadSpec.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
+					Resources:       apiSpec.WorkloadSpec.Resources(),
+					VolumeMounts: apiSpec.WorkloadSpec.AdditionalVolumeMounts(
 						corev1.VolumeMount{
 							Name:      "tmp",
 							MountPath: "/tmp",
@@ -242,8 +242,8 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 						},
 					},
 				}},
-				SecurityContext: apiSpec.WorkloadTemplate.PodSecurityContext(),
-				Volumes: apiSpec.WorkloadTemplate.Volumes(
+				SecurityContext: apiSpec.WorkloadSpec.PodSecurityContext(),
+				Volumes: apiSpec.WorkloadSpec.Volumes(
 					corev1.Volume{
 						Name: "tmp",
 						VolumeSource: corev1.VolumeSource{
@@ -276,7 +276,7 @@ func (r *StorageApiReconciler) reconcileStorageApiService(
 	)
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, storageApiService, func() error {
-		storageApiService.Labels = storage.Spec.Api.WorkloadTemplate.MergeLabels(
+		storageApiService.Labels = storage.Spec.Api.WorkloadSpec.MergeLabels(
 			objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.Storage.Tag),
 			storage.Labels,
 		)
