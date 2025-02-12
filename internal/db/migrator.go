@@ -32,7 +32,7 @@ type Migrator struct {
 	Conn *pgx.Conn
 }
 
-func (m Migrator) ApplyAll(ctx context.Context, status supabasev1alpha1.MigrationStatus, seq iter.Seq2[migrations.Script, error]) (appliedSomething bool, err error) {
+func (m Migrator) ApplyAll(ctx context.Context, status *supabasev1alpha1.CoreStatus, seq iter.Seq2[migrations.Script, error], areInitScripts bool) (appliedSomething bool, err error) {
 	logger := log.FromContext(ctx)
 
 	for s, err := range seq {
@@ -40,11 +40,14 @@ func (m Migrator) ApplyAll(ctx context.Context, status supabasev1alpha1.Migratio
 			return false, err
 		}
 
-		if status.IsApplied(s.FileName) {
+		if found, upToDate := status.Database.IsMigrationUpToDate(s.FileName, s.Hash); found && upToDate {
+			continue
+		} else if found && !upToDate && areInitScripts {
+			logger.Info("Change in init script was detected - will not apply because init scripts are not idempotent", "file_name", s.FileName)
 			continue
 		}
 
-		logger.Info("Applying missing migration", "filename", s.FileName)
+		logger.Info("Applying missing or outdated migration", "filename", s.FileName)
 		if err := m.Apply(ctx, s.Content); err != nil {
 			return false, err
 		}

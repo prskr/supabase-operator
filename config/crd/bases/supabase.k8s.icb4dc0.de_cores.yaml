@@ -5353,11 +5353,48 @@ spec:
             properties:
               database:
                 properties:
-                  appliedMigrations:
-                    additionalProperties:
-                      format: date-time
-                      type: string
-                    type: object
+                  migrationConditions:
+                    items:
+                      properties:
+                        hash:
+                          description: Hash - SHA256 hash of the script when it was
+                            last successfully applied
+                          format: byte
+                          type: string
+                        lastProbeTime:
+                          description: LastProbeTime - last time the operator tried
+                            to execute the migration script
+                          format: date-time
+                          type: string
+                        lastTransitionTime:
+                          description: LastTransitionTime - last time the condition
+                            transitioned from one status to another
+                          format: date-time
+                          type: string
+                        message:
+                          description: Message - human-readable message indicating
+                            details about the last transition
+                          type: string
+                        name:
+                          description: Name - file name of the migration script
+                          type: string
+                        reason:
+                          description: Reason - one-word, CamcelCase reason for the
+                            condition's last transition
+                          type: string
+                        status:
+                          description: Status - whether the migration was applied
+                            or not
+                          enum:
+                          - Applied
+                          - Failed
+                          type: string
+                      required:
+                      - hash
+                      - name
+                      - status
+                      type: object
+                    type: array
                   roles:
                     additionalProperties:
                       format: byte

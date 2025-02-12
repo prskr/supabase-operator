@@ -17,6 +17,7 @@ limitations under the License.
 package migrations
 
 import (
+	"crypto/sha256"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -32,6 +33,7 @@ var migrationsFS embed.FS
 type Script struct {
 	FileName string
 	Content  string
+	Hash     []byte
 }
 
 func InitScripts() iter.Seq2[Script, error] {
@@ -49,10 +51,18 @@ func RoleCreationScript(roleName string) (Script, error) {
 		return Script{}, err
 	}
 
-	return Script{fileName, string(content)}, nil
+	hash := sha256.New()
+	_, _ = hash.Write(content)
+
+	return Script{
+		FileName: fileName,
+		Content:  string(content),
+		Hash:     hash.Sum(nil),
+	}, nil
 }
 
 func readScripts(dir string) iter.Seq2[Script, error] {
+	hash := sha256.New()
 	return func(yield func(Script, error) bool) {
 		files, err := migrationsFS.ReadDir(dir)
 		if err != nil {
@@ -76,10 +86,15 @@ func readScripts(dir string) iter.Seq2[Script, error] {
 				}
 			}
 
+			_, _ = hash.Write(content)
+
 			s := Script{
 				FileName: file.Name(),
 				Content:  string(content),
+				Hash:     hash.Sum(nil),
 			}
+
+			hash.Reset()
 
 			if !yield(s, nil) {
 				return

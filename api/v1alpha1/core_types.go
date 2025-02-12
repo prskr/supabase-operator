@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -25,6 +26,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -387,20 +389,75 @@ type CoreSpec struct {
 	Auth      *AuthSpec     `json:"auth,omitempty"`
 }
 
-type MigrationStatus map[string]metav1.Time
+type MigrationConditionStatus string
 
-func (s MigrationStatus) IsApplied(name string) bool {
-	_, ok := s[name]
-	return ok
-}
+const (
+	MigrationConditionStatusApplied MigrationConditionStatus = "Applied"
+	MigrationConditionStatusFailed  MigrationConditionStatus = "Failed"
+)
 
-func (s MigrationStatus) Record(name string) {
-	s[name] = metav1.Now()
+type MigrationScriptCondition struct {
+	// Name - file name of the migration script
+	Name string `json:"name"`
+	// Hash - SHA256 hash of the script when it was last successfully applied
+	Hash []byte `json:"hash"`
+	// Status - whether the migration was applied or not
+	// +kubebuilder:validation:Enum=Applied;Failed
+	Status MigrationConditionStatus `json:"status"`
+	// LastProbeTime - last time the operator tried to execute the migration script
+	LastProbeTime metav1.Time `json:"lastProbeTime,omitempty"`
+	// LastTransitionTime - last time the condition transitioned from one status to another
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	// Reason - one-word, CamcelCase reason for the condition's last transition
+	Reason string `json:"reason,omitempty"`
+	// Message - human-readable message indicating details about the last transition
+	Message string `json:"message,omitempty"`
 }
 
 type DatabaseStatus struct {
-	AppliedMigrations MigrationStatus   `json:"appliedMigrations,omitempty"`
-	Roles             map[string][]byte `json:"roles,omitempty"`
+	MigrationConditions []MigrationScriptCondition `json:"migrationConditions,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+	Roles               map[string][]byte          `json:"roles,omitempty"`
+}
+
+func (s DatabaseStatus) IsMigrationUpToDate(name string, hash []byte) (found bool, upToDate bool) {
+	for _, cond := range s.MigrationConditions {
+		if cond.Name == name {
+			return true, bytes.Equal(cond.Hash, hash)
+		}
+	}
+
+	return false, false
+}
+
+func (s DatabaseStatus) RecordMigrationCondition(name string, hash []byte, err error) {
+	var (
+		now                = time.Now()
+		newStatus          = MigrationConditionStatusApplied
+		lastProbeTime      = metav1.NewTime(now)
+		lastTransitionTime metav1.Time
+		message            string
+	)
+
+	if err != nil {
+		newStatus = MigrationConditionStatusFailed
+		message = err.Error()
+	}
+
+	for idx, cond := range s.MigrationConditions {
+		if cond.Name == name {
+			lastTransitionTime = cond.LastTransitionTime
+			if cond.Status != newStatus {
+				lastTransitionTime = metav1.NewTime(now)
+			}
+
+			cond.Hash = hash
+			cond.Status = newStatus
+			cond.LastProbeTime = lastProbeTime
+			cond.LastTransitionTime = lastTransitionTime
+			cond.Reason = "Outdated"
+			cond.Message = message
+		}
+	}
 }
 
 type CoreConditionType string
