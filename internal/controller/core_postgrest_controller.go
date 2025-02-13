@@ -165,7 +165,8 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 				Labels: objectLabels(core, serviceCfg.Name, "core", supabase.Images.Postgrest.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: postgrestSpec.WorkloadSpec.PullSecrets(),
+				ImagePullSecrets:             postgrestSpec.WorkloadSpec.PullSecrets(),
+				AutomountServiceAccountToken: ptrOf(false),
 				Containers: []corev1.Container{
 					{
 						Name:            "supabase-rest",

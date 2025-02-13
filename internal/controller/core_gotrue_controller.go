@@ -160,7 +160,8 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 				Labels: objectLabels(core, "auth", "core", supabase.Images.Gotrue.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: authSpec.WorkloadTemplate.PullSecrets(),
+				ImagePullSecrets:             authSpec.WorkloadTemplate.PullSecrets(),
+				AutomountServiceAccountToken: ptrOf(false),
 				InitContainers: []corev1.Container{{
 					Name:            "supabase-auth-migrations",
 					Image:           authSpec.WorkloadTemplate.Image(supabase.Images.Gotrue.String()),

@@ -126,7 +126,8 @@ func (r *StorageImgProxyReconciler) reconcileImgProxyDeployment(
 				Labels: objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.ImgProxy.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: imgProxySpec.WorkloadSpec.PullSecrets(),
+				ImagePullSecrets:             imgProxySpec.WorkloadSpec.PullSecrets(),
+				AutomountServiceAccountToken: ptrOf(false),
 				Containers: []corev1.Container{{
 					Name:            "supabase-imgproxy",
 					Image:           imgProxySpec.WorkloadSpec.Image(supabase.Images.ImgProxy.String()),

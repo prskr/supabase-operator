@@ -199,7 +199,8 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 				Labels: objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.Storage.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: apiSpec.WorkloadSpec.PullSecrets(),
+				ImagePullSecrets:             apiSpec.WorkloadSpec.PullSecrets(),
+				AutomountServiceAccountToken: ptrOf(false),
 				Containers: []corev1.Container{{
 					Name:            "supabase-storage",
 					Image:           apiSpec.WorkloadSpec.Image(supabase.Images.Storage.String()),

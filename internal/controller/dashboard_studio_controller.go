@@ -137,7 +137,8 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 				Labels: objectLabels(dashboard, serviceCfg.Name, "dashboard", supabase.Images.Studio.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: studioSpec.WorkloadSpec.PullSecrets(),
+				ImagePullSecrets:             studioSpec.WorkloadSpec.PullSecrets(),
+				AutomountServiceAccountToken: ptrOf(false),
 				Containers: []corev1.Container{{
 					Name:            "supabase-studio",
 					Image:           studioSpec.WorkloadSpec.Image(supabase.Images.Studio.String()),

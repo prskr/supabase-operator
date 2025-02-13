@@ -126,7 +126,8 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
 				Labels: objectLabels(dashboard, serviceCfg.Name, "dashboard", supabase.Images.PostgresMeta.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets: pgMetaSpec.WorkloadSpec.PullSecrets(),
+				ImagePullSecrets:             pgMetaSpec.WorkloadSpec.PullSecrets(),
+				AutomountServiceAccountToken: ptrOf(false),
 				Containers: []corev1.Container{{
 					Name:            "supabase-meta",
 					Image:           pgMetaSpec.WorkloadSpec.Image(supabase.Images.PostgresMeta.String()),
