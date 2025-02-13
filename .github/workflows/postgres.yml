@@ -1,7 +1,11 @@
 name: Postgres image
 on:
+  schedule:
+    # every Thursday 2:30am
+    - cron: "30 2 * * 2"
   push:
     paths:
+      - .github/workflows/postgres.yml
       - postgres/**
     branches:
       - main
