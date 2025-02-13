@@ -36,7 +36,6 @@ jobs:
       - name: Init go
         run: |
           go mod download
-          go mod download -modfile tools/go.mod
 
       - name: Snapshot release
         uses: goreleaser/goreleaser-action@v6

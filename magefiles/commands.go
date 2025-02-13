@@ -20,33 +20,11 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
-type command string
-
-var (
-	ControllerGen = command("controller-gen")
-	Gofumpt       = command("gofumpt")
-	GolangciLint  = command("golangci-lint")
-	Gotestsum     = command("gotestsum")
-	Sqlc          = command("sqlc")
-	CRDRefDocs    = command("crd-ref-docs")
-	Envtest       = command("envtest")
-)
-
-var tools map[command]string = map[command]string{
-	ControllerGen: "sigs.k8s.io/controller-tools/cmd/controller-gen",
-	Gofumpt:       "mvdan.cc/gofumpt",
-	GolangciLint:  "github.com/golangci/golangci-lint/cmd/golangci-lint",
-	Gotestsum:     "gotest.tools/gotestsum",
-	Sqlc:          "github.com/sqlc-dev/sqlc/cmd/sqlc",
-	CRDRefDocs:    "github.com/elastic/crd-ref-docs",
-	Envtest:       "sigs.k8s.io/controller-runtime/tools/setup-envtest",
-}
-
 var (
 	Go      = sh.RunCmd("go")
 	Git     = sh.RunCmd("git")
-	RunTool = RunVCmd("go", "run", "-modfile=tools/go.mod")
-	OutTool = sh.OutCmd("go", "run", "-modfile=tools/go.mod")
+	RunTool = RunVCmd("go", "tool")
+	OutTool = sh.OutCmd("go", "tool")
 )
 
 func RunVCmd(cmd string, primaryArgs ...string) func(args ...string) error {

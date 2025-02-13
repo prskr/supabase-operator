@@ -37,7 +37,7 @@ This operator tries to be as un-opionionated as possible and thereofore does not
 ## Getting Started
 
 ### Prerequisites
-- go version v1.23.x+
+- go version v1.24.x+
 - docker version 27.+.
 - kubectl version v1.30.0+.
 - Access to a Kubernetes v1.30.+ cluster.

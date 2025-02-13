@@ -53,20 +53,20 @@ func GenerateAll(ctx context.Context) {
 func CRDs() error {
 	return errors.Join(
 		RunTool(
-			tools[ControllerGen],
+			"controller-gen",
 			"rbac:roleName=manager-role",
 			"crd",
 			"webhook",
 			`paths="./..."`,
 			"output:crd:artifacts:config=config/crd/bases",
 		),
-		RunTool(tools[ControllerGen], `object:headerFile="hack/boilerplate.go.txt"`, `paths="./..."`),
+		RunTool("controller-gen", `object:headerFile="hack/boilerplate.go.txt"`, `paths="./..."`),
 	)
 }
 
 func CRDDocs() error {
 	return RunTool(
-		tools[CRDRefDocs],
+		"crd-ref-docs",
 		"--source-path=./api/",
 		"--renderer=markdown",
 		"--config=crd-docs.yaml",
@@ -165,7 +165,7 @@ func FetchImageMeta(ctx context.Context) (err error) {
 		return err
 	}
 
-	return RunTool(tools[Gofumpt], "-l", "-w", f.Name())
+	return RunTool("gofumpt", "-l", "-w", f.Name())
 }
 
 func FetchMigrations(ctx context.Context) (err error) {

@@ -23,7 +23,7 @@ func Validate() {
 }
 
 func Fmt() error {
-	return RunTool(tools[Gofumpt], "-l", "-w", ".")
+	return RunTool("gofumpt", "-l", "-w", ".")
 }
 
 func Vet() error {
@@ -31,9 +31,9 @@ func Vet() error {
 }
 
 func Lint() error {
-	return RunTool(tools[GolangciLint], "run")
+	return RunTool("golangci-lint", "run")
 }
 
 func LintFix() error {
-	return RunTool(tools[GolangciLint], "run", "--fix")
+	return RunTool("golangci-lint", "run", "--fix")
 }

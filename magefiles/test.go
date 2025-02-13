@@ -24,7 +24,7 @@ import (
 )
 
 func Test() error {
-	out, err := OutTool(tools[Envtest], "use", k8sVersion, "--bin-dir", "bin", "-p", "path")
+	out, err := OutTool("envtest", "use", k8sVersion, "--bin-dir", "bin", "-p", "path")
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func Test() error {
 
 	return sh.RunWithV(
 		testEnv,
-		"go", "run", "-modfile=tools/go.mod",
-		tools[Gotestsum], "-f", "pkgname-and-test-fails", "--", "-race", "-shuffle=on", "./...",
+		"go", "tool",
+		"gotestsum", "-f", "pkgname-and-test-fails", "--", "-race", "-shuffle=on", "./...",
 	)
 }
