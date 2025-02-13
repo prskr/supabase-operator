@@ -45,8 +45,6 @@ jobs:
           build-args: |
             POSTGRES_MAJOR=${{ matrix.postgres_major }}
             POSTGRES_MINOR=${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}
-          cache-from: type=registry,ref=code.icb4dc0.de/prskr/supabase-operator/postgres:buildcache
-          cache-to: type=registry,ref=code.icb4dc0.de/prskr/supabase-operator/postgres:buildcache,mode=max
 
   manifest:
     strategy:
