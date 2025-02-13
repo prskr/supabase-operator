@@ -32,7 +32,12 @@ type Migrator struct {
 	Conn *pgx.Conn
 }
 
-func (m Migrator) ApplyAll(ctx context.Context, status *supabasev1alpha1.CoreStatus, seq iter.Seq2[migrations.Script, error], areInitScripts bool) (appliedSomething bool, err error) {
+func (m Migrator) ApplyAll(
+	ctx context.Context,
+	status *supabasev1alpha1.CoreStatus,
+	seq iter.Seq2[migrations.Script, error],
+	areInitScripts bool,
+) (appliedSomething bool, err error) {
 	logger := log.FromContext(ctx)
 
 	for s, err := range seq {
@@ -48,12 +53,12 @@ func (m Migrator) ApplyAll(ctx context.Context, status *supabasev1alpha1.CoreSta
 		}
 
 		logger.Info("Applying missing or outdated migration", "filename", s.FileName)
-		if err := m.Apply(ctx, s.Content); err != nil {
+		err := status.Database.RecordMigrationCondition(s.FileName, s.Hash, m.Apply(ctx, s.Content))
+		if err != nil {
 			return false, err
 		}
 
 		appliedSomething = true
-		status.Record(s.FileName)
 	}
 
 	return appliedSomething, nil

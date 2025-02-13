@@ -1,12 +1,13 @@
 apiVersion: ctlptl.dev/v1alpha1
 kind: Registry
-name: ctlptl-registry
+name: supabase-operator-registry
 port: 5005
 ---
 apiVersion: ctlptl.dev/v1alpha1
 kind: Cluster
 product: kind
-registry: ctlptl-registry
+registry: supabase-operator-registry
 kindV1Alpha4Cluster:
+  name: supabase-operator-debug
   networking:
     ipFamily: dual

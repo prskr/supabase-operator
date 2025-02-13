@@ -7,13 +7,6 @@ k8s_yaml(kustomize('config/dev'))
 
 compile_cmd = 'CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o out/supabase-operator ./cmd/'
 
-update_settings(suppress_unused_image_warnings=["localhost:5005/cnpg-postgres:17.2"])
-custom_build(
-    'localhost:5005/cnpg-postgres:17.2',
-    'docker build -t $EXPECTED_REF --push -f postgres/Dockerfile --build-arg POSTGRES_MAJOR=17 --build-arg=POSTGRES_MINOR=2 .',
-    ['postgres/Dockerfile']
-)
-
 local_resource(
   'manager-go-compile',
   compile_cmd,

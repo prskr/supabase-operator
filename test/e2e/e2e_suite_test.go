@@ -43,7 +43,7 @@ var (
 
 	// projectImage is the name of the image which will be build and loaded
 	// with the code source changes to be tested.
-	projectImage = "example.com/supabase-operator:v0.0.1"
+	projectImage = "code.icb4dc0.de/prskr/supabase-operator:v0.0.1"
 )
 
 // TestE2E runs the end-to-end (e2e) test suite for the project. These tests execute in an isolated,

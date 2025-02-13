@@ -31,13 +31,13 @@ import (
 )
 
 // namespace where the project is deployed in
-const namespace = "supabase-operator-system"
+const namespace = "supabase-system"
 
 // serviceAccountName created for the project
 const serviceAccountName = "supabase-operator-controller-manager"
 
 // metricsServiceName is the name of the metrics service of the project
-const metricsServiceName = "supabase-operator-controller-manager-metrics-service"
+const metricsServiceName = "supabase-controller-manager-metrics-service"
 
 // metricsRoleBindingName is the name of the RBAC that will be created to allow get the metrics data
 const metricsRoleBindingName = "supabase-operator-metrics-binding"

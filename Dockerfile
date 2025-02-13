@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.23.4 AS builder
+FROM golang:1.23.6-alpine AS builder
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -16,10 +16,7 @@ COPY [ "go.*", "./" ]
 COPY [ "api", "api" ]
 COPY [ "assets/migrations", "assets/migrations" ]
 COPY [ "cmd", "cmd" ]
-COPY [ "infrastructure", "infrastructure" ]
 COPY [ "internal", "internal" ]
-COPY [ "magefiles", "magefiles" ]
-COPY [ "tools", "tools" ]
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command

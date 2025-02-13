@@ -105,11 +105,7 @@ func (r *CoreDbReconciler) applyMissingMigrations(
 
 	var appliedSomething bool
 
-	if core.Status.Database.AppliedMigrations == nil {
-		core.Status.Database.AppliedMigrations = make(supabasev1alpha1.MigrationStatus)
-	}
-
-	if appliedSomething, err = migrator.ApplyAll(ctx, core.Status.Database.AppliedMigrations, migrations.InitScripts()); err != nil {
+	if appliedSomething, err = migrator.ApplyAll(ctx, &core.Status, migrations.InitScripts(), true); err != nil {
 		return err
 	}
 
@@ -120,7 +116,7 @@ func (r *CoreDbReconciler) applyMissingMigrations(
 		logger.Info("Init scripts were up to date - did not run any")
 	}
 
-	if appliedSomething, err = migrator.ApplyAll(ctx, core.Status.Database.AppliedMigrations, migrations.MigrationScripts()); err != nil {
+	if appliedSomething, err = migrator.ApplyAll(ctx, &core.Status, migrations.MigrationScripts(), false); err != nil {
 		return err
 	}
 

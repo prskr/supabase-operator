@@ -518,7 +518,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `appliedMigrations` _[MigrationStatus](#migrationstatus)_ |  |  |  |
+| `migrationConditions` _[MigrationScriptCondition](#migrationscriptcondition) array_ |  |  |  |
 | `roles` _object (keys:string, values:integer array)_ |  |  |  |
 
 
@@ -773,9 +773,11 @@ _Appears in:_
 | `serviceKey` _string_ | ServiceKey - key in secret where to read the service JWT from | service_key |  |
 
 
-#### MigrationStatus
 
-_Underlying type:_ _[Time](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#time-v1-meta)_
+
+#### MigrationScriptCondition
+
+
 
 
 
@@ -784,6 +786,14 @@ _Underlying type:_ _[Time](https://kubernetes.io/docs/reference/generated/kubern
 _Appears in:_
 - [DatabaseStatus](#databasestatus)
 
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `name` _string_ | Name - file name of the migration script |  |  |
+| `hash` _integer array_ | Hash - SHA256 hash of the script when it was last successfully applied |  |  |
+| `lastProbeTime` _[Time](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#time-v1-meta)_ | LastProbeTime - last time the operator tried to execute the migration script |  |  |
+| `lastTransitionTime` _[Time](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#time-v1-meta)_ | LastTransitionTime - last time the condition transitioned from one status to another |  |  |
+| `reason` _string_ | Reason - one-word, CamcelCase reason for the condition's last transition |  |  |
+| `message` _string_ | Message - human-readable message indicating details about the last transition |  |  |
 
 
 #### OAuthProvider

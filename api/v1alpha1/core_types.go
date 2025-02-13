@@ -429,12 +429,12 @@ func (s DatabaseStatus) IsMigrationUpToDate(name string, hash []byte) (found boo
 	return false, false
 }
 
-func (s DatabaseStatus) RecordMigrationCondition(name string, hash []byte, err error) {
+func (s *DatabaseStatus) RecordMigrationCondition(name string, hash []byte, err error) error {
 	var (
 		now                = time.Now()
 		newStatus          = MigrationConditionStatusApplied
 		lastProbeTime      = metav1.NewTime(now)
-		lastTransitionTime metav1.Time
+		lastTransitionTime = metav1.NewTime(now)
 		message            string
 	)
 
@@ -456,8 +456,22 @@ func (s DatabaseStatus) RecordMigrationCondition(name string, hash []byte, err e
 			cond.LastTransitionTime = lastTransitionTime
 			cond.Reason = "Outdated"
 			cond.Message = message
+
+			s.MigrationConditions[idx] = cond
+			return err
 		}
 	}
+
+	s.MigrationConditions = append(s.MigrationConditions, MigrationScriptCondition{
+		Name:               name,
+		Hash:               hash,
+		Status:             newStatus,
+		LastProbeTime:      lastProbeTime,
+		LastTransitionTime: lastTransitionTime,
+		Message:            message,
+	})
+
+	return err
 }
 
 type CoreConditionType string

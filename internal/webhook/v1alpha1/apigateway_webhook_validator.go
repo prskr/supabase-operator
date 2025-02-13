@@ -106,6 +106,7 @@ func (v *APIGatewayCustomValidator) ValidateDelete(ctx context.Context, obj runt
 	return nil, nil
 }
 
+//nolint:unparam // keep the warnings for future use cases
 func validateEnvoyControlPlane(gateway *supabasev1alpha1.APIGateway) (admission.Warnings, error) {
 	envoySpec := gateway.Spec.Envoy
 

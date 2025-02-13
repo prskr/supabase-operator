@@ -63,6 +63,8 @@ jobs:
 
       - name: Create manifest
         run: |
-          docker buildx imagetools create -t code.icb4dc0.de/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }} \
+          docker buildx imagetools create \
+              -t code.icb4dc0.de/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }} \
+              -t code.icb4dc0.de/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }} \
               code.icb4dc0.de/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-arm64 \
               code.icb4dc0.de/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-amd64
