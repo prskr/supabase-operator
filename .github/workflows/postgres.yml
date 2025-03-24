@@ -32,16 +32,16 @@ jobs:
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
-          registry: code.icb4dc0.de
-          username: prskr
-          password: ${{ secrets.RELEASE_TOKEN }}
+          registry: registry.icb4dc0.de
+          username: ${{ secrets.HARBOR_USER }}
+          password: ${{ secrets.HARBOR_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           file: postgres/Dockerfile
           push: true
-          tags: code.icb4dc0.de/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-${{ matrix.arch }}
+          tags: registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-${{ matrix.arch }}
           build-args: |
             POSTGRES_MAJOR=${{ matrix.postgres_major }}
             POSTGRES_MINOR=${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}
@@ -59,14 +59,14 @@ jobs:
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
-          registry: code.icb4dc0.de
-          username: prskr
-          password: ${{ secrets.RELEASE_TOKEN }}
+          registry: registry.icb4dc0.de
+          username: ${{ secrets.HARBOR_USER }}
+          password: ${{ secrets.HARBOR_TOKEN }}
 
       - name: Create manifest
         run: |
           docker buildx imagetools create \
-              -t code.icb4dc0.de/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }} \
-              -t code.icb4dc0.de/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }} \
-              code.icb4dc0.de/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-arm64 \
-              code.icb4dc0.de/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-amd64
+              -t registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }} \
+              -t registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }} \
+              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-arm64 \
+              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-amd64
