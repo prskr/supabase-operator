@@ -44,7 +44,7 @@ metadata:
   namespace: supabase-demo
 spec:
   instances: 1
-  imageName: code.icb4dc0.de/prskr/supabase-operator/postgres:17.2.258
+  imageName: code.icb4dc0.de/prskr/supabase-operator/postgres:17.2
   imagePullPolicy: Always
   postgresUID: 26
   postgresGID: 102

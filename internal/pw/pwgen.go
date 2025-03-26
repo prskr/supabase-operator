@@ -19,6 +19,7 @@ package pw
 import (
 	"bytes"
 	"math/rand/v2"
+	"time"
 )
 
 func GeneratePW(length uint, random *rand.Rand) []byte {
@@ -28,7 +29,8 @@ func GeneratePW(length uint, random *rand.Rand) []byte {
 	)
 
 	if random == nil {
-		random = rand.New(rand.NewPCG(0, 0))
+		now := time.Now()
+		random = rand.New(rand.NewPCG(uint64(now.Year()), uint64(now.UnixNano())))
 	}
 
 	for range length {

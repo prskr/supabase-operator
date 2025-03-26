@@ -1,36 +1,18 @@
+version: "2"
 run:
-  timeout: 5m
   allow-parallel-runners: true
-
-issues:
-  # don't skip warning about doc comments
-  # don't exclude the default set of lint
-  exclude-use-default: false
-  # restore some of the defaults
-  # (fill in the rest as needed)
-  exclude-rules:
-    - path: "api/*"
-      linters:
-        - lll
-    - path: "internal/*"
-      linters:
-        - dupl
-        - lll
 linters:
-  disable-all: true
+  default: none
   enable:
+    - copyloopvar
     - dupl
     - errcheck
-    - copyloopvar
     - ginkgolinter
     - goconst
     - gocyclo
-    - gofmt
-    - goimports
-    - goheader
-    - gosimple
     # enable when the TODOs are fixed
     # - godox
+    - goheader
     - govet
     - ineffassign
     - lll
@@ -39,43 +21,65 @@ linters:
     - prealloc
     - revive
     - staticcheck
-    - typecheck
     - unconvert
     - unparam
     - unused
-
-linters-settings:
-  revive:
+  settings:
+    goheader:
+      values:
+        const:
+          AUTHOR: Peter Kurfer
+      template-path: hack/header.tmpl
+    importas:
+      alias:
+        - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
+          alias: $1$2
+        - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+          alias: metav1
+      no-unaliased: true
+      no-extra-aliases: true
+    revive:
+      rules:
+        - name: comment-spacings
+  exclusions:
+    generated: lax
     rules:
-      - name: comment-spacings
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(code.icb4dc0.de/prskr/supabase-operator)
-      - alias
-      - blank
-      - dot
-  goimports:
-    local-prefixes: code.icb4dc0.de/prskr/supabase-operator
-  goheader:
-    values:
-      const:
-        AUTHOR: Peter Kurfer
-    template-path: hack/header.tmpl
-
-  importas:
-    no-unaliased: true
-    no-extra-aliases: true
-    alias:
-      - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
-        alias: $1$2
-      - pkg: "k8s.io/apimachinery/pkg/apis/meta/v1"
-        alias: metav1
-
+      - linters:
+          - lll
+        path: api/*
+      - linters:
+          - dupl
+          - lll
+        path: internal/*
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 severity:
-  default-severity: error
+  default: error
   rules:
     - linters:
         - godox
       severity: info
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(code.icb4dc0.de/prskr/supabase-operator)
+        - alias
+        - blank
+        - dot
+    goimports:
+      local-prefixes:
+        - code.icb4dc0.de/prskr/supabase-operator
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

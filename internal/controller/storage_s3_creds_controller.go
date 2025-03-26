@@ -91,15 +91,14 @@ func (r *StorageS3CredentialsReconciler) reconcileS3StorageSecret(
 		},
 	}
 
-	if err := r.Get(ctx, client.ObjectKeyFromObject(s3CredsSecret), s3CredsSecret); err != nil {
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, s3CredsSecret, func() error {
+		return controllerutil.SetControllerReference(storage, s3CredsSecret, r.Scheme)
+	})
+	if err != nil {
 		return err
 	}
 
-	if err := controllerutil.SetControllerReference(storage, s3CredsSecret, r.Scheme); err != nil {
-		return err
-	}
-
-	return r.Update(ctx, s3CredsSecret)
+	return nil
 }
 
 func (r *StorageS3CredentialsReconciler) reconcileS3ProtoSecret(

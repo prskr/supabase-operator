@@ -166,7 +166,7 @@ func (r *APIGatewayReconciler) endpointSliceEventHandler() handler.TypedEventHan
 		}
 
 		logger.Info("Triggering APIGateway reconciliation", "obj_name", obj.GetName(), "obj_namespace", obj.GetNamespace())
-		if err := r.Client.List(ctx, &apiGatewayList, client.InNamespace(endpointSlice.Namespace)); err != nil {
+		if err := r.List(ctx, &apiGatewayList, client.InNamespace(endpointSlice.Namespace)); err != nil {
 			logger.Error(err, "failed to list APIGateways to determine reconcile targets")
 			return nil
 		}

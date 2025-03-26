@@ -2753,6 +2753,8 @@ spec:
                           i.e. all secrets need to be provided or the instance won't work
                         type: boolean
                     type: object
+                required:
+                - dsnSecretRef
                 type: object
               externalUrl:
                 description: |-

@@ -118,7 +118,7 @@ func (v *CoreCustomValidator) validateDb(
 	if dbSpec.Roles.SelfManaged {
 		doesSecretExists := func(ctx context.Context, name string) (exists bool, err error) {
 			var secret corev1.Secret
-			if err := v.Client.Get(ctx, types.NamespacedName{Namespace: core.Namespace, Name: name}, &secret); err == nil {
+			if err := v.Get(ctx, types.NamespacedName{Namespace: core.Namespace, Name: name}, &secret); err == nil {
 				return true, nil
 			} else if client.IgnoreNotFound(err) == nil {
 				return false, nil

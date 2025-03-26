@@ -334,7 +334,7 @@ func (s *StudioCluster) basicAuthHttpFilter(ctx context.Context, gateway *supaba
 		},
 	}
 
-	if err := s.Client.Get(ctx, client.ObjectKeyFromObject(&usersSecret), &usersSecret); err != nil {
+	if err := s.Get(ctx, client.ObjectKeyFromObject(&usersSecret), &usersSecret); err != nil {
 		if client.IgnoreNotFound(err) != nil {
 			return nil, fmt.Errorf("failed to fetch credentials secret: %w", err)
 		}

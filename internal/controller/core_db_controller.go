@@ -19,7 +19,7 @@ package controller
 import (
 	"bytes"
 	"context"
-	"hash/fnv"
+	"crypto/rand"
 	"maps"
 	"net/url"
 	"time"
@@ -38,7 +38,6 @@ import (
 	"code.icb4dc0.de/prskr/supabase-operator/internal/db"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/errx"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/meta"
-	"code.icb4dc0.de/prskr/supabase-operator/internal/pw"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
 )
 
@@ -169,8 +168,6 @@ func (r *CoreDbReconciler) ensureDbRolesSecrets(
 		core.Status.Database.Roles = make(map[string][]byte)
 	}
 
-	hash := fnv.New64a()
-
 	for secretName, role := range roles {
 		secretLogger := logger.WithValues("secret_name", secretName, "role_name", role.String())
 
@@ -203,21 +200,23 @@ func (r *CoreDbReconciler) ensureDbRolesSecrets(
 
 			var requireStatusUpdate bool
 
+			// if the current role is the same user as in the DSN, we're keeping the password as is
 			if value := credentialsSecret.Data[corev1.BasicAuthPasswordKey]; len(value) == 0 || (role.String() == dsnUser && !bytes.Equal(credentialsSecret.Data[corev1.BasicAuthPasswordKey], []byte(dsnPW))) {
 				if role.String() == dsnUser {
 					credentialsSecret.Data[corev1.BasicAuthPasswordKey] = []byte(dsnPW)
 				} else {
-					credentialsSecret.Data[corev1.BasicAuthPasswordKey] = pw.GeneratePW(24, nil)
+					credentialsSecret.Data[corev1.BasicAuthPasswordKey] = []byte(rand.Text())
 				}
 
 				secretLogger.Info("Update database role to match secret credentials")
 				if err := rolesMgr.UpdateRolePassword(ctx, role.String(), credentialsSecret.Data[corev1.BasicAuthPasswordKey]); err != nil {
 					return err
 				}
-				core.Status.Database.Roles[role.String()] = hash.Sum(credentialsSecret.Data[corev1.BasicAuthPasswordKey])
+
+				core.Status.Database.Roles[role.String()] = HashBytes(credentialsSecret.Data[corev1.BasicAuthPasswordKey])
 				requireStatusUpdate = true
 			} else {
-				if bytes.Equal(core.Status.Database.Roles[role.String()], hash.Sum(credentialsSecret.Data[corev1.BasicAuthPasswordKey])) {
+				if bytes.Equal(core.Status.Database.Roles[role.String()], HashBytes(credentialsSecret.Data[corev1.BasicAuthPasswordKey])) {
 					logger.Info("Role password is up to date", "role_name", role.String())
 				} else {
 					if err := rolesMgr.UpdateRolePassword(ctx, role.String(), credentialsSecret.Data[corev1.BasicAuthPasswordKey]); err != nil {
@@ -225,7 +224,7 @@ func (r *CoreDbReconciler) ensureDbRolesSecrets(
 					}
 					requireStatusUpdate = true
 				}
-				core.Status.Database.Roles[role.String()] = hash.Sum(credentialsSecret.Data[corev1.BasicAuthPasswordKey])
+				core.Status.Database.Roles[role.String()] = HashBytes(credentialsSecret.Data[corev1.BasicAuthPasswordKey])
 			}
 
 			credentialsSecret.Type = corev1.SecretTypeBasicAuth

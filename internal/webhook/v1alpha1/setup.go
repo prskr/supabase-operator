@@ -42,7 +42,7 @@ func SetupAPIGatewayWebhookWithManager(mgr ctrl.Manager, cfg WebhookConfig) erro
 func SetupCoreWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(&supabasev1alpha1.Core{}).
 		WithValidator(&CoreCustomValidator{Client: mgr.GetClient()}).
-		WithDefaulter(&CoreCustomDefaulter{Client: mgr.GetClient()}).
+		WithDefaulter(&CoreCustomDefaulter{Client: mgr.GetClient(), Scheme: mgr.GetScheme()}).
 		Complete()
 }
 

@@ -195,7 +195,7 @@ func (r *APIGatewayReconciler) apiTargetServiceEventHandler() handler.TypedEvent
 			return nil
 		}
 
-		if err := r.Client.List(ctx, &list, client.InNamespace(obj.GetNamespace())); err != nil {
+		if err := r.List(ctx, &list, client.InNamespace(obj.GetNamespace())); err != nil {
 			logger.Error(err, "Failed to list Services to map updates to APIGateway reconciliation requests")
 			return nil
 		}

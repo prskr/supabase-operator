@@ -25,7 +25,7 @@ spec:
       bucket: test
       credentialsSecretRef:
         secretName: storage-s3-credentials
-    s3Protocol: {}
+    s3: {}
     db:
       host: cluster-example-rw.supabase-demo.svc
       dbName: app

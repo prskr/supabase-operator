@@ -46,6 +46,7 @@ import (
 // as it is used only for temporary operations and does not need to be deeply copied.
 type CoreCustomDefaulter struct {
 	client.Client
+	Scheme *runtime.Scheme
 }
 
 var _ webhook.CustomDefaulter = &CoreCustomDefaulter{}
@@ -62,6 +63,16 @@ func (d *CoreCustomDefaulter) Default(ctx context.Context, obj runtime.Object) e
 	if err := d.defaultJWT(ctx, core); err != nil {
 		return fmt.Errorf("ensuring JWT secret: %w", err)
 	}
+
+	if err := d.defaultDatabase(ctx, core); err != nil {
+		return fmt.Errorf("ensuring database setup: %w", err)
+	}
+
+	return nil
+}
+
+func (d *CoreCustomDefaulter) defaultDatabase(ctx context.Context, core *supabasev1alpha1.Core) error {
+	corelog.Info("Defaulting database")
 
 	corelog.Info("Defaulting database roles")
 	if !core.Spec.Database.Roles.SelfManaged {
@@ -90,6 +101,30 @@ func (d *CoreCustomDefaulter) Default(ctx context.Context, obj runtime.Object) e
 			corelog.Info("Defaulting role", "role_name", supabase.DBRoleStorageAdmin)
 			core.Spec.Database.Roles.Secrets.StorageAdmin = fmt.Sprintf(roleCredsSecretNameTemplate, core.Name, supabase.DBRoleStorageAdmin.K8sString())
 		}
+	}
+
+	if plaintextDsn := core.Spec.Database.DSN; plaintextDsn != nil && *plaintextDsn != "" {
+		dsnSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      core.Spec.Database.DSNSecretRef.Name,
+				Namespace: core.Namespace,
+			},
+		}
+
+		_, err := controllerutil.CreateOrUpdate(ctx, d.Client, dsnSecret, func() error {
+			if dsnSecret.Data == nil {
+				dsnSecret.Data = make(map[string][]byte)
+			}
+
+			dsnSecret.Data[core.Spec.Database.DSNSecretRef.Key] = []byte(*plaintextDsn)
+
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("create or update DSN secret: %w", err)
+		}
+
+		core.Spec.Database.DSN = nil
 	}
 
 	return nil
