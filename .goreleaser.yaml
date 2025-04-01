@@ -8,7 +8,7 @@ before:
     - go mod tidy
     - go run mage.go GenerateAll
     - mkdir -p out
-    - sh -c "cd config/release/default && kustomize edit set image supabase-operator=code.icb4dc0.de/prskr/supabase-operator:{{.Version}}"
+    - sh -c "cd config/release/default && kustomize edit set image supabase-operator=registry.icb4dc0.de/supabase-operator/controller:{{.Version}}"
     - sh -c "kustomize build config/release/default > out/operator_manifest.yaml"
 
 builds:
@@ -28,7 +28,7 @@ kos:
     base_image: gcr.io/distroless/static:nonroot
     user: "65532:65532"
     repositories:
-      - code.icb4dc0.de/prskr/supabase-operator
+      - registry.icb4dc0.de/supabase-operator/controller
     platforms:
       - linux/amd64
       - linux/arm64

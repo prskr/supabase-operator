@@ -22,9 +22,9 @@ jobs:
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
-          registry: code.icb4dc0.de
-          username: prskr
-          password: ${{ secrets.RELEASE_TOKEN }}
+          registry: registry.icb4dc0.de
+          username: ${{ secrets.HARBOR_USER }}
+          password: ${{ secrets.HARBOR_TOKEN }}
 
       - name: Setup Go
         uses: actions/setup-go@v5

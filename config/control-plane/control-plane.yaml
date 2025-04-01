@@ -25,7 +25,7 @@ spec:
       containers:
         - args:
             - control-plane
-          image: supabase-operator:latest
+          image: controller:latest
           name: control-plane
           env:
             - name: CONTROL_PLANE_NAMESPACE

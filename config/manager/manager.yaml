@@ -29,7 +29,7 @@ spec:
             - manager
             - --leader-elect
             - --health-probe-bind-address=:8081
-          image: supabase-operator:latest
+          image: controller:latest
           name: manager
           env:
             - name: CONTROLLER_NAMESPACE

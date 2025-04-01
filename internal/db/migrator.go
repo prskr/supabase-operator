@@ -55,7 +55,8 @@ func (m Migrator) ApplyAll(
 		logger.Info("Applying missing or outdated migration", "filename", s.FileName)
 		err := status.Database.RecordMigrationCondition(s.FileName, s.Hash, m.Apply(ctx, s.Content))
 		if err != nil {
-			return false, err
+			logger.Error(err, "Failed to apply migrations", "filename", s.FileName)
+			continue
 		}
 
 		appliedSomething = true

@@ -37,7 +37,7 @@ type studioDefaults struct {
 func studioServiceConfig() serviceConfig[studioEnvKeys, studioDefaults] {
 	return serviceConfig[studioEnvKeys, studioDefaults]{
 		Name:              "studio",
-		LivenessProbePath: "/api/profile",
+		LivenessProbePath: "/api/platform/profile",
 		EnvKeys: studioEnvKeys{
 			PGMetaURL:      "STUDIO_PG_META_URL",
 			DBPassword:     "POSTGRES_PASSWORD",
@@ -47,7 +47,7 @@ func studioServiceConfig() serviceConfig[studioEnvKeys, studioDefaults] {
 			AnonKey:        "SUPABASE_ANON_KEY",
 			ServiceKey:     "SUPABASE_SERVICE_KEY",
 			Host:           fixedEnvOf("HOSTNAME", "0.0.0.0"),
-			LogsEnabled:    fixedEnvOf("NEXT_PUBLIC_ENABLE_LOGS", "true"),
+			LogsEnabled:    fixedEnvOf("NEXT_PUBLIC_ENABLE_LOGS", "false"),
 		},
 		Defaults: studioDefaults{
 			NodeUID: 1000,

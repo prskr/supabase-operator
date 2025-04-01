@@ -25,7 +25,7 @@ local_resource(
 k8s_kind('Cluster', api_version='postgresql.cnpg.io/v1')
 
 docker_build_with_restart(
-  'supabase-operator',
+  'controller',
   '.',
   entrypoint=['/app/bin/supabase-operator'],
   dockerfile='dev/Dockerfile',

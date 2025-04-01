@@ -2,9 +2,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 images:
-- name: supabase-operator
-  newName: code.icb4dc0.de/prskr/supabase-operator
-  newTag: 0.1.0-SNAPSHOT-e6c7d68
+  - name: controller
+    newName: registry.icb4dc0.de/supabase-operator/controller
+    newTag: 0.1.0-SNAPSHOT-e6c7d68
 
 resources:
-- ../../default
+  - ../../default

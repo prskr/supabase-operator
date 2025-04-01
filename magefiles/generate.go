@@ -44,6 +44,7 @@ const (
 
 var ignoredMigrations = []string{
 	"10000000000000_demote-postgres.sql",
+	"20250312095419_pgbouncer_ownership.sql",
 }
 
 func GenerateAll(ctx context.Context) {
@@ -147,7 +148,7 @@ func FetchImageMeta(ctx context.Context) (err error) {
 		}
 	}
 
-	latestEnvoyTag, err := latestReleaseVersion(ctx, "envoyproxy", "envoy")
+	latestEnvoyTag, err := latestReleaseVersion(ctx, "envoyproxy", "envoy", excludeDrafts, excludePreReleases)
 	if err != nil {
 		return err
 	}
@@ -169,10 +170,12 @@ func FetchImageMeta(ctx context.Context) (err error) {
 }
 
 func FetchMigrations(ctx context.Context) (err error) {
-	latestRelease, err := latestReleaseVersion(ctx, "supabase", "postgres")
+	latestRelease, err := latestReleaseVersion(ctx, "supabase", "postgres", excludeDrafts, excludePreReleases, matchesTagPattern(`15\..*`))
 	if err != nil {
 		return err
 	}
+
+	slog.InfoContext(ctx, "Extracting Postgres migrations for release", slog.String("release", latestRelease))
 
 	releaseArtifactURL := fmt.Sprintf("https://github.com/supabase/postgres/archive/refs/tags/%s.tar.gz", latestRelease)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, releaseArtifactURL, nil)

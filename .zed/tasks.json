@@ -1,0 +1,47 @@
+[
+  {
+    "label": "Tilt Up",
+    "command": "tilt",
+    "args": ["up"],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false
+  },
+  {
+    "label": "Generate CRDs",
+    "command": "go",
+    "args": ["run", "mage.go", "CRDs"],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "tags": ["mage", "generate"]
+  },
+  {
+    "label": "Generate CRD docs",
+    "command": "go",
+    "args": ["run", "mage.go", "CRDDocs"],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "tags": ["mage", "generate"]
+  },
+  {
+    "label": "Update image meta",
+    "command": "go",
+    "args": ["run", "mage.go", "FetchImageMeta"],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "tags": ["mage"]
+  },
+  {
+    "label": "Update DB migrations",
+    "command": "go",
+    "args": ["run", "mage.go", "FetchMigrations"],
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "tags": ["mage"]
+  },
+  {
+    "label": "Run all Go tests",
+    "command": "go tool gotestsum ./...",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false
+  }
+]

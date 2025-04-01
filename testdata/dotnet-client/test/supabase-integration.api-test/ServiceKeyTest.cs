@@ -21,7 +21,7 @@ public class TaskList : BaseModel
     [PrimaryKey("id")]
     public int Id { get; set; }
     [Column("user_id")]
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     [Column("name")]
     public string Name { get; set; }
 }
