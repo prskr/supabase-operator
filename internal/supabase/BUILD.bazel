@@ -1,0 +1,48 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+ENVOY_REPO = "envoyproxy/envoy"
+
+ENVOY_TAG = "distroless-v1.34.2"
+
+genrule(
+    name = "supabase-images",
+    srcs = [
+        "@supabase_compose//file",
+    ],
+    outs = ["images.go"],
+    cmd = """
+        $(execpath //internal/codegen/images:images) \
+            -source-file=./external/+supabase_compose+supabase_compose/file/docker-compose.yml \
+            -out-file=$@ \
+            -envoy-repo={} \
+            -envoy-tag={}
+    """.format(ENVOY_REPO, ENVOY_TAG),
+    tools = [
+        "//internal/codegen/images",
+    ],
+)
+
+go_library(
+    name = "supabase",
+    srcs = [
+        "auth.go",
+        "db_roles.go",
+        "env.go",
+        "env_types.go",
+        "envoy.go",
+        "img_proxy.go",
+        "jwt.go",
+        "pg_meta.go",
+        "postgrest.go",
+        "storage.go",
+        "studio.go",
+        ":supabase-images",
+    ],
+    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/supabase",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@org_golang_x_exp//constraints",
+    ],
+)

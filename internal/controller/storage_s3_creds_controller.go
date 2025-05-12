@@ -34,6 +34,8 @@ import (
 	"code.icb4dc0.de/prskr/supabase-operator/internal/pw"
 )
 
+var errS3CredentialsSecretEmpty = errors.New("S3 storage credentials secret is empty")
+
 type StorageS3CredentialsReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -81,7 +83,7 @@ func (r *StorageS3CredentialsReconciler) reconcileS3StorageSecret(
 	storage *supabasev1alpha1.Storage,
 ) error {
 	if storage.Spec.Api.S3Backend.CredentialsSecretRef == nil {
-		return errors.New("S3 storage credentials secret is empty")
+		return errS3CredentialsSecretEmpty
 	}
 
 	s3CredsSecret := &corev1.Secret{

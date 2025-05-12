@@ -60,7 +60,7 @@ var _ webhook.CustomValidator = &CoreCustomValidator{}
 func (v *CoreCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	core, ok := obj.(*supabasev1alpha1.Core)
 	if !ok {
-		return nil, fmt.Errorf("expected a Core object but got %T", obj)
+		return nil, fmt.Errorf("%w: expected a Core object but got %T", errObjectTypeMismatch, obj)
 	}
 	corelog.Info("Validation for Core upon creation", "name", core.GetName())
 
@@ -76,7 +76,7 @@ func (v *CoreCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Ob
 func (v *CoreCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	core, ok := newObj.(*supabasev1alpha1.Core)
 	if !ok {
-		return nil, fmt.Errorf("expected a Core object for the newObj but got %T", newObj)
+		return nil, fmt.Errorf("%w: expected a Core object for the newObj but got %T", errObjectTypeMismatch, newObj)
 	}
 	corelog.Info("Validation for Core upon update", "name", core.GetName())
 
@@ -92,7 +92,7 @@ func (v *CoreCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj
 func (v *CoreCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	core, ok := obj.(*supabasev1alpha1.Core)
 	if !ok {
-		return nil, fmt.Errorf("expected a Core object but got %T", obj)
+		return nil, fmt.Errorf("%w: expected a Core object but got %T", errObjectTypeMismatch, obj)
 	}
 	corelog.Info("Validation for Core upon deletion", "name", core.GetName())
 

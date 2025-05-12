@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/url"
 	"slices"
@@ -47,6 +48,11 @@ import (
 
 	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
+)
+
+var (
+	errUnsupprtedEndpoointScheme = errors.New("unsupported token endpoint scheme")
+	errInvalidOAuth2Config       = errors.New("invalid oauth2 config")
 )
 
 type StudioCluster struct {
@@ -192,7 +198,12 @@ func (s *StudioCluster) oauth2TokenEndpointCluster(
 	instance string,
 	gateway *supabasev1alpha1.APIGateway,
 ) (*clusterv3.Cluster, error) {
-	parsedTokenEndpoint, err := url.Parse(gateway.Spec.DashboardEndpoint.OAuth2().TokenEndpoint)
+	oauth2Spec := gateway.Spec.DashboardEndpoint.OAuth2()
+	if oauth2Spec == nil {
+		return nil, errInvalidOAuth2Config
+	}
+
+	parsedTokenEndpoint, err := url.Parse(oauth2Spec.TokenEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse token endpoint: %w", err)
 	}
@@ -208,7 +219,7 @@ func (s *StudioCluster) oauth2TokenEndpointCluster(
 		endpointPort = 443
 		tls = true
 	default:
-		return nil, fmt.Errorf("unsupported token endpoint scheme: %s", parsedTokenEndpoint.Scheme)
+		return nil, fmt.Errorf("%w: %s", errUnsupprtedEndpoointScheme, parsedTokenEndpoint.Scheme)
 	}
 
 	if tokenEndpointPort := parsedTokenEndpoint.Port(); tokenEndpointPort != "" {

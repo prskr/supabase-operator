@@ -41,6 +41,8 @@ func warnError(err error) {
 }
 
 // Run executes the provided command within this context
+//
+//nolint:err113
 func Run(cmd *exec.Cmd) (string, error) {
 	dir, _ := GetProjectDir()
 	cmd.Dir = dir
@@ -203,6 +205,8 @@ func GetProjectDir() (string, error) {
 
 // UncommentCode searches for target in the file and remove the comment prefix
 // of the target content. The target content may span multiple lines.
+//
+//nolint:err113
 func UncommentCode(filename, target, prefix string) error {
 	// false positive
 	// nolint:gosec

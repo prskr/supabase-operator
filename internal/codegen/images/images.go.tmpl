@@ -1,5 +1,5 @@
 /*
-Copyright 2025 Peter Kurfer.
+Copyright {{ .Year }} {{ .Author }}.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,26 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package supabase
 
-import "github.com/magefile/mage/mg"
+import "fmt"
 
-func Validate() {
-	mg.Deps(Fmt, Lint)
+type ImageRef struct {
+    // The repository of the image
+    Repository string
+    // The tag of the image
+    Tag string
 }
 
-func Fmt() error {
-	return RunTool("gofumpt", "-l", "-w", ".")
+func (r ImageRef) String() string {
+    return fmt.Sprintf("%s:%s", r.Repository, r.Tag)
 }
 
-func Vet() error {
-	return Go("vet", "./...")
-}
-
-func Lint() error {
-	return RunTool("golangci-lint", "run")
-}
-
-func LintFix() error {
-	return RunTool("golangci-lint", "run", "--fix")
+var Images = struct{
+{{- range $name, $image := .Images }}
+    {{$name}} ImageRef
+{{- end }}
+}{
+{{- range $name, $image := .Images }}
+    {{$name}}: ImageRef{
+        Repository: "{{$image.Repository}}",
+        Tag: "{{$image.Tag}}",
+    },
+{{- end }}
 }

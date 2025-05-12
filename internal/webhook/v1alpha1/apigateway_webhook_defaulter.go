@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
@@ -45,6 +46,8 @@ type APIGatewayCustomDefaulter struct {
 
 var _ webhook.CustomDefaulter = &APIGatewayCustomDefaulter{}
 
+var errObjectTypeMismatch = errors.New("object type mismatch")
+
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind APIGateway.
 func (d *APIGatewayCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	const (
@@ -55,7 +58,7 @@ func (d *APIGatewayCustomDefaulter) Default(ctx context.Context, obj runtime.Obj
 	apiGateway, ok := obj.(*supabasev1alpha1.APIGateway)
 
 	if !ok {
-		return fmt.Errorf("expected an APIGateway object but got %T", obj)
+		return fmt.Errorf("%w: expected an APIGateway object but got %T", errObjectTypeMismatch, obj)
 	}
 	apigatewaylog.Info("Defaulting for APIGateway", "name", apiGateway.GetName())
 

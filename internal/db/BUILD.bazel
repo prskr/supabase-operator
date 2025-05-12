@@ -1,0 +1,17 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "db",
+    srcs = [
+        "migrator.go",
+        "roles_manager.go",
+    ],
+    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/db",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//api/v1alpha1",
+        "//assets/migrations",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@io_k8s_sigs_controller_runtime//pkg/log",
+    ],
+)

@@ -45,7 +45,7 @@ func (d *StorageCustomDefaulter) Default(ctx context.Context, obj runtime.Object
 	storage, ok := obj.(*supabasev1alpha1.Storage)
 
 	if !ok {
-		return fmt.Errorf("expected an Storage object but got %T", obj)
+		return fmt.Errorf("%w: expected an Storage object but got %T", errObjectTypeMismatch, obj)
 	}
 	storagelog.Info("Defaulting for Storage", "name", storage.GetName())
 

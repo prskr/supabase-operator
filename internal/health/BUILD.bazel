@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "health",
+    srcs = ["cert_valid.go"],
+    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/health",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/healthz",
+    ],
+)

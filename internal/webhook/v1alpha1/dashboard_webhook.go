@@ -50,7 +50,7 @@ func (d *DashboardCustomDefaulter) Default(ctx context.Context, obj runtime.Obje
 	dashboard, ok := obj.(*supabasev1alpha1.Dashboard)
 
 	if !ok {
-		return fmt.Errorf("expected an Dashboard object but got %T", obj)
+		return fmt.Errorf("%w: expected an Dashboard object but got %T", errObjectTypeMismatch, obj)
 	}
 	dashboardlog.Info("Defaulting for Dashboard", "name", dashboard.GetName())
 
@@ -78,7 +78,7 @@ var _ webhook.CustomValidator = &DashboardCustomValidator{}
 func (v *DashboardCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	dashboard, ok := obj.(*supabasev1alpha1.Dashboard)
 	if !ok {
-		return nil, fmt.Errorf("expected a Dashboard object but got %T", obj)
+		return nil, fmt.Errorf("%w: expected a Dashboard object but got %T", errObjectTypeMismatch, obj)
 	}
 	dashboardlog.Info("Validation for Dashboard upon creation", "name", dashboard.GetName())
 
@@ -91,7 +91,7 @@ func (v *DashboardCustomValidator) ValidateCreate(ctx context.Context, obj runti
 func (v *DashboardCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	dashboard, ok := newObj.(*supabasev1alpha1.Dashboard)
 	if !ok {
-		return nil, fmt.Errorf("expected a Dashboard object for the newObj but got %T", newObj)
+		return nil, fmt.Errorf("%w: expected a Dashboard object for the newObj but got %T", errObjectTypeMismatch, newObj)
 	}
 	dashboardlog.Info("Validation for Dashboard upon update", "name", dashboard.GetName())
 
@@ -104,7 +104,7 @@ func (v *DashboardCustomValidator) ValidateUpdate(ctx context.Context, oldObj, n
 func (v *DashboardCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	dashboard, ok := obj.(*supabasev1alpha1.Dashboard)
 	if !ok {
-		return nil, fmt.Errorf("expected a Dashboard object but got %T", obj)
+		return nil, fmt.Errorf("%w: expected a Dashboard object but got %T", errObjectTypeMismatch, obj)
 	}
 	dashboardlog.Info("Validation for Dashboard upon deletion", "name", dashboard.GetName())
 

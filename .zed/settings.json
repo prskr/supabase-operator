@@ -2,7 +2,10 @@
   "lsp": {
     "gopls": {
       "initialization_options": {
-        "local": "code.icb4dc0.de/prskr/supabase-operator"
+        "local": "code.icb4dc0.de/prskr/supabase-operator",
+        "env": {
+          "GOPACKAGESDRIVER": "./hack/gopackagesdriver.sh"
+        }
       }
     },
     "golangci-lint": {

@@ -1,0 +1,22 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "images_lib",
+    srcs = [
+        "github.go",
+        "main.go",
+    ],
+    embedsrcs = ["images.go.tmpl"],
+    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/codegen/images",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/errx",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)
+
+go_binary(
+    name = "images",
+    embed = [":images_lib"],
+    visibility = ["//:__subpackages__"],
+)

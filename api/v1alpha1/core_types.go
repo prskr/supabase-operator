@@ -40,7 +40,10 @@ func init() {
 	SchemeBuilder.Register(&Core{}, &CoreList{})
 }
 
-var ErrNoSuchSecretValue = errors.New("no such secret value")
+var (
+	ErrNoSuchSecretValue = errors.New("no such secret value")
+	ErrDSNNotSet         = errors.New("DSN not set")
+)
 
 type DatabaseRolesSecrets struct {
 	Admin          string `json:"supabaseAdmin,omitempty"`
@@ -56,18 +59,18 @@ type DatabaseRoles struct {
 	// i.e. all secrets need to be provided or the instance won't work
 	SelfManaged bool `json:"selfManaged,omitempty"`
 	// Secrets - typed 'map' of secrets for each database role that Supabase needs
-	Secrets DatabaseRolesSecrets `json:"secrets,omitempty"`
+	Secrets DatabaseRolesSecrets `json:"secrets,omitzero"`
 }
 
 type Database struct {
 	DSN          *string                   `json:"dsn,omitempty"`
 	DSNSecretRef *corev1.SecretKeySelector `json:"dsnSecretRef"`
-	Roles        DatabaseRoles             `json:"roles,omitempty"`
+	Roles        DatabaseRoles             `json:"roles,omitzero"`
 }
 
 func (d Database) GetDSN(ctx context.Context, client client.Client) (string, error) {
 	if d.DSNSecretRef == nil {
-		return "", errors.New("DSN not set")
+		return "", ErrDSNNotSet
 	}
 
 	var secret corev1.Secret
@@ -189,7 +192,7 @@ func (p *AuthProviderMeta) Vars(provider string) []corev1.EnvVar {
 	}}
 }
 
-type SmtpCredentialsReference struct {
+type SMTPCredentialsReference struct {
 	SecretName string `json:"secretName"`
 	// UsernameKey
 	// +kubebuilder:default="username"
@@ -199,11 +202,11 @@ type SmtpCredentialsReference struct {
 	PasswordKey string `json:"passwordKey"`
 }
 
-type EmailAuthSmtpSpec struct {
+type EmailAuthSMTPSpec struct {
 	Host           string                    `json:"host"`
 	Port           uint16                    `json:"port"`
 	MaxFrequency   *uint                     `json:"maxFrequency,omitempty"`
-	CredentialsRef *SmtpCredentialsReference `json:"credentialsRef"`
+	CredentialsRef *SMTPCredentialsReference `json:"credentialsRef"`
 }
 
 type EmailAuthProvider struct {
@@ -213,27 +216,27 @@ type EmailAuthProvider struct {
 	Autoconfirm          *bool              `json:"autoconfirmEmail,omitempty"`
 	SubjectsInvite       string             `json:"subjectsInvite,omitempty"`
 	SubjectsConfirmation string             `json:"subjectsConfirmation,omitempty"`
-	SmtpSpec             *EmailAuthSmtpSpec `json:"smtpSpec"`
+	SMTPSpec             *EmailAuthSMTPSpec `json:"smtpSpec"`
 }
 
 func (p *EmailAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
-	if p == nil || p.SmtpSpec == nil {
+	if p == nil || p.SMTPSpec == nil {
 		return nil
 	}
 
 	svcDefaults := supabase.ServiceConfig.Auth.Defaults
 
 	vars := []corev1.EnvVar{
-		{Name: "GOTRUE_SMTP_HOST", Value: p.SmtpSpec.Host},
-		{Name: "GOTRUE_SMTP_PORT", Value: strconv.FormatUint(uint64(p.SmtpSpec.Port), 10)},
+		{Name: "GOTRUE_SMTP_HOST", Value: p.SMTPSpec.Host},
+		{Name: "GOTRUE_SMTP_PORT", Value: strconv.FormatUint(uint64(p.SMTPSpec.Port), 10)},
 		{
 			Name: "GOTRUE_SMTP_USER",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: p.SmtpSpec.CredentialsRef.SecretName,
+						Name: p.SMTPSpec.CredentialsRef.SecretName,
 					},
-					Key: p.SmtpSpec.CredentialsRef.UsernameKey,
+					Key: p.SMTPSpec.CredentialsRef.UsernameKey,
 				},
 			},
 		},
@@ -242,9 +245,9 @@ func (p *EmailAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: p.SmtpSpec.CredentialsRef.SecretName,
+						Name: p.SMTPSpec.CredentialsRef.SecretName,
 					},
-					Key: p.SmtpSpec.CredentialsRef.PasswordKey,
+					Key: p.SMTPSpec.CredentialsRef.PasswordKey,
 				},
 			},
 		},
@@ -384,8 +387,8 @@ type CoreSpec struct {
 	// In most Kubernetes scenarios this is the same as the APIExternalURL with a different path handler in the ingress
 	SiteURL   string        `json:"siteUrl"`
 	JWT       *CoreJwtSpec  `json:"jwt,omitempty"`
-	Database  Database      `json:"database,omitempty"`
-	Postgrest PostgrestSpec `json:"postgrest,omitempty"`
+	Database  Database      `json:"database,omitzero"`
+	Postgrest PostgrestSpec `json:"postgrest,omitzero"`
 	Auth      *AuthSpec     `json:"auth,omitempty"`
 }
 
@@ -405,9 +408,9 @@ type MigrationScriptCondition struct {
 	// +kubebuilder:validation:Enum=Applied;Failed
 	Status MigrationConditionStatus `json:"status"`
 	// LastProbeTime - last time the operator tried to execute the migration script
-	LastProbeTime metav1.Time `json:"lastProbeTime,omitempty"`
+	LastProbeTime metav1.Time `json:"lastProbeTime,omitzero"`
 	// LastTransitionTime - last time the condition transitioned from one status to another
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitzero"`
 	// Reason - one-word, CamcelCase reason for the condition's last transition
 	Reason string `json:"reason,omitempty"`
 	// Message - human-readable message indicating details about the last transition

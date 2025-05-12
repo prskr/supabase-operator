@@ -4,3 +4,13 @@ out/
 .venv/
 site/
 dist/
+
+
+# Bazel
+bazel-*
+user.bazelrc
+
+# IntelliJ
+.idea/
+.ijwb/
+*.iml

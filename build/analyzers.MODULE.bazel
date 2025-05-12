@@ -1,0 +1,69 @@
+"analyzers"
+
+go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
+go_deps.module(
+    path = "code.icb4dc0.de/prskr/bazel-golangci-lint-analyzers",
+    sum = "h1:IeB6GBjFPiV4abzog/lEknt3soEf4uZpNStMwAW8NO4=",
+    version = "v0.0.0-20250508121110-976f361c56c5",
+)
+go_deps.module(
+    path = "go.uber.org/nilaway",
+    sum = "h1:/bYqa5er7dGMbXS8JUr8GKAeB732XHDNzflUzMB/itw=",
+    version = "v0.0.0-20250709162316-aa1ea38dc990",
+)
+go_deps.module(
+    path = "github.com/gordonklaus/ineffassign",
+    sum = "h1:y2Gd/9I7MdY1oEIt+n+rowjBNDcLQq3RsH5hwJd0f9s=",
+    version = "v0.1.0",
+)
+go_deps.module(
+    path = "github.com/kisielk/errcheck",
+    sum = "h1:9xt1zI9EBfcYBvdU1nVrzMzzUPUtPKs9bVSIM3TAb3M=",
+    version = "v1.9.0",
+)
+go_deps.module(
+    path = "github.com/kkHAIKE/contextcheck",
+    sum = "h1:7HIyRcnyzxL9Lz06NGhiKvenXq7Zw6Q0UQu/ttjfJCE=",
+    version = "v1.1.6",
+)
+go_deps.module(
+    path = "github.com/gostaticanalysis/analysisutil",
+    sum = "h1:ZMCjoue3DtDWQ5WyU16YbjbQEQ3VuzwxALrpYd+HeKk=",
+    version = "v0.7.1",
+)
+go_deps.module(
+    path = "github.com/gostaticanalysis/comment",
+    sum = "h1:X82FLl+TswsUMpMh17srGRuKaaXprTaytmEpgnKIDu8=",
+    version = "v1.5.0",
+)
+go_deps.module(
+    path = "github.com/lasiar/canonicalheader",
+    sum = "h1:vZ5uqwvDbyJCnMhmFYimgMZnJMjwljN5VGY0VKbMXb4=",
+    version = "v1.1.2",
+)
+go_deps.module(
+    path = "github.com/go-toolsmith/astcast",
+    sum = "h1:+JN9xZV1A+Re+95pgnMgDboWNVnIMMQXwfBwLRPgSC8=",
+    version = "v1.1.0",
+)
+go_deps.module(
+    path = "github.com/sivchari/containedctx",
+    sum = "h1:x+etemjbsh2fB5ewm5FeLNi5bUjK0V8n0RB+Wwfd0XE=",
+    version = "v1.0.3",
+)
+go_deps.module(
+    path = "github.com/karamaru-alpha/copyloopvar",
+    sum = "h1:wmZaZYIjnJ0b5UoKDjUHrikcV0zuPyyxI4SVplLd2CI=",
+    version = "v1.2.1",
+)
+go_deps.module(
+    path = "github.com/Djarvur/go-err113",
+    sum = "h1:uCRZZOdMQ0TZPHYTdYpoC0bLYJKPEHPUJ8MeAa51lNU=",
+    version = "v0.1.0",
+)
+go_deps.module(
+    indirect = True,
+    path = "github.com/klauspost/compress",
+    sum = "h1:c/Cqfb0r+Yi+JtIEq73FWXVkRonBlf0CRNYc8Zttxdo=",
+    version = "v1.18.0",
+)

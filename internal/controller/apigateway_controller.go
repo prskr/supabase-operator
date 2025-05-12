@@ -257,12 +257,7 @@ func (r *APIGatewayReconciler) reconcileHmacSecret(
 
 		if _, ok := hmacSecret.Data[serviceCfg.Defaults.HmacSecretKey]; !ok {
 			secret := make([]byte, hmacSecretLength)
-			if n, err := rand.Read(secret); err != nil {
-				return fmt.Errorf("failed to generate HMAC token secret: %w", err)
-			} else if n != hmacSecretLength {
-				return fmt.Errorf("failed to generate HMAC token secret: not enough bytes generated")
-			}
-
+			_, _ = rand.Read(secret)
 			hmacSecret.Data[serviceCfg.Defaults.HmacSecretKey] = secret
 		}
 

@@ -30,10 +30,8 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/magefile/mage/mg"
-	"gopkg.in/yaml.v3"
 
 	"code.icb4dc0.de/prskr/supabase-operator/internal/errx"
 )
@@ -48,125 +46,7 @@ var ignoredMigrations = []string{
 }
 
 func GenerateAll(ctx context.Context) {
-	mg.CtxDeps(ctx, FetchImageMeta, FetchMigrations, CRDs, CRDDocs)
-}
-
-func CRDs() error {
-	return errors.Join(
-		RunTool(
-			"controller-gen",
-			"rbac:roleName=manager-role",
-			"crd",
-			"webhook",
-			`paths="./..."`,
-			"output:crd:artifacts:config=config/crd/bases",
-		),
-		RunTool("controller-gen", `object:headerFile="hack/boilerplate.go.txt"`, `paths="./..."`),
-	)
-}
-
-func CRDDocs() error {
-	return RunTool(
-		"crd-ref-docs",
-		"--source-path=./api/",
-		"--renderer=markdown",
-		"--config=crd-docs.yaml",
-		"--output-path=./docs/api/",
-		"--output-mode=group",
-	)
-}
-
-func FetchImageMeta(ctx context.Context) (err error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, composeFileUrl, nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer errx.Close(resp.Body, &err)
-
-	var composeFile struct {
-		Services map[string]struct {
-			Image string `yaml:"image"`
-		}
-	}
-
-	if err := yaml.NewDecoder(resp.Body).Decode(&composeFile); err != nil {
-		return err
-	}
-
-	f, err := os.Create(filepath.Join("internal", "supabase", "images.go"))
-	if err != nil {
-		return err
-	}
-
-	defer errx.Close(f, &err)
-
-	type imageRef struct {
-		Repository string
-		Tag        string
-	}
-
-	serviceMappings := map[string]string{
-		"auth":      "Gotrue",
-		"functions": "EdgeRuntime",
-		"imgproxy":  "ImgProxy",
-		"meta":      "PostgresMeta",
-		"realtime":  "Realtime",
-		"rest":      "Postgrest",
-		"storage":   "Storage",
-		"studio":    "Studio",
-	}
-
-	templateData := struct {
-		Images map[string]imageRef
-		Year   int
-		Author string
-	}{
-		Images: make(map[string]imageRef),
-		Year:   time.Now().Year(),
-		Author: "Peter Kurfer",
-	}
-
-	for name, service := range composeFile.Services {
-		splitIdx := strings.LastIndex(service.Image, ":")
-		repo := service.Image[:splitIdx]
-		tag := service.Image[splitIdx+1:]
-
-		mapping, ok := serviceMappings[name]
-		if !ok {
-			continue
-		}
-
-		templateData.Images[mapping] = imageRef{
-			Repository: repo,
-			Tag:        tag,
-		}
-	}
-
-	latestEnvoyTag, err := latestReleaseVersion(ctx, "envoyproxy", "envoy", excludeDrafts, excludePreReleases)
-	if err != nil {
-		return err
-	}
-
-	templateData.Images["Envoy"] = imageRef{
-		Repository: "envoyproxy/envoy",
-		Tag:        fmt.Sprintf("distroless-%s", latestEnvoyTag),
-	}
-
-	if err := templates.ExecuteTemplate(f, "images.go.tmpl", templateData); err != nil {
-		return err
-	}
-
-	if err := f.Sync(); err != nil {
-		return err
-	}
-
-	return RunTool("gofumpt", "-l", "-w", f.Name())
+	mg.CtxDeps(ctx, FetchMigrations)
 }
 
 func FetchMigrations(ctx context.Context) (err error) {
@@ -208,9 +88,14 @@ func FetchMigrations(ctx context.Context) (err error) {
 			continue
 		}
 
+		if header == nil {
+			slog.Warn("header is nil - what's happening?!")
+			continue
+		}
+
 		fileName := header.Name
-		if strings.HasPrefix(fileName, migrationsDirPath) {
-			fileName = strings.TrimPrefix(fileName, migrationsDirPath)
+		if after, ok := strings.CutPrefix(fileName, migrationsDirPath); ok {
+			fileName = after
 
 			dir, migrationFileName := path.Split(fileName)
 

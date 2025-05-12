@@ -1,0 +1,62 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "v1alpha1",
+    srcs = [
+        "apigateway_webhook_defaulter.go",
+        "apigateway_webhook_validator.go",
+        "core_webhook_defaulter.go",
+        "core_webhook_validator.go",
+        "dashboard_webhook.go",
+        "setup.go",
+        "storage_webhook_defaulter.go",
+        "storage_webhook_validator.go",
+    ],
+    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/webhook/v1alpha1",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//api/v1alpha1",
+        "//internal/jwk",
+        "//internal/meta",
+        "//internal/oidc",
+        "//internal/supabase",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_client_go//tools/record",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/controller/controllerutil",
+        "@io_k8s_sigs_controller_runtime//pkg/log",
+        "@io_k8s_sigs_controller_runtime//pkg/webhook",
+        "@io_k8s_sigs_controller_runtime//pkg/webhook/admission",
+    ],
+)
+
+go_test(
+    name = "v1alpha1_test",
+    srcs = [
+        "apigateway_webhook_test.go",
+        "core_webhook_test.go",
+        "dashboard_webhook_test.go",
+        "storage_webhook_test.go",
+        "webhook_suite_test.go",
+    ],
+    embed = [":v1alpha1"],
+    deps = [
+        "//api/v1alpha1",
+        "@com_github_onsi_ginkgo_v2//:ginkgo",
+        "@com_github_onsi_gomega//:gomega",
+        "@io_k8s_api//admission/v1:admission",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/envtest",
+        "@io_k8s_sigs_controller_runtime//pkg/log",
+        "@io_k8s_sigs_controller_runtime//pkg/log/zap",
+        "@io_k8s_sigs_controller_runtime//pkg/metrics/server",
+        "@io_k8s_sigs_controller_runtime//pkg/webhook",
+    ],
+)

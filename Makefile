@@ -88,6 +88,15 @@ lint: ## Run golangci-lint linter
 lint-fix: ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
 
+.PHONY: crd-docs
+crd-docs:
+	go tool crd-ref-docs \
+	    --source-path=./api/ \
+	    --renderer=markdown \
+	    --config=crd-docs.yaml \
+	    --output-path=./docs/api/ \
+	    --output-mode=group
+
 ##@ Build
 
 .PHONY: build

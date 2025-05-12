@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -35,6 +36,8 @@ import (
 	"code.icb4dc0.de/prskr/supabase-operator/internal/meta"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
 )
+
+var errAmbiguousGatewayService = errors.New("ambiguous gateway service matches")
 
 type DashboardStudioReconciler struct {
 	client.Client
@@ -101,7 +104,7 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 	}
 
 	if itemCount := len(gatewayServiceList.Items); itemCount != 1 {
-		return fmt.Errorf("unexpected matches for gateway service: %d", itemCount)
+		return fmt.Errorf("%w: %d", errAmbiguousGatewayService, itemCount)
 	}
 
 	gatewayService := gatewayServiceList.Items[0]

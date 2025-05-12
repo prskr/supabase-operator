@@ -560,10 +560,10 @@ _Appears in:_
 | `autoconfirmEmail` _boolean_ |  |  |  |
 | `subjectsInvite` _string_ |  |  |  |
 | `subjectsConfirmation` _string_ |  |  |  |
-| `smtpSpec` _[EmailAuthSmtpSpec](#emailauthsmtpspec)_ |  |  |  |
+| `smtpSpec` _[EmailAuthSMTPSpec](#emailauthsmtpspec)_ |  |  |  |
 
 
-#### EmailAuthSmtpSpec
+#### EmailAuthSMTPSpec
 
 
 
@@ -579,7 +579,7 @@ _Appears in:_
 | `host` _string_ |  |  |  |
 | `port` _integer_ |  |  |  |
 | `maxFrequency` _integer_ |  |  |  |
-| `credentialsRef` _[SmtpCredentialsReference](#smtpcredentialsreference)_ |  |  |  |
+| `credentialsRef` _[SMTPCredentialsReference](#smtpcredentialsreference)_ |  |  |  |
 
 
 #### EndpointTlsSpec
@@ -923,7 +923,7 @@ _Appears in:_
 | `credentialsSecretRef` _[S3CredentialsRef](#s3credentialsref)_ | CredentialsSecretRef - reference to the Secret where access key id and access secret key are stored |  |  |
 
 
-#### SmtpCredentialsReference
+#### SMTPCredentialsReference
 
 
 
@@ -932,7 +932,7 @@ _Appears in:_
 
 
 _Appears in:_
-- [EmailAuthSmtpSpec](#emailauthsmtpspec)
+- [EmailAuthSMTPSpec](#emailauthsmtpspec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |

@@ -36,6 +36,13 @@ import (
 // log is for logging in this package.
 var storagelog = logf.Log.WithName("storage-resource")
 
+var (
+	errAmbiguousStorageBackendConfiguration = fmt.Errorf("ambiguous storage backend configuration")
+	errInvalidSecretRef                     = errors.New("invalid secret reference")
+	errMissingSecretKey                     = errors.New("missing secret key")
+	errEmptySecretKey                       = errors.New("empty secret key")
+)
+
 // NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:path=/validate-supabase-k8s-icb4dc0-de-v1alpha1-storage,mutating=false,failurePolicy=fail,sideEffects=None,groups=supabase.k8s.icb4dc0.de,resources=storages,verbs=create;update,versions=v1alpha1,name=vstorage-v1alpha1.kb.io,admissionReviewVersions=v1
@@ -55,11 +62,11 @@ var _ webhook.CustomValidator = &StorageCustomValidator{}
 func (v *StorageCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
 	storage, ok := obj.(*supabasev1alpha1.Storage)
 	if !ok {
-		return nil, fmt.Errorf("expected a Storage object but got %T", obj)
+		return nil, fmt.Errorf("%w: expected a Storage object but got %T", errObjectTypeMismatch, obj)
 	}
 	storagelog.Info("Validation for Storage upon creation", "name", storage.GetName())
 
-	if ws, err := v.validateStorageApi(ctx, storage); err != nil {
+	if ws, err := v.validateStorageAPI(ctx, storage); err != nil {
 		return ws, err
 	} else {
 		warnings = append(warnings, ws...)
@@ -72,11 +79,11 @@ func (v *StorageCustomValidator) ValidateCreate(ctx context.Context, obj runtime
 func (v *StorageCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
 	storage, ok := newObj.(*supabasev1alpha1.Storage)
 	if !ok {
-		return nil, fmt.Errorf("expected a Storage object for the newObj but got %T", newObj)
+		return nil, fmt.Errorf("%w: expected a Storage object for the newObj but got %T", errObjectTypeMismatch, newObj)
 	}
 	storagelog.Info("Validation for Storage upon update", "name", storage.GetName())
 
-	if ws, err := v.validateStorageApi(ctx, storage); err != nil {
+	if ws, err := v.validateStorageAPI(ctx, storage); err != nil {
 		return ws, err
 	} else {
 		warnings = append(warnings, ws...)
@@ -89,25 +96,25 @@ func (v *StorageCustomValidator) ValidateUpdate(ctx context.Context, oldObj, new
 func (v *StorageCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	storage, ok := obj.(*supabasev1alpha1.Storage)
 	if !ok {
-		return nil, fmt.Errorf("expected a Storage object but got %T", obj)
+		return nil, fmt.Errorf("%w: expected a Storage object but got %T", errObjectTypeMismatch, obj)
 	}
 	storagelog.Info("Validation for Storage upon deletion", "name", storage.GetName())
 
 	return nil, nil
 }
 
-func (v *StorageCustomValidator) validateStorageApi(ctx context.Context, storage *supabasev1alpha1.Storage) (admission.Warnings, error) {
+func (v *StorageCustomValidator) validateStorageAPI(ctx context.Context, storage *supabasev1alpha1.Storage) (admission.Warnings, error) {
 	var warnings admission.Warnings
 
 	apiSpec := storage.Spec.Api
 
 	if (apiSpec.FileBackend == nil) == (apiSpec.S3Backend == nil) {
-		return nil, errors.New("it is not possible to configure both or non backend at all - please configure either file or S3 backend")
+		return nil, fmt.Errorf("%w: it is not possible to configure both or no backend at all - please configure either file or S3 backend", errAmbiguousStorageBackendConfiguration)
 	}
 
 	if apiSpec.S3Backend != nil {
 		if apiSpec.S3Backend.CredentialsSecretRef == nil {
-			return nil, errors.New(".spec.api.s3Backend.credentialsSecretRef cannot be empty")
+			return nil, fmt.Errorf("%w: .spec.api.s3Backend.credentialsSecretRef", errInvalidSecretRef)
 		}
 
 		s3CredentialsSecret := &corev1.Secret{
@@ -123,16 +130,16 @@ func (v *StorageCustomValidator) validateStorageApi(ctx context.Context, storage
 				return nil, err
 			}
 		} else {
-			if accessKeyId, ok := s3CredentialsSecret.Data[apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIdKey]; !ok {
-				return warnings, fmt.Errorf("secret %q does not contain an access key id at specified key %q", apiSpec.S3Backend.CredentialsSecretRef.SecretName, apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIdKey)
-			} else if len(accessKeyId) == 0 {
-				return warnings, fmt.Errorf("access key id in Secret %q with key %q is empty", apiSpec.S3Backend.CredentialsSecretRef.SecretName, apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIdKey)
+			if accessKeyID, ok := s3CredentialsSecret.Data[apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIdKey]; !ok {
+				return warnings, fmt.Errorf("%w: %q does not contain an access key ID with key %q", errMissingSecretKey, apiSpec.S3Backend.CredentialsSecretRef.SecretName, apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIdKey)
+			} else if len(accessKeyID) == 0 {
+				return warnings, fmt.Errorf("%w: key %q in Secret %q", errEmptySecretKey, apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIdKey, apiSpec.S3Backend.CredentialsSecretRef.SecretName)
 			}
 
 			if accessSecretKey, ok := s3CredentialsSecret.Data[apiSpec.S3Backend.CredentialsSecretRef.AccessSecretKeyKey]; !ok {
-				return warnings, fmt.Errorf("secret %q does not contain an access secret key at specified key %q", apiSpec.S3Backend.CredentialsSecretRef.SecretName, apiSpec.S3Backend.CredentialsSecretRef.AccessSecretKeyKey)
+				return warnings, fmt.Errorf("%w: %q does not contain an access secret key with key %q", errMissingSecretKey, apiSpec.S3Backend.CredentialsSecretRef.SecretName, apiSpec.S3Backend.CredentialsSecretRef.AccessSecretKeyKey)
 			} else if len(accessSecretKey) == 0 {
-				return warnings, fmt.Errorf("access secret key in Secret %q with key %q is empty", apiSpec.S3Backend.CredentialsSecretRef.SecretName, apiSpec.S3Backend.CredentialsSecretRef.AccessSecretKeyKey)
+				return warnings, fmt.Errorf("%w: key %q in Secret %q", errEmptySecretKey, apiSpec.S3Backend.CredentialsSecretRef.AccessSecretKeyKey, apiSpec.S3Backend.CredentialsSecretRef.SecretName)
 			}
 		}
 	}

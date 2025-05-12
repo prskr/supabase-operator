@@ -55,7 +55,7 @@ var _ webhook.CustomValidator = &APIGatewayCustomValidator{}
 func (v *APIGatewayCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	apigateway, ok := obj.(*supabasev1alpha1.APIGateway)
 	if !ok {
-		return nil, fmt.Errorf("expected a APIGateway object but got %T", obj)
+		return nil, fmt.Errorf("%w: expected a APIGateway object but got %T", errObjectTypeMismatch, obj)
 	}
 	apigatewaylog.Info("Validation for APIGateway upon creation", "name", apigateway.GetName())
 
@@ -77,7 +77,7 @@ func (v *APIGatewayCustomValidator) ValidateCreate(ctx context.Context, obj runt
 func (v *APIGatewayCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	apigateway, ok := newObj.(*supabasev1alpha1.APIGateway)
 	if !ok {
-		return nil, fmt.Errorf("expected a APIGateway object for the newObj but got %T", newObj)
+		return nil, fmt.Errorf("%w: expected a APIGateway object for the newObj but got %T", errObjectTypeMismatch, newObj)
 	}
 	apigatewaylog.Info("Validation for APIGateway upon update", "name", apigateway.GetName())
 
@@ -99,7 +99,7 @@ func (v *APIGatewayCustomValidator) ValidateUpdate(ctx context.Context, oldObj, 
 func (v *APIGatewayCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	apigateway, ok := obj.(*supabasev1alpha1.APIGateway)
 	if !ok {
-		return nil, fmt.Errorf("expected a APIGateway object but got %T", obj)
+		return nil, fmt.Errorf("%w: expected a APIGateway object but got %T", errObjectTypeMismatch, obj)
 	}
 	apigatewaylog.Info("Validation for APIGateway upon deletion", "name", apigateway.GetName())
 
@@ -130,12 +130,12 @@ func validateDashboardEndpointSpec(gateway *supabasev1alpha1.APIGateway) (warnin
 	switch dashboardEndpointSpec.AuthType() {
 	case supabasev1alpha1.DashboardAuthTypeOAuth2:
 		oauth2Spec := dashboardEndpointSpec.OAuth2()
-		if oauth2Spec.OpenIDIssuer == "" && oauth2Spec.AuthorizationEndpoint == "" && oauth2Spec.TokenEndpoint == "" {
+		if oauth2Spec == nil || oauth2Spec.OpenIDIssuer == "" && oauth2Spec.AuthorizationEndpoint == "" && oauth2Spec.TokenEndpoint == "" {
 			return nil, fmt.Errorf("%w: you have to either set the OpenID issuer or authorization and token endpoints for oauth2 authentication", ErrOAuth2EndpointsMissing)
 		}
 	case supabasev1alpha1.DashboardAuthTypeBasic:
 		basicAuthSpec := dashboardEndpointSpec.Basic()
-		if len(basicAuthSpec.UsersInline) == 0 && basicAuthSpec.PlaintextUsersSecretRef == "" {
+		if basicAuthSpec == nil || len(basicAuthSpec.UsersInline) == 0 && basicAuthSpec.PlaintextUsersSecretRef == "" {
 			return nil, fmt.Errorf("%w: neither inline users are specified nor a secret for plaintext credentials was referenced", ErrBasicAuthNoUsers)
 		}
 

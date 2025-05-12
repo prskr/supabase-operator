@@ -1,0 +1,11 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "certs",
+    srcs = [
+        "format.go",
+        "generate.go",
+    ],
+    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/certs",
+    visibility = ["//:__subpackages__"],
+)

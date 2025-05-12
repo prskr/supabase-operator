@@ -55,6 +55,7 @@ type release struct {
 	PreRelease bool   `json:"prerelease"`
 }
 
+//nolint:err113
 func latestReleaseVersion(ctx context.Context, owner, repo string, matchers ...releaseMatcher) (tagName string, err error) {
 	releaseURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases", owner, repo)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, releaseURL, nil)

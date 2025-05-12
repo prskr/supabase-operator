@@ -56,7 +56,7 @@ func (d *CoreCustomDefaulter) Default(ctx context.Context, obj runtime.Object) e
 	core, ok := obj.(*supabasev1alpha1.Core)
 
 	if !ok {
-		return fmt.Errorf("expected an Core object but got %T", obj)
+		return fmt.Errorf("%w: expected an Core object but got %T", errObjectTypeMismatch, obj)
 	}
 	corelog.Info("Defaulting for Core", "name", core.GetName())
 

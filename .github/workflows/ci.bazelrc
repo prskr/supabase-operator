@@ -1,0 +1,5 @@
+common --remote_cache=http://localhost:3055
+
+build --stamp --workspace_status_command=./tools/workspace_status.sh
+
+test --test_output=errors
