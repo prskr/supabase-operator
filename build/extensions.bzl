@@ -1,22 +1,47 @@
-load(":repositories.bzl", "supabase_compose_file", "supabase_migration_files", "supabase_init_script_files")
+def _supbase_compose_impl(repository_ctx):
+    repository_ctx.download(
+        "https://raw.githubusercontent.com/supabase/supabase/refs/tags/{}/docker/docker-compose.yml".format(repository_ctx.attr.version),
+        sha256 = repository_ctx.attr.sha256,
+        output = "docker-compose.yml",
+    )
 
-def _supbase_compose_impl(_ctx):
-    supabase_compose_file()
+    repository_ctx.file("BUILD.bazel", content = """
+filegroup(
+    name = "docker-compose",
+    srcs = ["docker-compose.yml"],
+    visibility = ["//visibility:public"],
+)
+""".format(repository_ctx.original_name))
 
-supabase_compose = module_extension(
+supabase_compose = repository_rule(
     implementation = _supbase_compose_impl,
+    attrs = {
+        "version": attr.string(mandatory = True),
+        "sha256": attr.string(mandatory = True),
+    },
 )
 
-def _supbase_migrations_impl(_ctx):
-    supabase_migration_files()
+def _supbase_migrations_impl(repository_ctx):
+    repository_ctx.download_and_extract(
+        "https://github.com/supabase/postgres/archive/refs/tags/{}.tar.gz".format(repository_ctx.attr.version),
+        sha256 = repository_ctx.attr.sha256,
+        type = "tar.gz",
+        strip_prefix = "postgres-{}/{}".format(repository_ctx.attr.version, repository_ctx.attr.path_prefix),
+    )
 
-supabase_migrations = module_extension(
+    repository_ctx.file("BUILD.bazel", content = """
+filegroup(
+    name = "{}",
+    srcs = glob(["*.sql"]),
+    visibility = ["//visibility:public"],
+)
+""".format(repository_ctx.original_name))
+
+supabase_migrations = repository_rule(
     implementation = _supbase_migrations_impl,
-)
-
-def _supbase_init_script_impl(_ctx):
-    supabase_init_script_files()
-
-supabase_init_scripts = module_extension(
-    implementation = _supbase_init_script_impl,
+    attrs = {
+        "version": attr.string(mandatory = True),
+        "sha256": attr.string(mandatory = True),
+        "path_prefix": attr.string(mandatory = True),
+    },
 )

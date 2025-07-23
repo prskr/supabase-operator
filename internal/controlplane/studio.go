@@ -91,7 +91,9 @@ func (s *StudioCluster) Listener(ctx context.Context, instance string, gateway *
 
 	switch gateway.Spec.DashboardEndpoint.AuthType() {
 	case supabasev1alpha1.DashboardAuthTypeOAuth2:
-		httpFilters = append(httpFilters, s.oauth2HttpFilter(instance, gateway))
+		if oauth2Filter := s.oauth2HttpFilter(instance, gateway); oauth2Filter != nil {
+			httpFilters = append(httpFilters, oauth2Filter)
+		}
 	case supabasev1alpha1.DashboardAuthTypeBasic:
 		if filter, err := s.basicAuthHttpFilter(ctx, gateway); err != nil {
 			return nil, err
@@ -384,6 +386,10 @@ func (s *StudioCluster) oauth2HttpFilter(instance string, gateway *supabasev1alp
 		serviceCfg = supabase.ServiceConfig.Envoy
 		oauth2Spec = gateway.Spec.DashboardEndpoint.OAuth2()
 	)
+
+	if oauth2Spec == nil {
+		return nil
+	}
 
 	return &hcm.HttpFilter{
 		Name: FilterNameOAuth2,

@@ -1,22 +1,23 @@
-load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 genrule(
-    name = "gen-migrations",
-    cmd = "ls -lah",
-    srcs = [
-        "@supabase_migrations//migrations"
-    ],
-    outs = ["migrations/20211115181400_update-auth-permissions.sql"],
-)
-
-go_library(
-    name = "migrations",
-    srcs = ["migrations.go"],
-    embedsrcs = [
+    name = "init_scripts",
+    srcs = ["@supabase_init_scripts"],
+    outs = [
         "init-scripts/00000000000000-initial-schema.sql",
         "init-scripts/00000000000001-auth-schema.sql",
         "init-scripts/00000000000002-storage-schema.sql",
         "init-scripts/00000000000003-post-setup.sql",
+    ],
+    cmd = "cp $(locations @supabase_init_scripts//:supabase_init_scripts) \"$(@D)/init-scripts/\"",
+)
+
+genrule(
+    name = "migration_scripts",
+    srcs = ["@supabase_migrations"],
+    outs = [
+        # Ignored
+        # "10000000000000_demote-postgres.sql"
         "migrations/20211115181400_update-auth-permissions.sql",
         "migrations/20211118015519_create-realtime-schema.sql",
         "migrations/20211122051245_update-realtime-permissions.sql",
@@ -35,7 +36,6 @@ go_library(
         "migrations/20221028101028_set_authenticator_timeout.sql",
         "migrations/20221103090837_revoke_admin.sql",
         "migrations/20221207154255_create_pgsodium_and_vault.sql",
-        "migrations/20221207154255_create_vault.sql",
         "migrations/20230201083204_grant_auth_roles_to_postgres.sql",
         "migrations/20230224042246_grant_extensions_perms_for_postgres.sql",
         "migrations/20230306081037_grant_pg_monitor_to_postgres.sql",
@@ -53,9 +53,40 @@ go_library(
         "migrations/20250205144616_move_orioledb_to_extensions_schema.sql",
         "migrations/20250218031949_pgsodium_mask_role.sql",
         "migrations/20250220051611_pg_net_perms_fix.sql",
+        # skipped
+        # "20250312095419_pgbouncer_ownership.sql",
+        "migrations/20250402065937_alter_internal_event_triggers_owner_to_supabase_admin.sql",
+        "migrations/20250402093753_grant_subscription_to_postgres_16_and_above.sql",
+        "migrations/20250417190610_update_pgbouncer_get_auth.sql",
+        "migrations/20250421084701_revoke_admin_roles_from_postgres.sql",
+        "migrations/20250605172253_grant_with_admin_to_postgres_16_and_above.sql",
+        "migrations/20250623125453_tmp_grant_storage_tables_to_postgres_with_grant_option.sql",
+        "migrations/20250709135250_grant_storage_schema_to_postgres_with_grant_option.sql",
+        "migrations/20250710151649_supabase_read_only_user_default_transaction_read_only.sql",
+    ],
+    cmd = "cp $(locations @supabase_migrations//:supabase_migrations) \"$(@D)/migrations/\"",
+)
+
+go_library(
+    name = "migrations",
+    srcs = ["migrations.go"],
+    embedsrcs = [
+        # keep
+        ":init_scripts",
+        # keep
+        ":migration_scripts",
         "roles/supabase_functions_admin.sql",
         "setup/realtime.sql",
     ],
     importpath = "code.icb4dc0.de/prskr/supabase-operator/assets/migrations",
     visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "migrations_test",
+    srcs = ["migrations_test.go"],
+    deps = [
+        ":migrations",
+        "@com_github_alecthomas_assert_v2//:assert",
+    ],
 )

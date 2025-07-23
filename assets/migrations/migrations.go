@@ -27,8 +27,8 @@ import (
 	"strings"
 )
 
-//go:embed */*.sql
-var migrationsFS embed.FS
+//go:embed setup/*.sql roles/*.sql init-scripts/*.sql migrations/*.sql
+var MigrationsFS embed.FS
 
 type Script struct {
 	FileName string
@@ -46,7 +46,7 @@ func MigrationScripts() iter.Seq2[Script, error] {
 
 func RoleCreationScript(roleName string) (Script, error) {
 	fileName := fmt.Sprintf("%s.sql", roleName)
-	content, err := migrationsFS.ReadFile(path.Join("roles", fileName))
+	content, err := MigrationsFS.ReadFile(path.Join("roles", fileName))
 	if err != nil {
 		return Script{}, err
 	}
@@ -64,7 +64,7 @@ func RoleCreationScript(roleName string) (Script, error) {
 func readScripts(dir string) iter.Seq2[Script, error] {
 	hash := sha256.New()
 	return func(yield func(Script, error) bool) {
-		files, err := migrationsFS.ReadDir(dir)
+		files, err := MigrationsFS.ReadDir(dir)
 		if err != nil {
 			yield(Script{}, err)
 			return
@@ -79,7 +79,7 @@ func readScripts(dir string) iter.Seq2[Script, error] {
 				continue
 			}
 
-			content, err := migrationsFS.ReadFile(path.Join(dir, file.Name()))
+			content, err := MigrationsFS.ReadFile(path.Join(dir, file.Name()))
 			if err != nil {
 				if !yield(Script{}, err) {
 					return

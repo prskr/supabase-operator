@@ -1,5 +1,4 @@
 # gazelle:proto disable_global
-# gazelle:exclude magefiles
 
 load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
 load("@buildifier_prebuilt//:rules.bzl", "buildifier")
@@ -25,7 +24,7 @@ ARCHS = [
 ]
 
 nogo(
-    name = "analyzers",
+    name = "nogo",
     config = ".nogo_config.json",
     vet = True,
     visibility = ["//visibility:public"],

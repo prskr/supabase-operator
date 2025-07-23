@@ -5,6 +5,17 @@
       "external/.*": "exclude all third_party code for all analyzers"
     }
   },
+  "usetesting": {
+    "analyzer_flags": {
+      "contextbackground": "true",
+      "contexttodo": "true",
+      "oschdir": "true",
+      "osmkdirtemp": "true",
+      "ossetenv": "true",
+      "ostempdir": "true",
+      "oscreatetemp": "true"
+    }
+  },
   "nilaway": {
     "only_files": {
       "(internal|cmd)/.*": "exclude generated deepcopy code"

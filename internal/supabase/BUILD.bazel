@@ -7,12 +7,12 @@ ENVOY_TAG = "distroless-v1.34.2"
 genrule(
     name = "supabase-images",
     srcs = [
-        "@supabase_compose//file",
+        "@supabase_compose//:docker-compose",
     ],
     outs = ["images.go"],
     cmd = """
         $(execpath //internal/codegen/images:images) \
-            -source-file=./external/+supabase_compose+supabase_compose/file/docker-compose.yml \
+            -source-file=$(location @supabase_compose//:docker-compose) \
             -out-file=$@ \
             -envoy-repo={} \
             -envoy-tag={}
@@ -30,13 +30,13 @@ go_library(
         "env.go",
         "env_types.go",
         "envoy.go",
+        "images.go",
         "img_proxy.go",
         "jwt.go",
         "pg_meta.go",
         "postgrest.go",
         "storage.go",
         "studio.go",
-        ":supabase-images",
     ],
     importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/supabase",
     visibility = ["//:__subpackages__"],
