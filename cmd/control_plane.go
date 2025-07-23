@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -58,6 +59,8 @@ import (
 	"code.icb4dc0.de/prskr/supabase-operator/internal/controlplane"
 	"code.icb4dc0.de/prskr/supabase-operator/internal/health"
 )
+
+var errCouldNoParseCert = errors.New("could not parse certificate")
 
 //nolint:lll // flag declaration with struct tags is as long as it is
 type controlPlane struct {
@@ -116,6 +119,7 @@ func (cp *controlPlane) Run(ctx context.Context, logger logr.Logger) error {
 		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 	}
 
+	//nolint:contextcheck
 	bootstrapClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
 	if err != nil {
 		return fmt.Errorf("unable to create bootstrap client: %w", err)
@@ -137,7 +141,7 @@ func (cp *controlPlane) Run(ctx context.Context, logger logr.Logger) error {
 	cacheLoggerInst := cacheLogger(logger.WithName("envoy-snapshot-cache"))
 	envoySnapshotCache := cachev3.NewSnapshotCache(false, cachev3.IDHash{}, cacheLoggerInst)
 
-	serverCert, err := cp.ensureControlPlaneTlsCert(ctx, bootstrapClient)
+	serverCert, err := cp.ensureControlPlaneTLSCert(ctx, bootstrapClient)
 	if err != nil {
 		return fmt.Errorf("failed to ensure control plane TLS cert: %w", err)
 	}
@@ -254,11 +258,12 @@ func (cp *controlPlane) envoyServer(
 			<-ctx.Done()
 			grpcServer.GracefulStop()
 		}(ctx)
+		//nolint:contextcheck
 		return grpcServer.Serve(lis)
 	}), nil
 }
 
-func (cp *controlPlane) ensureControlPlaneTlsCert(
+func (cp *controlPlane) ensureControlPlaneTLSCert(
 	ctx context.Context,
 	k8sClient client.Client,
 ) (tls.Certificate, error) {
@@ -330,11 +335,11 @@ func (cp *controlPlane) tlsConfig(serverCert tls.Certificate) (*tls.Config, erro
 
 	tlsCfg.Certificates = append(tlsCfg.Certificates, serverCert)
 	if !tlsCfg.RootCAs.AppendCertsFromPEM(cp.Tls.CA.Cert) {
-		return nil, fmt.Errorf("failed to parse CA certificate")
+		return nil, fmt.Errorf("%w: root CA certificate", errCouldNoParseCert)
 	}
 
 	if !tlsCfg.ClientCAs.AppendCertsFromPEM(cp.Tls.CA.Cert) {
-		return nil, fmt.Errorf("failed to parse client CA certificate")
+		return nil, fmt.Errorf("%w: client CA certificate", errCouldNoParseCert)
 	}
 
 	return tlsCfg, nil

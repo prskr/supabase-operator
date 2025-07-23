@@ -7,7 +7,7 @@ toolchain go1.24.5
 require (
 	code.icb4dc0.de/prskr/bazel-golangci-lint-analyzers v0.0.0-20250722172205-47d3ea5a21cd
 	github.com/alecthomas/assert/v2 v2.11.0
-	github.com/alecthomas/kong v1.12.0
+	github.com/alecthomas/kong v1.12.1
 	github.com/envoyproxy/go-control-plane v0.13.4
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4
 	github.com/go-logr/logr v1.4.3
@@ -16,7 +16,6 @@ require (
 	github.com/kisielk/errcheck v1.9.0
 	github.com/lasiar/canonicalheader v1.1.2
 	github.com/lestrrat-go/jwx/v2 v2.1.6
-	github.com/magefile/mage v1.15.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.36.3
 	github.com/sivchari/containedctx v1.0.3

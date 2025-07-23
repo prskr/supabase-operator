@@ -40,6 +40,17 @@ go_sdk.nogo(nogo = "//:nogo")
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_mod = "//:go.mod")
 
+# hack required because otherwise bazel tries to generate necessary proto files and is missing one
+# instead of simply using the pre-generated files
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    directives = [
+        "gazelle:exclude **/*.proto",
+        "gazelle:go_generate_proto false",
+    ],
+    path = "sigs.k8s.io/apiserver-network-proxy/konnectivity-client",
+)
+
 supabase_compose = use_repo_rule("//build:extensions.bzl", "supabase_compose")
 
 supabase_compose(
@@ -76,7 +87,6 @@ use_repo(
     "com_github_kisielk_errcheck",
     "com_github_lasiar_canonicalheader",
     "com_github_lestrrat_go_jwx_v2",
-    "com_github_magefile_mage",
     "com_github_onsi_ginkgo_v2",
     "com_github_onsi_gomega",
     "com_github_sivchari_containedctx",

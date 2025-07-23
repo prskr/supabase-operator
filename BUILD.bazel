@@ -5,9 +5,17 @@ load("@buildifier_prebuilt//:rules.bzl", "buildifier")
 load("@gazelle//:def.bzl", "gazelle")
 load("@rules_go//go:def.bzl", "go_binary", "go_cross_binary", "nogo")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_image_index", "oci_load", "oci_push")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
-gazelle(name = "gazelle")
+gazelle(
+    name = "gazelle",
+    extra_args = [
+        "-mode=fix",
+        "-proto=disable_global",
+        "-strict=true",
+    ],
+)
 
 buildifier(
     name = "fmt",
@@ -25,7 +33,7 @@ ARCHS = [
 
 nogo(
     name = "nogo",
-    config = ".nogo_config.json",
+    config = ".nogo.json",
     vet = True,
     visibility = ["//visibility:public"],
     deps = [
@@ -73,9 +81,20 @@ platform(
 ]
 
 [
+    pkg_files(
+        name = "app_files_" + arch,
+        srcs = [":supabase-operator_" + arch],
+        renames = {
+            "supabase-operator_" + arch: "supabase-operator",
+        },
+    )
+    for arch in ARCHS
+]
+
+[
     pkg_tar(
         name = "app_layer_" + arch,
-        srcs = [":supabase-operator_" + arch],
+        srcs = [":app_files_" + arch],
     )
     for arch in ARCHS
 ]
