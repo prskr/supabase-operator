@@ -17,18 +17,18 @@ require (
 	github.com/lasiar/canonicalheader v1.1.2
 	github.com/lestrrat-go/jwx/v2 v2.1.6
 	github.com/onsi/ginkgo/v2 v2.23.4
-	github.com/onsi/gomega v1.36.3
+	github.com/onsi/gomega v1.38.0
 	github.com/sivchari/containedctx v1.0.3
 	github.com/stretchr/testify v1.10.0
-	go.uber.org/nilaway v0.0.0-20250709162316-aa1ea38dc990
+	go.uber.org/nilaway v0.0.0-20250722134535-afb472521551
 	go.uber.org/zap v1.27.0
-	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
-	google.golang.org/grpc v1.73.0
+	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792
+	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.33.2
-	k8s.io/apimachinery v0.33.2
-	k8s.io/client-go v0.33.2
+	k8s.io/api v0.33.3
+	k8s.io/apimachinery v0.33.3
+	k8s.io/client-go v0.33.3
 	sigs.k8s.io/controller-runtime v0.21.0
 )
 
@@ -153,11 +153,10 @@ require (
 	golang.org/x/text v0.27.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.35.0 // indirect
-	golang.org/x/tools/go/expect v0.1.0-deprecated // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
