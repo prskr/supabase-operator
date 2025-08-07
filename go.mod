@@ -2,7 +2,7 @@ module code.icb4dc0.de/prskr/supabase-operator
 
 go 1.24.0
 
-toolchain go1.24.5
+toolchain go1.24.6
 
 require (
 	code.icb4dc0.de/prskr/bazel-golangci-lint-analyzers v0.0.0-20250722172205-47d3ea5a21cd
