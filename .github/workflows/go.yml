@@ -27,7 +27,7 @@ jobs:
           password: ${{ secrets.HARBOR_TOKEN }}
 
       - name: Build images
-        run: bazel run --bazelrc=.github/workflows/ci.bazelrc //:image_multiarch
+        run: bazel --bazelrc=.github/workflows/ci.bazelrc build //:image_multiarch
 
       - name: Generate a changelog
         uses: orhun/git-cliff-action@v3
@@ -43,7 +43,7 @@ jobs:
         if: github.ref_type == 'tag'
         run: |
           tea login add --url ${{ env.GITHUB_SERVER_URL }}
-          bazel run --bazelrc=.github/workflows/ci.bazelrc //:push
+          bazel --bazelrc=.github/workflows/ci.bazelrc run //:push
 
           mkdir release
           sh -c "cd config/release/default && kustomize edit set image supabase-operator=registry.icb4dc0.de/supabase-operator/controller:{{ github.ref_name }}"
