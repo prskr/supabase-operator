@@ -35,6 +35,7 @@ jobs:
         with:
           config: cliff.toml
           args: --current
+          github_token: ''
         env:
           OUTPUT: release-notes.md
           GITHUB_REPO: ${{ github.repository }}
