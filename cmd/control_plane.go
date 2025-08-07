@@ -296,7 +296,7 @@ func (cp *controlPlane) ensureControlPlaneTLSCert(
 			}
 
 			renewGracePeriod := time.Duration(float64(serverCert.Leaf.NotAfter.Sub(serverCert.Leaf.NotBefore)) * 0.1)
-			if serverCert.Leaf.NotAfter.Before(time.Now().Add(-renewGracePeriod)) {
+			if serverCert.Leaf.NotAfter.After(time.Now().Add(renewGracePeriod)) {
 				requireRenewal = true
 			}
 		} else {
