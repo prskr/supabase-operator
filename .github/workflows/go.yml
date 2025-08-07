@@ -29,8 +29,6 @@ jobs:
       - uses: bazel-contrib/setup-bazel@0.15.0
         with:
           bazelisk-cache: true
-          disk-cache: ${{ github.workflow }}
-          repository-cache: true
 
       - name: Build images
         run: bazel run --bazelrc=.github/workflows/ci.bazelrc //:image_multiarch
