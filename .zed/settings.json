@@ -7,19 +7,6 @@
           "GOPACKAGESDRIVER": "./hack/gopackagesdriver.sh"
         }
       }
-    },
-    "golangci-lint": {
-      "initialization_options": {
-        "command": [
-          "go",
-          "tool",
-          "golangci-lint",
-          "run",
-          "--output.json.path",
-          "stderr",
-          "--issues-exit-code=1"
-        ]
-      }
     }
   }
 }
