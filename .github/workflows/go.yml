@@ -26,10 +26,6 @@ jobs:
           username: ${{ secrets.HARBOR_USER }}
           password: ${{ secrets.HARBOR_TOKEN }}
 
-      - uses: bazel-contrib/setup-bazel@0.15.0
-        with:
-          bazelisk-cache: true
-
       - name: Build images
         run: bazel run --bazelrc=.github/workflows/ci.bazelrc //:image_multiarch
 
