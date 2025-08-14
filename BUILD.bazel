@@ -5,7 +5,7 @@ load("@buildifier_prebuilt//:rules.bzl", "buildifier")
 load("@gazelle//:def.bzl", "gazelle")
 load("@rules_go//go:def.bzl", "go_binary", "go_cross_binary", "nogo")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_image_index", "oci_load", "oci_push")
-load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
 gazelle(
@@ -84,6 +84,7 @@ platform(
     pkg_files(
         name = "app_files_" + arch,
         srcs = [":supabase-operator_" + arch],
+        attributes = pkg_attributes("755"),
         renames = {
             "supabase-operator_" + arch: "supabase-operator",
         },
@@ -102,10 +103,11 @@ platform(
 [
     oci_image(
         name = "image_" + arch,
-        architecture = arch,
+        base = "@distroless_base_nossl_debian12",
         entrypoint = ["/supabase-operator"],
-        os = "linux",
         tars = [":app_layer_" + arch],
+        user = "65534:65534",
+        visibility = ["//visibility:public"],
     )
     for arch in ARCHS
 ]

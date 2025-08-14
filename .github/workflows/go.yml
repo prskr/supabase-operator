@@ -29,17 +29,6 @@ jobs:
       - name: Build images
         run: bazel --bazelrc=.github/workflows/ci.bazelrc build //:image_multiarch
 
-      - name: Generate a changelog
-        uses: orhun/git-cliff-action@v3
-        if: github.ref_type == 'tag'
-        with:
-          config: cliff.toml
-          args: --current
-          github_token: ''
-        env:
-          OUTPUT: release-notes.md
-          GITHUB_REPO: ${{ github.repository }}
-
       - name: Release
         if: github.ref_type == 'tag'
         run: |
@@ -47,6 +36,9 @@ jobs:
           bazel --bazelrc=.github/workflows/ci.bazelrc run //:push
 
           mkdir release
+
+          git-cliff --current --output release/release-notes.md
+
           sh -c "cd config/release/default && kustomize edit set image supabase-operator=registry.icb4dc0.de/supabase-operator/controller:{{ github.ref_name }}"
           kustomize build config/release/default > release/operator_manifest.yaml
 

@@ -2,29 +2,38 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - https://github.com/cert-manager/cert-manager/releases/download/v1.17.1/cert-manager.yaml
-  - https://github.com/cloudnative-pg/cloudnative-pg/releases/download/v1.25.0/cnpg-1.25.0.yaml
-  - ca.yaml
-  - namespace.yaml
-  - cnpg-cluster.yaml
-  - minio.yaml
-  - ../default
-  - studio-plaintext-users.yaml
-  - studio-credentials-secret.yaml
-  - core.yaml
-  - apigateway.yaml
-  - dashboard.yaml
-  - storage.yaml
+- https://github.com/cert-manager/cert-manager/releases/download/v1.17.1/cert-manager.yaml
+- https://github.com/cloudnative-pg/cloudnative-pg/releases/download/v1.25.0/cnpg-1.25.0.yaml
+- ca.yaml
+- namespace.yaml
+- cnpg-cluster.yaml
+- minio.yaml
+- ../default
+- studio-plaintext-users.yaml
+- studio-credentials-secret.yaml
+- core.yaml
+- apigateway.yaml
+- dashboard.yaml
+- storage.yaml
 
 patches:
-  - path: manager_dev_settings.yaml
-    target:
-      kind: Deployment
-      labelSelector: app.kubernetes.io/name=supabase-operator
-  - path: manager_dev_settings.yaml
-    target:
-      kind: Deployment
-      labelSelector: app.kubernetes.io/name=control-plane
+- path: manager_dev_settings.yaml
+  target:
+    kind: Deployment
+    labelSelector: app.kubernetes.io/name=supabase-operator
+- path: manager_dev_settings.yaml
+  target:
+    kind: Deployment
+    labelSelector: app.kubernetes.io/name=control-plane
 
 configurations:
-  - kustomizeconfig/cnpg-cluster.yaml
+- kustomizeconfig/cnpg-cluster.yaml
+images:
+- digest: sha256:619850a83ab0fa3c9d10366d16eaba8353eaff7109d26541cbbc907e76ecc4b6
+  name: controller
+  newName: localhost:5005/supabase-operator
+  newTag: latest
+- digest: sha256:1193276ca02da78ac377cf9eed3306181659f2d1d455c647bff17b682d98cb10
+  name: supabase-operator
+  newName: localhost:5005/supabase-operator
+  newTag: latest

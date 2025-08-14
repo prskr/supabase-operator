@@ -32,6 +32,60 @@ bazel_dep(
     name = "buildifier_prebuilt",
     version = "8.2.0.2",
 )
+bazel_dep(
+    name = "rules_multirun",
+    version = "0.12.0",
+)
+
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "kubectl_linux_arm64",
+    downloaded_file_path = "kubectl_linux_arm64",
+    executable = True,
+    sha256 = "48541d119455ac5bcc5043275ccda792371e0b112483aa0b29378439cf6322b9",
+    url = "https://dl.k8s.io/release/v1.33.0/bin/linux/arm64/kubectl",
+)
+
+http_file(
+    name = "kubectl_linux_amd64",
+    downloaded_file_path = "kubectl_linux_amd64",
+    executable = True,
+    sha256 = "9efe8d3facb23e1618cba36fb1c4e15ac9dc3ed5a2c2e18109e4a66b2bac12dc",
+    url = "https://dl.k8s.io/release/v1.33.0/bin/linux/amd64/kubectl",
+)
+
+http_file(
+    name = "kubectl_darwin_arm64",
+    downloaded_file_path = "kubectl_darwin_arm64",
+    executable = True,
+    sha256 = "007746617abc12746dd80ad6c261c2b062269688d44c0b97aa47108c562b07c1",
+    url = "https://dl.k8s.io/release/v1.33.0/bin/darwin/arm64/kubectl",
+)
+
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "distroless_base_nossl_debian12",
+    digest = "sha256:9a1c8b2ff7412ea80ca8c531eb7542e0e7766c8cf79489a8f0f31f0aa341c0fe",
+    image = "gcr.io/distroless/base-nossl-debian12",
+    platforms = [
+        "linux/amd64",
+        "linux/arm64/v8",
+    ],
+)
+use_repo(
+    oci,
+    "distroless_base_nossl_debian12",
+    "distroless_base_nossl_debian12_linux_amd64",
+    "distroless_base_nossl_debian12_linux_arm64_v8",
+)
+
+go_tool_deps = use_extension("@gazelle//:extensions.bzl", "go_deps", isolate = True)
+go_tool_deps.from_file(go_mod = "//tools:go.mod")
+use_repo(
+    go_tool_deps,
+    "io_k8s_sigs_kustomize_kustomize_v5",
+)
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
 go_sdk.from_file(go_mod = "//:go.mod")

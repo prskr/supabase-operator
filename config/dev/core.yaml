@@ -33,7 +33,6 @@ spec:
       key: url
   auth:
     disableSignup: false
-    enableEmailAutoconfirm: true
     providers: {}
   postgrest:
     maxRows: 1000

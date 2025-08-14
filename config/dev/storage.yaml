@@ -34,7 +34,6 @@ spec:
         # just make sure the secret name is either based on the name of the core resource or explicitly set
         # format <core-resource-name>-db-creds-supabase-storage-admin
         secretName: core-sample-db-creds-supabase-storage-admin
-    enableImageTransformation: true
     jwtAuth:
       # will be created by Core resource operator if not present
       # just make sure the secret name is either based on the name of the core resource or explicitly set
