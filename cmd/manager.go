@@ -40,7 +40,7 @@ type manager struct {
 	SecureMetrics        bool   `name:"metrics-secure" default:"true" help:"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead."`
 	EnableHTTP2          bool   `name:"enable-http2" default:"false" help:"If set, HTTP/2 will be enabled for the metrics and webhook servers"`
 	Namespace            string `name:"controller-namespace" env:"CONTROLLER_NAMESPACE" default:"" help:"Namespace where the controller is running, ideally set via downward API"`
-	Tls                  struct {
+	TLS                  struct {
 		CACert FileContent `env:"CA_CERT" name:"ca-cert" required:"" help:"The path to the CA certificate file."`
 		CAKey  FileContent `env:"CA_KEY" name:"ca-key" required:"" help:"The path to the CA key file."`
 	} `embed:"" prefix:"tls." envprefix:"TLS_"`
@@ -72,7 +72,7 @@ func (m manager) Run(ctx context.Context) error {
 		TLSOpts: tlsOpts,
 	})
 
-	caCert, err := tls.X509KeyPair(m.Tls.CACert, m.Tls.CAKey)
+	caCert, err := tls.X509KeyPair(m.TLS.CACert, m.TLS.CAKey)
 	if err != nil {
 		return fmt.Errorf("unable to load CA cert: %w", err)
 	}
