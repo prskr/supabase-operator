@@ -30,6 +30,7 @@ go_library(
         "@com_github_envoyproxy_go_control_plane_envoy//service/runtime/v3:runtime",
         "@com_github_envoyproxy_go_control_plane_envoy//service/secret/v3:secret",
         "@com_github_go_logr_logr//:logr",
+        "@com_github_prometheus_operator_prometheus_operator_pkg_apis_monitoring//v1:monitoring",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_apimachinery//pkg/runtime",

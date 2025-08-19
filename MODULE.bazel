@@ -131,8 +131,10 @@ supabase_migrations(
 
 use_repo(
     go_deps,
+    "cc_mvdan_gofumpt",
     "com_github_alecthomas_assert_v2",
     "com_github_alecthomas_kong",
+    "com_github_elastic_crd_ref_docs",
     "com_github_envoyproxy_go_control_plane",
     "com_github_envoyproxy_go_control_plane_envoy",
     "com_github_go_logr_logr",
@@ -143,6 +145,7 @@ use_repo(
     "com_github_lestrrat_go_jwx_v2",
     "com_github_onsi_ginkgo_v2",
     "com_github_onsi_gomega",
+    "com_github_prometheus_operator_prometheus_operator_pkg_apis_monitoring",
     "com_github_sivchari_containedctx",
     "com_github_stretchr_testify",
     "de_icb4dc0_code_prskr_bazel_golangci_lint_analyzers",
@@ -151,6 +154,7 @@ use_repo(
     "io_k8s_apimachinery",
     "io_k8s_client_go",
     "io_k8s_sigs_controller_runtime",
+    "io_k8s_sigs_controller_runtime_tools_setup_envtest",
     "io_k8s_sigs_controller_tools",
     "org_golang_google_grpc",
     "org_golang_google_protobuf",

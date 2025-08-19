@@ -34,6 +34,7 @@ go_library(
         "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_lestrrat_go_jwx_v2//jwa",
         "@com_github_lestrrat_go_jwx_v2//jwt",
+        "@com_github_prometheus_operator_prometheus_operator_pkg_apis_monitoring//v1:monitoring",
         "@io_k8s_api//apps/v1:apps",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/api/resource",

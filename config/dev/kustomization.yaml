@@ -2,12 +2,13 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- https://github.com/cert-manager/cert-manager/releases/download/v1.17.1/cert-manager.yaml
-- https://github.com/cloudnative-pg/cloudnative-pg/releases/download/v1.25.0/cnpg-1.25.0.yaml
+- https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml
+- https://github.com/cloudnative-pg/cloudnative-pg/releases/download/v1.27.0/cnpg-1.27.0.yaml
 - ca.yaml
 - namespace.yaml
 - cnpg-cluster.yaml
 - minio.yaml
+- ../prometheus-operator
 - ../default
 - studio-plaintext-users.yaml
 - studio-credentials-secret.yaml
@@ -29,7 +30,7 @@ patches:
 configurations:
 - kustomizeconfig/cnpg-cluster.yaml
 images:
-- digest: sha256:9c70818e74bdeaaca2add45045ae645620c1fc995467d5b9dcb1a93df72f4a27
+- digest: sha256:0b96ba9298fb69e4552354814bd072242644ff00458dfb13dadcb348a996d8ba
   name: controller
   newName: localhost:5005/supabase-operator
   newTag: latest

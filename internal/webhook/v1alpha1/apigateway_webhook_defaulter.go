@@ -83,6 +83,14 @@ func (d *APIGatewayCustomDefaulter) Default(ctx context.Context, obj runtime.Obj
 		apiGateway.Spec.Envoy.NodeName = apiGateway.Name
 	}
 
+	// Set default ServiceName for OTEL tracing if not explicitly configured
+	if apiGateway.Spec.Envoy.Observability != nil &&
+		apiGateway.Spec.Envoy.Observability.Traces != nil &&
+		apiGateway.Spec.Envoy.Observability.Traces.OTEL != nil &&
+		apiGateway.Spec.Envoy.Observability.Traces.OTEL.ServiceName == "" {
+		apiGateway.Spec.Envoy.Observability.Traces.OTEL.ServiceName = fmt.Sprintf("%s:envoy", apiGateway.Name)
+	}
+
 	if apiGateway.Spec.Envoy.ControlPlane == nil {
 		if d.CurrentNamespace == defaultManagerNamespace {
 			d.Recorder.Event(

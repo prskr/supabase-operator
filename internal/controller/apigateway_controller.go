@@ -29,6 +29,7 @@ import (
 	"text/template"
 	"time"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,6 +116,10 @@ func (r *APIGatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	if err := r.reconcileEnvoyService(ctx, &gateway); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcilePodMonitor(ctx, &gateway); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -633,6 +638,49 @@ func (r *APIGatewayReconciler) reconcileEnvoyService(
 
 		if err := controllerutil.SetControllerReference(gateway, envoyService, r.Scheme); err != nil {
 			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func (r *APIGatewayReconciler) reconcilePodMonitor(
+	ctx context.Context,
+	gateway *supabasev1alpha1.APIGateway,
+) error {
+	if gateway.Spec.Envoy.Observability == nil || gateway.Spec.Envoy.Observability.Metrics == nil || !gateway.Spec.Envoy.Observability.Metrics.Enabled {
+		return nil
+	}
+
+	podMonitor := &monitoringv1.PodMonitor{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      supabase.ServiceConfig.Envoy.ObjectName(gateway),
+			Namespace: gateway.Namespace,
+		},
+	}
+
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, podMonitor, func() error {
+		podMonitor.Labels = MergeLabels(objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Envoy.Tag), gateway.Labels)
+
+		podMonitor.Spec = monitoringv1.PodMonitorSpec{
+			Selector: metav1.LabelSelector{
+				MatchLabels: objectLabels(gateway, "envoy", "api-gateway", supabase.Images.Envoy.Tag),
+			},
+			JobLabel: meta.WellKnownLabel.Instance,
+			PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
+				{
+					Port: ptrOf("admin"),
+					Path: "/stats/prometheus",
+					Params: map[string][]string{
+						"histogram_buckets": {"cumulative"},
+					},
+					Scheme:        "http",
+					ScrapeTimeout: "5s",
+					Interval:      "30s",
+				},
+			},
 		}
 
 		return nil

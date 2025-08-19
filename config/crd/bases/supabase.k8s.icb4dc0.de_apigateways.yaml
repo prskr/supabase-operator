@@ -295,6 +295,29 @@ spec:
                       if not set, the name of the APIGateway resource will be used
                       The primary use case is to make the assignment of multiple supabase instances in a single namespace explicit.
                     type: string
+                  observability:
+                    properties:
+                      metrics:
+                        properties:
+                          enabled:
+                            type: boolean
+                        type: object
+                      traces:
+                        properties:
+                          otel:
+                            properties:
+                              endpoint:
+                                type: string
+                              serviceName:
+                                description: The name for the service. This will be
+                                  populated in the ResourceSpan Resource attributes.
+                                  If it is not provided, it will default to “<name-of-the-api-gateway>:envoy”.
+                                type: string
+                            required:
+                            - endpoint
+                            type: object
+                        type: object
+                    type: object
                   workloadSpec:
                     description: WorkloadTemplate - customize the Envoy deployment
                     properties:
