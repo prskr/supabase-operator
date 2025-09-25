@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.13
 
 ARG POSTGRES_MAJOR=17
-ARG POSTGRES_MINOR=2
+ARG POSTGRES_MINOR=5
 ARG IMAGE_FLAVOR=standard
 ARG DISTRO=bookworm
 ARG IMAGE_BASE=ghcr.io/cloudnative-pg/postgresql:${POSTGRES_MAJOR}.${POSTGRES_MINOR}-${IMAGE_FLAVOR}-${DISTRO}
@@ -39,10 +39,10 @@ ARG PG_SAFEUPDATE_VERSION=1.5
 ARG PG_NET_VERSION=v0.9.1
 ARG PGSODIUM_VERSION=v3.1.9
 ARG PG_HASHIDS_VERSION=v1.2.1
-ARG PG_TLE_VERSION=v1.4.0
-ARG PG_GRAPHQL_VERSION=v1.5.9
+ARG PG_TLE_VERSION=v1.5.1
+ARG PG_GRAPHQL_VERSION=v1.5.11
 ARG PG_SUPABASE_VAULT_VERSION=v0.3.1
-ARG SUPABASE_WRAPPER_VERSION=v0.4.4
+ARG SUPABASE_WRAPPER_VERSION=v0.5.4
 ARG INDEX_ADVISOR_VERSION=v0.2.0
 ARG PG_JSONSCHEMA_VERSION=v0.3.3
 ARG PG_PLAN_FILTER_REVISION=5081a7b
@@ -67,7 +67,7 @@ RUN apt-get update && \
 RUN curl -sSf https://sh.rustup.rs | sh -s -- -y && \
     export PATH="/root/.cargo/bin:$PATH" && \
     export "PG${POSTGRES_MAJOR}_PG_CONFIG=/usr/lib/postgresql/${POSTGRES_MAJOR}/bin/pg_config" && \
-    cargo install cargo-pgrx --version 0.12.6 --locked && \
+    cargo install cargo-pgrx --version 0.12.9 --locked && \
     cargo pgrx init
 
 WORKDIR /postgres/extensions
@@ -99,10 +99,24 @@ RUN git clone --branch ${PG_GRAPHQL_VERSION} --depth 1 https://github.com/supaba
 RUN git clone --branch ${PG_SUPABASE_VAULT_VERSION} --depth 1 https://github.com/supabase/vault.git && \
     make -C vault && make -C vault install
 
+# Install matching cargo-pgrx for jsonschema
+RUN curl -sSf https://sh.rustup.rs | sh -s -- -y && \
+    export PATH="/root/.cargo/bin:$PATH" && \
+    export "PG${POSTGRES_MAJOR}_PG_CONFIG=/usr/lib/postgresql/${POSTGRES_MAJOR}/bin/pg_config" && \
+    cargo install cargo-pgrx --version 0.12.6 --locked && \
+    cargo pgrx init
+
 # install pg_jsonschema
 RUN git clone --branch ${PG_JSONSCHEMA_VERSION} --depth 1 https://github.com/supabase/pg_jsonschema.git && \
     cd pg_jsonschema && \
     cargo pgrx install --release
+
+# Install matching cargo-pgrx for wrappers
+RUN curl -sSf https://sh.rustup.rs | sh -s -- -y && \
+    export PATH="/root/.cargo/bin:$PATH" && \
+    export "PG${POSTGRES_MAJOR}_PG_CONFIG=/usr/lib/postgresql/${POSTGRES_MAJOR}/bin/pg_config" && \
+    cargo install cargo-pgrx --version 0.14.3 --locked && \
+    cargo pgrx init
 
 # install supabase wrappers
 RUN git clone --branch ${SUPABASE_WRAPPER_VERSION} --depth 1 https://github.com/supabase/wrappers.git && \
