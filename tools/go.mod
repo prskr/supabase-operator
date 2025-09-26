@@ -1,6 +1,6 @@
 module tools
 
-go 1.24.6
+go 1.25.1
 
 require sigs.k8s.io/kustomize/kustomize/v5 v5.7.1
 
