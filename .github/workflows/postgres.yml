@@ -83,6 +83,3 @@ jobs:
 
           buildah manifest push --all registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}
           buildah manifest push --all registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}
-
-          skopeo delete docker://registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-arm64
-          skopeo delete docker://registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-amd64
