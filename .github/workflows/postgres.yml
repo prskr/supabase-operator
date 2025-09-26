@@ -42,6 +42,7 @@ jobs:
         with:
           containerfiles: |
             postgres/Dockerfile
+          layers: true
           image: registry.icb4dc0.de/supabase-operator/postgres
           tags: ${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-${{ matrix.arch }}
           build-args: |
@@ -72,13 +73,13 @@ jobs:
       - name: Create manifest
         run: |
           buildah manifest create \
-              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }} \
+              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }} \
               registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-arm64 \
               registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-amd64
 
           buildah tag \
-              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }} \
-              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}
+              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }} \
+              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}
 
           buildah manifest push --all registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}
           buildah manifest push --all registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}
