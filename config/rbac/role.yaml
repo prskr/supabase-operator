@@ -4,82 +4,70 @@ kind: ClusterRole
 metadata:
   name: manager-role
 rules:
-  - apiGroups:
-      - ''
-    resources:
-      - configmaps
-      - secrets
-      - services
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ''
-    resources:
-      - events
-    verbs:
-      - create
-  - apiGroups:
-      - apps
-    resources:
-      - deployments
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - supabase.k8s.icb4dc0.de
-    resources:
-      - apigateways
-      - cores
-      - dashboards
-      - storages
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - supabase.k8s.icb4dc0.de
-    resources:
-      - apigateways/finalizers
-      - cores/finalizers
-      - dashboards/finalizers
-      - storages/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - supabase.k8s.icb4dc0.de
-    resources:
-      - apigateways/status
-      - cores/status
-      - dashboards/status
-      - storages/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - monitoring.coreos.com
-    resources:
-      - podmonitors
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - supabase.k8s.icb4dc0.de
+  resources:
+  - apigateways
+  - cores
+  - dashboards
+  - storages
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - supabase.k8s.icb4dc0.de
+  resources:
+  - apigateways/finalizers
+  - cores/finalizers
+  - dashboards/finalizers
+  - storages/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - supabase.k8s.icb4dc0.de
+  resources:
+  - apigateways/status
+  - cores/status
+  - dashboards/status
+  - storages/status
+  verbs:
+  - get
+  - patch
+  - update
