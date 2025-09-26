@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,6 +65,10 @@ func (r *CorePostgrestReconiler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	if err := r.reconcilePostgrestService(ctx, &core); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcilePodMonitor(ctx, &core); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -264,6 +269,53 @@ func (r *CorePostgrestReconiler) reconcilePostgrestService(
 
 		if err := controllerutil.SetControllerReference(core, postgrestService, r.Scheme); err != nil {
 			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func (r *CorePostgrestReconiler) reconcilePodMonitor(
+	ctx context.Context,
+	core *supabasev1alpha1.Core,
+) error {
+	if core.Spec.Postgrest.Observability == nil || core.Spec.Postgrest.Observability.Metrics == nil {
+		return nil
+	}
+
+	var (
+		serviceCfg = supabase.ServiceConfig.Postgrest
+		podMonitor = &monitoringv1.PodMonitor{
+			ObjectMeta: serviceCfg.ObjectMeta(core),
+		}
+	)
+
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, podMonitor, func() error {
+		podMonitor.Labels = core.Spec.Postgrest.WorkloadSpec.MergeLabels(
+			objectLabels(core, serviceCfg.Name, "core", supabase.Images.Postgrest.Tag),
+			core.Labels,
+		)
+
+		podMonitor.Spec = monitoringv1.PodMonitorSpec{
+			Selector: metav1.LabelSelector{
+				MatchLabels: selectorLabels(core, serviceCfg.Name),
+			},
+			JobLabel:               meta.WellKnownLabel.Instance,
+			FallbackScrapeProtocol: ptrOf(monitoringv1.PrometheusText1_0_0),
+			PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
+				{
+					Port: &serviceCfg.Defaults.AdminPortName,
+					Path: "/metrics",
+					Params: map[string][]string{
+						"histogram_buckets": {"cumulative"},
+					},
+					Scheme:        "http",
+					ScrapeTimeout: "5s",
+					Interval:      "30s",
+				},
+			},
 		}
 
 		return nil

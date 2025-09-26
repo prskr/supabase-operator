@@ -36,6 +36,9 @@ spec:
     providers: {}
   postgrest:
     maxRows: 1000
+    observability:
+      metrics:
+        enabled: true
   jwt:
     expiry: 3600
     # name of the secret containing the JWT secret

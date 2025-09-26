@@ -45,21 +45,30 @@ var (
 	ErrDSNNotSet         = errors.New("DSN not set")
 )
 
-type DatabaseRolesSecrets struct {
-	Admin          string `json:"supabaseAdmin,omitempty"`
-	Authenticator  string `json:"authenticator,omitempty"`
-	AuthAdmin      string `json:"supabaseAuthAdmin,omitempty"`
-	FunctionsAdmin string `json:"supabaseFunctionsAdmin,omitempty"`
-	StorageAdmin   string `json:"supabaseStorageAdmin,omitempty"`
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+// Core is the Schema for the cores API.
+type Core struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   CoreSpec   `json:"spec,omitempty"`
+	Status CoreStatus `json:"status,omitempty"`
 }
 
-type DatabaseRoles struct {
-	// SelfManaged - whether the database roles are managed externally
-	// when enabled the operator does not attempt to create secrets, generate passwords or whatsoever for all database roles
-	// i.e. all secrets need to be provided or the instance won't work
-	SelfManaged bool `json:"selfManaged,omitempty"`
-	// Secrets - typed 'map' of secrets for each database role that Supabase needs
-	Secrets DatabaseRolesSecrets `json:"secrets,omitzero"`
+// CoreSpec defines the desired state of Core.
+type CoreSpec struct {
+	// APIExternalURL is referring to the URL where Supabase API will be available
+	// Typically this is the ingress of the API gateway
+	APIExternalURL string `json:"externalUrl"`
+	// SiteURL is referring to the URL of the (frontend) application
+	// In most Kubernetes scenarios this is the same as the APIExternalURL with a different path handler in the ingress
+	SiteURL   string        `json:"siteUrl"`
+	JWT       *CoreJwtSpec  `json:"jwt,omitempty"`
+	Database  Database      `json:"database,omitzero"`
+	Postgrest PostgrestSpec `json:"postgrest,omitzero"`
+	Auth      *AuthSpec     `json:"auth,omitempty"`
 }
 
 type Database struct {
@@ -93,6 +102,23 @@ func (d Database) DSNEnv(key string) corev1.EnvVar {
 			SecretKeyRef: d.DSNSecretRef,
 		},
 	}
+}
+
+type DatabaseRoles struct {
+	// SelfManaged - whether the database roles are managed externally
+	// when enabled the operator does not attempt to create secrets, generate passwords or whatsoever for all database roles
+	// i.e. all secrets need to be provided or the instance won't work
+	SelfManaged bool `json:"selfManaged,omitempty"`
+	// Secrets - typed 'map' of secrets for each database role that Supabase needs
+	Secrets DatabaseRolesSecrets `json:"secrets,omitzero"`
+}
+
+type DatabaseRolesSecrets struct {
+	Admin          string `json:"supabaseAdmin,omitempty"`
+	Authenticator  string `json:"authenticator,omitempty"`
+	AuthAdmin      string `json:"supabaseAuthAdmin,omitempty"`
+	FunctionsAdmin string `json:"supabaseFunctionsAdmin,omitempty"`
+	StorageAdmin   string `json:"supabaseStorageAdmin,omitempty"`
 }
 
 type CoreJwtSpec struct {
@@ -174,6 +200,45 @@ type PostgrestSpec struct {
 	MaxRows int `json:"maxRows,omitempty"`
 	// WorkloadSpec - customize the PostgREST workload
 	WorkloadSpec *WorkloadSpec `json:"workloadSpec,omitempty"`
+	// ObservabilitySpec - customize the PostgREST observability
+	Observability *PostgrestObservabilitySpec `json:"observability,omitempty"`
+}
+
+type PostgrestObservabilitySpec struct {
+	Metrics *PostgrestMetricsSpec `json:"metrics,omitempty"`
+}
+
+type PostgrestMetricsSpec struct {
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+type AuthSpec struct {
+	AdditionalRedirectUrls []string       `json:"additionalRedirectUrls,omitempty"`
+	DisableSignup          *bool          `json:"disableSignup,omitempty"`
+	AnonymousUsersEnabled  *bool          `json:"anonymousUsersEnabled,omitempty"`
+	Providers              *AuthProviders `json:"providers,omitempty"`
+	WorkloadTemplate       *WorkloadSpec  `json:"workloadTemplate,omitempty"`
+	EmailSignupDisabled    *bool          `json:"emailSignupDisabled,omitempty"`
+}
+
+type AuthProviders struct {
+	Email  *EmailAuthProvider  `json:"email,omitempty"`
+	Azure  *AzureAuthProvider  `json:"azure,omitempty"`
+	Github *GithubAuthProvider `json:"github,omitempty"`
+	Phone  *PhoneAuthProvider  `json:"phone,omitempty"`
+}
+
+func (p *AuthProviders) Vars(apiExternalURL string) []corev1.EnvVar {
+	if p == nil {
+		return nil
+	}
+
+	return slices.Concat(
+		p.Email.Vars(apiExternalURL),
+		p.Azure.Vars(apiExternalURL),
+		p.Github.Vars(apiExternalURL),
+		p.Phone.Vars(),
+	)
 }
 
 type AuthProviderMeta struct {
@@ -192,21 +257,88 @@ func (p *AuthProviderMeta) Vars(provider string) []corev1.EnvVar {
 	}}
 }
 
-type SMTPCredentialsReference struct {
-	SecretName string `json:"secretName"`
-	// UsernameKey
-	// +kubebuilder:default="username"
-	UsernameKey string `json:"usernameKey"`
-	// PasswordKey
-	// +kubebuilder:default="password"
-	PasswordKey string `json:"passwordKey"`
+type GithubAuthProvider struct {
+	AuthProviderMeta `json:",inline"`
+	OAuthProvider    `json:",inline"`
 }
 
-type EmailAuthSMTPSpec struct {
-	Host           string                    `json:"host"`
-	Port           uint16                    `json:"port"`
-	MaxFrequency   *uint                     `json:"maxFrequency,omitempty"`
-	CredentialsRef *SMTPCredentialsReference `json:"credentialsRef"`
+func (p *GithubAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
+	const providerName = "GITHUB"
+	if p == nil {
+		return nil
+	}
+
+	return slices.Concat(
+		p.AuthProviderMeta.Vars(providerName),
+		p.OAuthProvider.Vars(providerName, apiExternalURL),
+	)
+}
+
+type AzureAuthProvider struct {
+	AuthProviderMeta `json:",inline"`
+	OAuthProvider    `json:",inline"`
+}
+
+func (p *AzureAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
+	const providerName = "AZURE"
+	if p == nil {
+		return nil
+	}
+
+	return slices.Concat(
+		p.AuthProviderMeta.Vars(providerName),
+		p.OAuthProvider.Vars(providerName, apiExternalURL),
+	)
+}
+
+type OAuthProvider struct {
+	ClientID        string                    `json:"clientID"`
+	ClientSecretRef *corev1.SecretKeySelector `json:"clientSecretRef"`
+	URL             string                    `json:"url,omitempty"`
+}
+
+func (p *OAuthProvider) Vars(provider, apiExternalURL string) []corev1.EnvVar {
+	if p == nil {
+		return nil
+	}
+
+	vars := []corev1.EnvVar{
+		{
+			Name:  fmt.Sprintf("GOTRUE_EXTERNAL_%s_CLIENT_ID", strings.ToUpper(provider)),
+			Value: p.ClientID,
+		},
+		{
+			Name:  fmt.Sprintf("GOTRUE_EXTERNAL_%s_REDIRECT_URI", strings.ToUpper(provider)),
+			Value: path.Join(apiExternalURL, "/auth/v1/callback"),
+		},
+		{
+			Name: fmt.Sprintf("GOTRUE_EXTERNAL_%s_SECRET", strings.ToUpper(provider)),
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: p.ClientSecretRef,
+			},
+		},
+	}
+
+	if p.URL != "" {
+		vars = append(vars, corev1.EnvVar{
+			Name:  fmt.Sprintf("GOTRUE_EXTERNAL_%s_URL", strings.ToUpper(provider)),
+			Value: p.URL,
+		})
+	}
+
+	return vars
+}
+
+type PhoneAuthProvider struct {
+	AuthProviderMeta `json:",inline"`
+}
+
+func (p *PhoneAuthProvider) Vars() []corev1.EnvVar {
+	if p == nil {
+		return nil
+	}
+
+	return []corev1.EnvVar{}
 }
 
 type EmailAuthProvider struct {
@@ -265,156 +397,28 @@ func (p *EmailAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
 	return vars
 }
 
-type PhoneAuthProvider struct {
-	AuthProviderMeta `json:",inline"`
+type EmailAuthSMTPSpec struct {
+	Host           string                    `json:"host"`
+	Port           uint16                    `json:"port"`
+	MaxFrequency   *uint                     `json:"maxFrequency,omitempty"`
+	CredentialsRef *SMTPCredentialsReference `json:"credentialsRef"`
 }
 
-func (p *PhoneAuthProvider) Vars() []corev1.EnvVar {
-	if p == nil {
-		return nil
-	}
-
-	return []corev1.EnvVar{}
+type SMTPCredentialsReference struct {
+	SecretName string `json:"secretName"`
+	// UsernameKey
+	// +kubebuilder:default="username"
+	UsernameKey string `json:"usernameKey"`
+	// PasswordKey
+	// +kubebuilder:default="password"
+	PasswordKey string `json:"passwordKey"`
 }
 
-type OAuthProvider struct {
-	ClientID        string                    `json:"clientID"`
-	ClientSecretRef *corev1.SecretKeySelector `json:"clientSecretRef"`
-	URL             string                    `json:"url,omitempty"`
-}
+type CoreConditionType string
 
-func (p *OAuthProvider) Vars(provider, apiExternalURL string) []corev1.EnvVar {
-	if p == nil {
-		return nil
-	}
-
-	vars := []corev1.EnvVar{
-		{
-			Name:  fmt.Sprintf("GOTRUE_EXTERNAL_%s_CLIENT_ID", strings.ToUpper(provider)),
-			Value: p.ClientID,
-		},
-		{
-			Name:  fmt.Sprintf("GOTRUE_EXTERNAL_%s_REDIRECT_URI", strings.ToUpper(provider)),
-			Value: path.Join(apiExternalURL, "/auth/v1/callback"),
-		},
-		{
-			Name: fmt.Sprintf("GOTRUE_EXTERNAL_%s_SECRET", strings.ToUpper(provider)),
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: p.ClientSecretRef,
-			},
-		},
-	}
-
-	if p.URL != "" {
-		vars = append(vars, corev1.EnvVar{
-			Name:  fmt.Sprintf("GOTRUE_EXTERNAL_%s_URL", strings.ToUpper(provider)),
-			Value: p.URL,
-		})
-	}
-
-	return vars
-}
-
-type AzureAuthProvider struct {
-	AuthProviderMeta `json:",inline"`
-	OAuthProvider    `json:",inline"`
-}
-
-func (p *AzureAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
-	const providerName = "AZURE"
-	if p == nil {
-		return nil
-	}
-
-	return slices.Concat(
-		p.AuthProviderMeta.Vars(providerName),
-		p.OAuthProvider.Vars(providerName, apiExternalURL),
-	)
-}
-
-type GithubAuthProvider struct {
-	AuthProviderMeta `json:",inline"`
-	OAuthProvider    `json:",inline"`
-}
-
-func (p *GithubAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
-	const providerName = "GITHUB"
-	if p == nil {
-		return nil
-	}
-
-	return slices.Concat(
-		p.AuthProviderMeta.Vars(providerName),
-		p.OAuthProvider.Vars(providerName, apiExternalURL),
-	)
-}
-
-type AuthProviders struct {
-	Email  *EmailAuthProvider  `json:"email,omitempty"`
-	Azure  *AzureAuthProvider  `json:"azure,omitempty"`
-	Github *GithubAuthProvider `json:"github,omitempty"`
-	Phone  *PhoneAuthProvider  `json:"phone,omitempty"`
-}
-
-func (p *AuthProviders) Vars(apiExternalURL string) []corev1.EnvVar {
-	if p == nil {
-		return nil
-	}
-
-	return slices.Concat(
-		p.Email.Vars(apiExternalURL),
-		p.Azure.Vars(apiExternalURL),
-		p.Github.Vars(apiExternalURL),
-		p.Phone.Vars(),
-	)
-}
-
-type AuthSpec struct {
-	AdditionalRedirectUrls []string       `json:"additionalRedirectUrls,omitempty"`
-	DisableSignup          *bool          `json:"disableSignup,omitempty"`
-	AnonymousUsersEnabled  *bool          `json:"anonymousUsersEnabled,omitempty"`
-	Providers              *AuthProviders `json:"providers,omitempty"`
-	WorkloadTemplate       *WorkloadSpec  `json:"workloadTemplate,omitempty"`
-	EmailSignupDisabled    *bool          `json:"emailSignupDisabled,omitempty"`
-}
-
-// CoreSpec defines the desired state of Core.
-type CoreSpec struct {
-	// APIExternalURL is referring to the URL where Supabase API will be available
-	// Typically this is the ingress of the API gateway
-	APIExternalURL string `json:"externalUrl"`
-	// SiteURL is referring to the URL of the (frontend) application
-	// In most Kubernetes scenarios this is the same as the APIExternalURL with a different path handler in the ingress
-	SiteURL   string        `json:"siteUrl"`
-	JWT       *CoreJwtSpec  `json:"jwt,omitempty"`
-	Database  Database      `json:"database,omitzero"`
-	Postgrest PostgrestSpec `json:"postgrest,omitzero"`
-	Auth      *AuthSpec     `json:"auth,omitempty"`
-}
-
-type MigrationConditionStatus string
-
-const (
-	MigrationConditionStatusApplied MigrationConditionStatus = "Applied"
-	MigrationConditionStatusFailed  MigrationConditionStatus = "Failed"
-)
-
-type MigrationScriptCondition struct {
-	// Name - file name of the migration script
-	Name string `json:"name"`
-	// Hash - SHA256 hash of the script when it was last successfully applied
-	Hash []byte `json:"hash"`
-	// Status - whether the migration was applied or not
-	// +kubebuilder:validation:Enum=Applied;Failed
-	Status MigrationConditionStatus `json:"status"`
-	// LastProbeTime - last time the operator tried to execute the migration script
-	LastProbeTime metav1.Time `json:"lastProbeTime,omitzero"`
-	// LastTransitionTime - last time the condition transitioned from one status to another
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitzero"`
-	// Reason - one-word, CamcelCase reason for the condition's last transition
-	Reason string `json:"reason,omitempty"`
-	// Message - human-readable message indicating details about the last transition
-	Message string `json:"message,omitempty"`
+// CoreStatus defines the observed state of Core.
+type CoreStatus struct {
+	Database DatabaseStatus `json:"database,omitempty"`
 }
 
 type DatabaseStatus struct {
@@ -477,23 +481,29 @@ func (s *DatabaseStatus) RecordMigrationCondition(name string, hash []byte, err 
 	return err
 }
 
-type CoreConditionType string
+type MigrationConditionStatus string
 
-// CoreStatus defines the observed state of Core.
-type CoreStatus struct {
-	Database DatabaseStatus `json:"database,omitempty"`
-}
+const (
+	MigrationConditionStatusApplied MigrationConditionStatus = "Applied"
+	MigrationConditionStatusFailed  MigrationConditionStatus = "Failed"
+)
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-
-// Core is the Schema for the cores API.
-type Core struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   CoreSpec   `json:"spec,omitempty"`
-	Status CoreStatus `json:"status,omitempty"`
+type MigrationScriptCondition struct {
+	// Name - file name of the migration script
+	Name string `json:"name"`
+	// Hash - SHA256 hash of the script when it was last successfully applied
+	Hash []byte `json:"hash"`
+	// Status - whether the migration was applied or not
+	// +kubebuilder:validation:Enum=Applied;Failed
+	Status MigrationConditionStatus `json:"status"`
+	// LastProbeTime - last time the operator tried to execute the migration script
+	LastProbeTime metav1.Time `json:"lastProbeTime,omitzero"`
+	// LastTransitionTime - last time the condition transitioned from one status to another
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitzero"`
+	// Reason - one-word, CamcelCase reason for the condition's last transition
+	Reason string `json:"reason,omitempty"`
+	// Message - human-readable message indicating details about the last transition
+	Message string `json:"message,omitempty"`
 }
 
 // +kubebuilder:object:root=true
