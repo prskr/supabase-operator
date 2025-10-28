@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Use bazel to build the project instead of using the go CLI directly
+Use `bazel` to build the project instead of using the go CLI directly
 
 ## Build/Lint/Test Commands
 - `bazel build //:supabase-operator` - Build the manager binary

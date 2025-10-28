@@ -51,6 +51,18 @@ spec:
                     type: boolean
                   emailSignupDisabled:
                     type: boolean
+                  observability:
+                    properties:
+                      metrics:
+                        properties:
+                          enabled:
+                            type: boolean
+                        required:
+                        - enabled
+                        type: object
+                      tracing:
+                        type: object
+                    type: object
                   providers:
                     properties:
                       azure:

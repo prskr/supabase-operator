@@ -22,6 +22,9 @@ import (
 )
 
 type StudioSpec struct {
+	// AI / LLM integration
+	// configure OpenAI API key and optionally base URL
+	AI  *AISpec  `json:"ai,omitempty"`
 	JWT *JwtSpec `json:"jwt,omitempty"`
 	// WorkloadTemplate - customize the studio deployment
 	WorkloadSpec *WorkloadSpec `json:"workloadSpec,omitempty"`
@@ -33,6 +36,31 @@ type StudioSpec struct {
 	// APIExternalURL is referring to the URL where Supabase API will be available
 	// Typically this is the ingress of the API gateway
 	APIExternalURL string `json:"externalUrl"`
+}
+
+type AISpec struct {
+	OpenAI *OpenAISpec `json:"openai,omitempty"`
+}
+
+type OpenAISpec struct {
+	APIKey *corev1.SecretKeySelector `json:"apiKey"`
+}
+
+func (s *OpenAISpec) Vars() []corev1.EnvVar {
+	if s == nil {
+		return nil
+	}
+
+	vars := []corev1.EnvVar{
+		{
+			Name: "OPENAI_API_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: s.APIKey,
+			},
+		},
+	}
+
+	return vars
 }
 
 type PGMetaSpec struct {

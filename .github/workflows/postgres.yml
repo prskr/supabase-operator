@@ -13,7 +13,7 @@ on:
       - 'v*'
 
 env:
-  MINOR_VERSIONS: '{"15":"14","17":"5"}'
+  MINOR_VERSIONS: '{"15":"14","16":"10","17":"6","18":"0"}'
 
 jobs:
   build:
@@ -24,7 +24,9 @@ jobs:
           - amd64
         postgres_major:
           - '15'
+          - '16'
           - '17'
+          - '18'
     runs-on: fedora-${{ matrix.arch }}
     steps:
       - uses: actions/checkout@v5
@@ -58,7 +60,9 @@ jobs:
       matrix:
         postgres_major:
           - '15'
+          - '16'
           - '17'
+          - '18'
     runs-on: fedora
     needs:
       - build

@@ -213,12 +213,13 @@ type PostgrestMetricsSpec struct {
 }
 
 type AuthSpec struct {
-	AdditionalRedirectUrls []string       `json:"additionalRedirectUrls,omitempty"`
-	DisableSignup          *bool          `json:"disableSignup,omitempty"`
-	AnonymousUsersEnabled  *bool          `json:"anonymousUsersEnabled,omitempty"`
-	Providers              *AuthProviders `json:"providers,omitempty"`
-	WorkloadTemplate       *WorkloadSpec  `json:"workloadTemplate,omitempty"`
-	EmailSignupDisabled    *bool          `json:"emailSignupDisabled,omitempty"`
+	AdditionalRedirectUrls []string                 `json:"additionalRedirectUrls,omitempty"`
+	DisableSignup          *bool                    `json:"disableSignup,omitempty"`
+	AnonymousUsersEnabled  *bool                    `json:"anonymousUsersEnabled,omitempty"`
+	Providers              *AuthProviders           `json:"providers,omitempty"`
+	WorkloadTemplate       *WorkloadSpec            `json:"workloadTemplate,omitempty"`
+	EmailSignupDisabled    *bool                    `json:"emailSignupDisabled,omitempty"`
+	Observability          *GoTrueObservabilitySpec `json:"observability,omitempty"`
 }
 
 type AuthProviders struct {
@@ -413,6 +414,35 @@ type SMTPCredentialsReference struct {
 	// +kubebuilder:default="password"
 	PasswordKey string `json:"passwordKey"`
 }
+
+type GoTrueObservabilitySpec struct {
+	Metrics *GoTrueMetricsSpec `json:"metrics,omitempty"`
+	Tracing *GoTrueTracingSpec `json:"tracing,omitempty"`
+}
+
+func (s *GoTrueObservabilitySpec) Vars() []corev1.EnvVar {
+	if s == nil {
+		return nil
+	}
+
+	var vars []corev1.EnvVar
+
+	if s.Metrics != nil && s.Metrics.Enabled {
+		vars = append(vars, corev1.EnvVar{
+			Name:  "GOTRUE_METRICS_ENABLED",
+			Value: strconv.FormatBool(true),
+		},
+		)
+	}
+
+	return vars
+}
+
+type GoTrueMetricsSpec struct {
+	Enabled bool `json:"enabled"`
+}
+
+type GoTrueTracingSpec struct{}
 
 type CoreConditionType string
 

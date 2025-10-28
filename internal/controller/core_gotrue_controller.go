@@ -147,6 +147,8 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 
 		authEnv = append(authEnv, authSpec.Providers.Vars(core.Spec.APIExternalURL)...)
 
+		authEnv = append(authEnv, authSpec.Observability.Vars()...)
+
 		if authDeployment.CreationTimestamp.IsZero() {
 			authDeployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: selectorLabels(core, "auth"),

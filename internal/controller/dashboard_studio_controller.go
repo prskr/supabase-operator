@@ -135,6 +135,10 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 			serviceCfg.EnvKeys.LogsEnabled.Var(),
 		}
 
+		if studioSpec.AI != nil {
+			studioEnv = append(studioEnv, studioSpec.AI.OpenAI.Vars()...)
+		}
+
 		studioDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: objectLabels(dashboard, serviceCfg.Name, "dashboard", supabase.Images.Studio.Tag),

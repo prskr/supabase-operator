@@ -2731,6 +2731,41 @@ spec:
               studio:
                 description: Studio
                 properties:
+                  ai:
+                    description: |-
+                      AI / LLM integration
+                      configure OpenAI API key and optionally base URL
+                    properties:
+                      openai:
+                        properties:
+                          apiKey:
+                            description: SecretKeySelector selects a key of a Secret.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                default: ""
+                                description: |-
+                                  Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        required:
+                        - apiKey
+                        type: object
+                    type: object
                   externalUrl:
                     description: |-
                       APIExternalURL is referring to the URL where Supabase API will be available
