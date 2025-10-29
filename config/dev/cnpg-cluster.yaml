@@ -31,7 +31,7 @@ metadata:
   name: supabase-admin-credentials
   namespace: supabase-demo
   labels:
-    cnpg.io/reload: "true"
+    cnpg.io/reload: 'true'
 type: kubernetes.io/basic-auth
 stringData:
   username: supabase_admin
@@ -44,7 +44,7 @@ metadata:
   namespace: supabase-demo
 spec:
   instances: 1
-  imageName: registry.icb4dc0.de/supabase-operator/postgres:17.4
+  imageName: registry.icb4dc0.de/supabase-operator/postgres:17.5
   imagePullPolicy: Always
   postgresUID: 26
   postgresGID: 102

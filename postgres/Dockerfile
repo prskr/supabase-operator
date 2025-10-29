@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.13
 
 ARG POSTGRES_MAJOR=17
-ARG POSTGRES_MINOR=5
-ARG IMAGE_FLAVOR=standard
-ARG DISTRO=bookworm
+ARG POSTGRES_MINOR=6
+ARG IMAGE_FLAVOR=minimal
+ARG DISTRO=trixie
 ARG IMAGE_BASE=ghcr.io/cloudnative-pg/postgresql:${POSTGRES_MAJOR}.${POSTGRES_MINOR}-${IMAGE_FLAVOR}-${DISTRO}
 
 FROM ${IMAGE_BASE} AS base
@@ -25,9 +25,8 @@ RUN apt-get update && \
     postgresql-${POSTGRES_MAJOR}-plpgsql-check \
     postgresql-${POSTGRES_MAJOR}-postgis-3 \
     postgresql-${POSTGRES_MAJOR}-wal2json \
-    postgresql-${POSTGRES_MAJOR}-rum \
-    postgresql-${POSTGRES_MAJOR}-repack \
-    postgresql-${POSTGRES_MAJOR}-timescaledb && \
+    postgresql-${POSTGRES_MAJOR}-repack && \
+    if [[ "${POSTGRES_MAJOR}" != "18" ]]; then apt-get install --yes --no-install-recommends postgresql-${POSTGRES_MAJOR}-rum postgresql-${POSTGRES_MAJOR}-timescaledb; fi && \
     rm -rf /var/lib/apt/lists/*
 
 USER 26
@@ -36,13 +35,13 @@ FROM ${IMAGE_BASE} AS builder
 
 ARG POSTGRES_MAJOR
 ARG PG_SAFEUPDATE_VERSION=1.5
-ARG PG_NET_VERSION=v0.9.1
+ARG PG_NET_VERSION=v0.20.0
 ARG PGSODIUM_VERSION=v3.1.9
 ARG PG_HASHIDS_VERSION=v1.2.1
-ARG PG_TLE_VERSION=v1.5.1
+ARG PG_TLE_VERSION=v1.5.2
 ARG PG_GRAPHQL_VERSION=v1.5.11
 ARG PG_SUPABASE_VAULT_VERSION=v0.3.1
-ARG SUPABASE_WRAPPER_VERSION=v0.5.4
+ARG SUPABASE_WRAPPER_VERSION=v0.5.6
 ARG INDEX_ADVISOR_VERSION=v0.2.0
 ARG PG_JSONSCHEMA_VERSION=v0.3.3
 ARG PG_PLAN_FILTER_REVISION=5081a7b
@@ -57,6 +56,9 @@ RUN apt-get update && \
     pkg-config \
     ca-certificates \
     postgresql-server-dev-${POSTGRES_MAJOR} \
+    libreadline-dev \
+    libicu-dev \
+    bison \
     libcurl4-openssl-dev \
     libsodium-dev \
     git \
@@ -68,7 +70,7 @@ RUN curl -sSf https://sh.rustup.rs | sh -s -- -y && \
     export PATH="/root/.cargo/bin:$PATH" && \
     export "PG${POSTGRES_MAJOR}_PG_CONFIG=/usr/lib/postgresql/${POSTGRES_MAJOR}/bin/pg_config" && \
     cargo install cargo-pgrx --version 0.12.9 --locked && \
-    cargo pgrx init
+    cargo pgrx init --jobs `nproc`
 
 WORKDIR /postgres/extensions
 
@@ -80,15 +82,15 @@ RUN git clone https://github.com/michelp/pgjwt.git && \
 
 # Install pg_hashids
 RUN git clone --branch ${PG_HASHIDS_VERSION} --depth 1 https://github.com/iCyberon/pg_hashids.git && \
-    make -C pg_hashids && make -C pg_hashids install
+    make -C pg_hashids && make -j `nproc` -C pg_hashids install
 
 # Install pg-safeupdate
 RUN git clone --branch ${PG_SAFEUPDATE_VERSION} --depth 1 https://github.com/eradman/pg-safeupdate.git && \
-    make -C pg-safeupdate && make -C pg-safeupdate install
+    make -C pg-safeupdate && make -j `nproc` -C pg-safeupdate install
 
 # install pg_net
 RUN git clone --branch ${PG_NET_VERSION} --depth 1 https://github.com/supabase/pg_net.git && \
-    make -C pg_net && make -C pg_net install
+    make -C pg_net && make -j `nproc` -C pg_net install
 
 # install pg_graphql
 RUN git clone --branch ${PG_GRAPHQL_VERSION} --depth 1 https://github.com/supabase/pg_graphql.git && \
@@ -97,14 +99,14 @@ RUN git clone --branch ${PG_GRAPHQL_VERSION} --depth 1 https://github.com/supaba
 
 # install supabase vault
 RUN git clone --branch ${PG_SUPABASE_VAULT_VERSION} --depth 1 https://github.com/supabase/vault.git && \
-    make -C vault && make -C vault install
+    make -C vault && make -j `nproc` -C vault install
 
 # Install matching cargo-pgrx for jsonschema
 RUN curl -sSf https://sh.rustup.rs | sh -s -- -y && \
     export PATH="/root/.cargo/bin:$PATH" && \
     export "PG${POSTGRES_MAJOR}_PG_CONFIG=/usr/lib/postgresql/${POSTGRES_MAJOR}/bin/pg_config" && \
     cargo install cargo-pgrx --version 0.12.6 --locked && \
-    cargo pgrx init
+    cargo pgrx init --jobs `nproc`
 
 # install pg_jsonschema
 RUN git clone --branch ${PG_JSONSCHEMA_VERSION} --depth 1 https://github.com/supabase/pg_jsonschema.git && \
@@ -115,8 +117,8 @@ RUN git clone --branch ${PG_JSONSCHEMA_VERSION} --depth 1 https://github.com/sup
 RUN curl -sSf https://sh.rustup.rs | sh -s -- -y && \
     export PATH="/root/.cargo/bin:$PATH" && \
     export "PG${POSTGRES_MAJOR}_PG_CONFIG=/usr/lib/postgresql/${POSTGRES_MAJOR}/bin/pg_config" && \
-    cargo install cargo-pgrx --version 0.14.3 --locked && \
-    cargo pgrx init
+    cargo install cargo-pgrx --version 0.16.0 --locked && \
+    cargo pgrx init --jobs `nproc`
 
 # install supabase wrappers
 RUN git clone --branch ${SUPABASE_WRAPPER_VERSION} --depth 1 https://github.com/supabase/wrappers.git && \
@@ -125,20 +127,20 @@ RUN git clone --branch ${SUPABASE_WRAPPER_VERSION} --depth 1 https://github.com/
 
 # install index_advisor
 RUN git clone --branch ${INDEX_ADVISOR_VERSION} --depth 1 https://github.com/supabase/index_advisor.git && \
-    make -C index_advisor && make -C index_advisor install
+    make -C index_advisor && make -j `nproc` -C index_advisor install
 
 # install pgsodium
 RUN git clone --branch ${PGSODIUM_VERSION} --depth 1 https://github.com/michelp/pgsodium.git && \
-    make -C pgsodium && make -C pgsodium install
+    make -C pgsodium && make -j `nproc` -C pgsodium install
 
 # install pg_tle
 RUN git clone --branch ${PG_TLE_VERSION} --depth 1 https://github.com/aws/pg_tle.git && \
-    make -C pg_tle && make -C pg_tle install
+    make -C pg_tle && make -j `nproc` -C pg_tle install
 
 # install pg_plan_filter
 RUN git clone https://github.com/pgexperts/pg_plan_filter.git && \
     git -C pg_plan_filter checkout ${PG_PLAN_FILTER_REVISION} && \
-    make -C pg_plan_filter && make -C pg_plan_filter install
+    make -C pg_plan_filter && make -j `nproc` -C pg_plan_filter install
 
 FROM base AS final
 
