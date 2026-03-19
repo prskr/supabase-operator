@@ -11,6 +11,10 @@ on:
       - main
     tags:
       - 'v*'
+  workflow_dispatch:
+
+permissions:
+  packages: write
 
 env:
   MINOR_VERSIONS: '{"15":"14","16":"10","17":"6","18":"0"}'
@@ -27,16 +31,16 @@ jobs:
           - '16'
           - '17'
           # - '18' - not ready yet
-    runs-on: fedora-${{ matrix.arch }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
       - name: Login to Harbor
         uses: redhat-actions/podman-login@v1
         with:
-          registry: registry.icb4dc0.de
-          username: ${{ secrets.HARBOR_USER }}
-          password: ${{ secrets.HARBOR_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build image
         id: build-image
@@ -45,7 +49,7 @@ jobs:
           containerfiles: |
             postgres/Dockerfile
           layers: true
-          image: registry.icb4dc0.de/supabase-operator/postgres
+          image: ghcr.io/prskr/supabase-operator/postgres
           tags: ${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-${{ matrix.arch }}
           build-args: |
             POSTGRES_MAJOR=${{ matrix.postgres_major }}
@@ -63,27 +67,27 @@ jobs:
           - '16'
           - '17'
           - '18'
-    runs-on: fedora
+    runs-on: ubuntu-latest
     needs:
       - build
     steps:
       - name: Login to Harbor
         uses: redhat-actions/podman-login@v1
         with:
-          registry: registry.icb4dc0.de
-          username: ${{ secrets.HARBOR_USER }}
-          password: ${{ secrets.HARBOR_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create manifest
         run: |
           buildah manifest create \
-              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }} \
-              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-arm64 \
-              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-amd64
+              ghcr.io/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }} \
+              ghcr.io/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-arm64 \
+              ghcr.io/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}-amd64
 
           buildah tag \
-              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }} \
-              registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}
+              ghcr.io/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }} \
+              ghcr.io/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}
 
-          buildah manifest push --all registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}
-          buildah manifest push --all registry.icb4dc0.de/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}
+          buildah manifest push --all ghcr.io/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}
+          buildah manifest push --all ghcr.io/prskr/supabase-operator/postgres:${{ matrix.postgres_major }}.${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}.${{ github.run_number }}
