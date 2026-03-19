@@ -44,10 +44,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
-	"code.icb4dc0.de/prskr/supabase-operator/internal/certs"
-	"code.icb4dc0.de/prskr/supabase-operator/internal/meta"
-	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
+	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
+	"github.com/prskr/supabase-operator/internal/certs"
+	"github.com/prskr/supabase-operator/internal/meta"
+	"github.com/prskr/supabase-operator/internal/supabase"
 )
 
 var (

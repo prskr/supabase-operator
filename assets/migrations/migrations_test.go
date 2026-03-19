@@ -5,7 +5,7 @@ import (
 
 	"github.com/alecthomas/assert/v2"
 
-	"code.icb4dc0.de/prskr/supabase-operator/assets/migrations"
+	"github.com/prskr/supabase-operator/assets/migrations"
 )
 
 func TestMigrationScripts(t *testing.T) {

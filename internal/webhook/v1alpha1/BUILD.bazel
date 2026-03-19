@@ -12,7 +12,7 @@ go_library(
         "storage_webhook_defaulter.go",
         "storage_webhook_validator.go",
     ],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/webhook/v1alpha1",
+    importpath = "github.com/prskr/supabase-operator/internal/webhook/v1alpha1",
     visibility = ["//:__subpackages__"],
     deps = [
         "//api/v1alpha1",

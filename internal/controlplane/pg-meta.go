@@ -22,7 +22,7 @@ import (
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 
-	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
+	"github.com/prskr/supabase-operator/internal/supabase"
 )
 
 type PGMetaCluster struct {

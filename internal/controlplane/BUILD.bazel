@@ -17,7 +17,7 @@ go_library(
         "studio.go",
         "utils.go",
     ],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/controlplane",
+    importpath = "github.com/prskr/supabase-operator/internal/controlplane",
     visibility = ["//:__subpackages__"],
     deps = [
         "//api/v1alpha1",

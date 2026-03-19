@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
+	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 	// TODO (user): Add any additional imports if needed
 )
 

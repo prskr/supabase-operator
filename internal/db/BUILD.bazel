@@ -6,7 +6,7 @@ go_library(
         "migrator.go",
         "roles_manager.go",
     ],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/db",
+    importpath = "github.com/prskr/supabase-operator/internal/db",
     visibility = ["//:__subpackages__"],
     deps = [
         "//api/v1alpha1",

@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
+	"github.com/prskr/supabase-operator/internal/supabase"
 )
 
 type BackendStorageType string

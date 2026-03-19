@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"code.icb4dc0.de/prskr/supabase-operator/api"
+	"github.com/prskr/supabase-operator/api"
 )
 
 func ptrOf[T any](val T) *T {

@@ -6,6 +6,6 @@ go_library(
         "key.go",
         "set.go",
     ],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/jwk",
+    importpath = "github.com/prskr/supabase-operator/internal/jwk",
     visibility = ["//:__subpackages__"],
 )

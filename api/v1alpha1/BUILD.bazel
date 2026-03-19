@@ -18,7 +18,7 @@ go_library(
         "storage_types.go",
         "zz_generated.deepcopy.go",
     ],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1",
+    importpath = "github.com/prskr/supabase-operator/api/v1alpha1",
     visibility = ["//visibility:public"],
     deps = [
         "//internal/supabase",

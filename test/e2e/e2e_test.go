@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"code.icb4dc0.de/prskr/supabase-operator/test/utils"
+	"github.com/prskr/supabase-operator/test/utils"
 )
 
 // namespace where the project is deployed in

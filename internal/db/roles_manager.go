@@ -24,7 +24,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"code.icb4dc0.de/prskr/supabase-operator/assets/migrations"
+	"github.com/prskr/supabase-operator/assets/migrations"
 )
 
 const (

@@ -1,3 +1,4 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 load("@rules_go//go:def.bzl", "go_library")
 
 ENVOY_REPO = "envoyproxy/envoy"
@@ -22,6 +23,15 @@ genrule(
     ],
 )
 
+write_source_files(
+    name = "generate",
+    diff_test = False,
+    files = {
+        # Destination in source tree : Source from Bazel output
+        "images.go": ":supabase-images",
+    },
+)
+
 go_library(
     name = "supabase",
     srcs = [
@@ -38,7 +48,7 @@ go_library(
         "storage.go",
         "studio.go",
     ],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/supabase",
+    importpath = "github.com/prskr/supabase-operator/internal/supabase",
     visibility = ["//:__subpackages__"],
     deps = [
         "@io_k8s_api//core/v1:core",

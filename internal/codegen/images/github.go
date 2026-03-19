@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"code.icb4dc0.de/prskr/supabase-operator/internal/errx"
+	"github.com/prskr/supabase-operator/internal/errx"
 )
 
 type releaseMatcher interface {

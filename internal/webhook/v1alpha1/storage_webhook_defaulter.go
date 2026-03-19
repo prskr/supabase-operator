@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
+	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 )
 
 // +kubebuilder:webhook:path=/mutate-supabase-k8s-icb4dc0-de-v1alpha1-storage,mutating=true,failurePolicy=fail,sideEffects=None,groups=supabase.k8s.icb4dc0.de,resources=storages,verbs=create;update,versions=v1alpha1,name=mstorage-v1alpha1.kb.io,admissionReviewVersions=v1

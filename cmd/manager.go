@@ -28,8 +28,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"code.icb4dc0.de/prskr/supabase-operator/internal/controller"
-	webhooksupabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/internal/webhook/v1alpha1"
+	"github.com/prskr/supabase-operator/internal/controller"
+	webhooksupabasev1alpha1 "github.com/prskr/supabase-operator/internal/webhook/v1alpha1"
 )
 
 //nolint:lll // flag declaration needs to be in tags

@@ -24,8 +24,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
-	"code.icb4dc0.de/prskr/supabase-operator/assets/migrations"
+	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
+	"github.com/prskr/supabase-operator/assets/migrations"
 )
 
 type Migrator struct {

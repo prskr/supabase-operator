@@ -8,7 +8,7 @@ go_library(
         "main.go",
         "manager.go",
     ],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/cmd",
+    importpath = "github.com/prskr/supabase-operator/cmd",
     visibility = ["//visibility:public"],
     deps = [
         "//api/v1alpha1",

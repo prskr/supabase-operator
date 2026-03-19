@@ -18,7 +18,7 @@ go_library(
         "utils.go",
     ],
     embedsrcs = ["templates/envoy_control_plane_config.yaml.tmpl"],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/controller",
+    importpath = "github.com/prskr/supabase-operator/internal/controller",
     visibility = ["//:__subpackages__"],
     deps = [
         "//api",

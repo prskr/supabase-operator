@@ -3,7 +3,7 @@ load("@rules_go//go:def.bzl", "go_library")
 go_library(
     name = "meta",
     srcs = ["labels.go"],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/meta",
+    importpath = "github.com/prskr/supabase-operator/internal/meta",
     visibility = ["//:__subpackages__"],
     deps = ["//api/v1alpha1"],
 )

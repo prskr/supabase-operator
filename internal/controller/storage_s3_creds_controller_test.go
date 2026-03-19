@@ -15,8 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
-	"code.icb4dc0.de/prskr/supabase-operator/internal/controller"
+	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
+	"github.com/prskr/supabase-operator/internal/controller"
 )
 
 func TestStorageS3CredsController(t *testing.T) {

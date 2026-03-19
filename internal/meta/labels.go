@@ -16,7 +16,7 @@ limitations under the License.
 
 package meta
 
-import supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
+import supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 
 const (
 	WellKnownMetaPrefix = "app.kubernetes.io/"

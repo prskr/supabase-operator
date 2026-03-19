@@ -31,7 +31,7 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 
-	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
+	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 
 	// +kubebuilder:scaffold:imports
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"

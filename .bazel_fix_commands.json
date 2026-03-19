@@ -1,0 +1,7 @@
+[
+  {
+    "regex": "no such package '@.*//.*':|no such target '@.*//.*':|missing import",
+    "command": "bazel",
+    "args": ["run", "//:gazelle"]
+  }
+]

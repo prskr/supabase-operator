@@ -11,21 +11,23 @@
         "-e",
         "DATABASE_URI",
         "crystaldba/postgres-mcp",
-        "--access-mode=unrestricted"
+        "--access-mode=unrestricted",
       ],
       "env": {
-        "DATABASE_URI": "postgresql://supabase_admin:1n1t-R00t!@localhost:5432/app"
-      }
-    }
+        "DATABASE_URI": "postgresql://supabase_admin:1n1t-R00t!@localhost:5432/app",
+      },
+    },
   },
   "lsp": {
     "gopls": {
+      "binary": {
+        "ignore_system_version": true,
+        "path": "bazel",
+        "arguments": ["run", "@org_golang_x_tools_gopls//:gopls"],
+      },
       "initialization_options": {
-        "local": "code.icb4dc0.de/prskr/supabase-operator",
-        "env": {
-          "GOPACKAGESDRIVER": "./hack/gopackagesdriver.sh"
-        }
-      }
-    }
-  }
+        "local": "github.com/prskr/supabase-operator",
+      },
+    },
+  },
 }

@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
+	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 )
 
 var _ = Describe("Core Controller", func() {

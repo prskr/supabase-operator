@@ -31,10 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
-	"code.icb4dc0.de/prskr/supabase-operator/internal/jwk"
-	"code.icb4dc0.de/prskr/supabase-operator/internal/meta"
-	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
+	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
+	"github.com/prskr/supabase-operator/internal/jwk"
+	"github.com/prskr/supabase-operator/internal/meta"
+	"github.com/prskr/supabase-operator/internal/supabase"
 )
 
 // +kubebuilder:webhook:path=/mutate-supabase-k8s-icb4dc0-de-v1alpha1-core,mutating=true,failurePolicy=fail,sideEffects=None,groups=supabase.k8s.icb4dc0.de,resources=cores,verbs=create;update,versions=v1alpha1,name=mcore-v1alpha1.kb.io,admissionReviewVersions=v1

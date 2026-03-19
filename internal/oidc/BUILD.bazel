@@ -3,6 +3,6 @@ load("@rules_go//go:def.bzl", "go_library")
 go_library(
     name = "oidc",
     srcs = ["discovery.go"],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/oidc",
+    importpath = "github.com/prskr/supabase-operator/internal/oidc",
     visibility = ["//:__subpackages__"],
 )

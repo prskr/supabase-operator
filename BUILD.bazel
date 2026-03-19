@@ -8,6 +8,16 @@ load("@rules_oci//oci:defs.bzl", "oci_image", "oci_image_index", "oci_load", "oc
 load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
+alias(
+    name = "kustomize",
+    actual = "@io_k8s_sigs_kustomize_kustomize_v5//:v5",
+)
+
+alias(
+    name = "go",
+    actual = "@rules_go//go",
+)
+
 gazelle(
     name = "gazelle",
     extra_args = [
@@ -15,6 +25,7 @@ gazelle(
         "-proto=disable_global",
         "-strict=true",
     ],
+    visibility = ["//:__subpackages__"],
 )
 
 buildifier(

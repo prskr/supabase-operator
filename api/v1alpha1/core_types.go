@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
+	"github.com/prskr/supabase-operator/internal/supabase"
 )
 
 func init() {

@@ -5,7 +5,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
-	supabasev1alpha1 "code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1"
+	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 )
 
 var testingScheme = runtime.NewScheme()

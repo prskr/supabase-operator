@@ -1,0 +1,18 @@
+load("@bazel_env.bzl", "bazel_env")
+
+package(default_visibility = ["//visibility:public"])
+
+bazel_env(
+    name = "bazel_env",
+    toolchains = {},
+    tools = {
+        # Tools can be specified as labels.
+        "buildifier": "@buildifier_prebuilt//:buildifier",
+        "gazelle": "//:gazelle",
+        "go": "@rules_go//go",
+        "gopls": "@org_golang_x_tools_gopls//:gopls",
+        "kubectl": "@multitool//tools/kubectl:kubectl",
+        "kustomize": "@io_k8s_sigs_kustomize_kustomize_v5//:v5",
+        "kind": "@io_k8s_sigs_kind//:kind",
+    },
+)

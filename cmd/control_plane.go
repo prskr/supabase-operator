@@ -55,9 +55,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"code.icb4dc0.de/prskr/supabase-operator/internal/certs"
-	"code.icb4dc0.de/prskr/supabase-operator/internal/controlplane"
-	"code.icb4dc0.de/prskr/supabase-operator/internal/health"
+	"github.com/prskr/supabase-operator/internal/certs"
+	"github.com/prskr/supabase-operator/internal/controlplane"
+	"github.com/prskr/supabase-operator/internal/health"
 )
 
 var errCouldNoParseCert = errors.New("could not parse certificate")

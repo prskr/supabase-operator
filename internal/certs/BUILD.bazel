@@ -6,6 +6,6 @@ go_library(
         "format.go",
         "generate.go",
     ],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/certs",
+    importpath = "github.com/prskr/supabase-operator/internal/certs",
     visibility = ["//:__subpackages__"],
 )

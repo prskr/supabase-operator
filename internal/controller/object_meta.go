@@ -21,7 +21,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"code.icb4dc0.de/prskr/supabase-operator/internal/meta"
+	"github.com/prskr/supabase-operator/internal/meta"
 )
 
 func selectorLabels(

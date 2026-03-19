@@ -3,8 +3,8 @@
 # git hook pre commit
 pre-commit = [
     "bazel run @rules_go//go -- mod tidy",
+    "bazel build //...",
     "husky lint-staged",
-    # "golangci-lint run",
 ]
 
 # git hook commit msg
@@ -15,6 +15,6 @@ commit-msg = [
 # list staged files do some pre-process and git add
 [lint-staged]
 "*.go" = [
-    "goimports -l -w",
-    "gofumpt -l -w",
+    # "goimports -l -w",
+    # "gofumpt -l -w",
 ]

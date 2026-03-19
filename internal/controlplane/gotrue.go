@@ -24,7 +24,7 @@ import (
 	matcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"code.icb4dc0.de/prskr/supabase-operator/internal/supabase"
+	"github.com/prskr/supabase-operator/internal/supabase"
 )
 
 type GoTrueCluster struct {

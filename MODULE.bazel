@@ -1,67 +1,24 @@
 "supabase-operator"
 
 module(
-    name = "de_icb4dc0_code_prskr_supabase-operator",
+    name = "com_github_prskr_supabase-operator",
 )
 
-bazel_dep(
-    name = "rules_go",
-    version = "0.58.2",
-)
-bazel_dep(
-    name = "gazelle",
-    version = "0.45.0",
-)
-bazel_dep(
-    name = "rules_oci",
-    version = "2.2.6",
-)
-bazel_dep(
-    name = "platforms",
-    version = "1.0.0",
-)
-bazel_dep(
-    name = "rules_pkg",
-    version = "1.1.0",
-)
-bazel_dep(
-    name = "aspect_bazel_lib",
-    version = "2.21.2",
-)
-bazel_dep(
-    name = "buildifier_prebuilt",
-    version = "8.2.0.2",
-)
-bazel_dep(
-    name = "rules_multirun",
-    version = "0.13.0",
-)
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+bazel_dep(name = "bazel_env.bzl", version = "0.7.1")
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2")
+bazel_dep(name = "gazelle", version = "0.47.0")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_go", version = "0.60.0")
+bazel_dep(name = "rules_multirun", version = "0.13.0")
+bazel_dep(name = "rules_multitool", version = "1.11.1")
+bazel_dep(name = "rules_oci", version = "2.2.7")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "rules_pkg", version = "1.2.0")
 
-http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
-
-http_file(
-    name = "kubectl_linux_arm64",
-    downloaded_file_path = "kubectl_linux_arm64",
-    executable = True,
-    sha256 = "753e0dd54f28c4f7009b9c0b18a68aed175416bd8b7d134858264586eaac56f0",
-    url = "https://dl.k8s.io/release/v1.34.0/bin/linux/arm64/kubectl",
-)
-
-http_file(
-    name = "kubectl_linux_amd64",
-    downloaded_file_path = "kubectl_linux_amd64",
-    executable = True,
-    sha256 = "cfda68cba5848bc3b6c6135ae2f20ba2c78de20059f68789c090166d6abc3e2c",
-    url = "https://dl.k8s.io/release/v1.34.0/bin/linux/amd64/kubectl",
-)
-
-http_file(
-    name = "kubectl_darwin_arm64",
-    downloaded_file_path = "kubectl_darwin_arm64",
-    executable = True,
-    sha256 = "d491f4c47c34856188d38e87a27866bd94a66a57b8db3093a82ae43baf3bb20d",
-    url = "https://dl.k8s.io/release/v1.34.0/bin/darwin/arm64/kubectl",
-)
+multitool = use_extension("@rules_multitool//multitool:extension.bzl", "multitool")
+multitool.hub(lockfile = "//tools:multitool.lock.json")
+use_repo(multitool, "multitool")
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
@@ -86,15 +43,11 @@ use_repo(
     "distroless_base_nossl_debian12_linux_s390x",
 )
 
-go_tool_deps = use_extension("@gazelle//:extensions.bzl", "go_deps", isolate = True)
-go_tool_deps.from_file(go_mod = "//tools:go.mod")
-use_repo(
-    go_tool_deps,
-    "io_k8s_sigs_kustomize_kustomize_v5",
-)
-
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
-go_sdk.from_file(go_mod = "//:go.mod")
+go_sdk.download(
+    experiments = ["jsonv2"],
+    version = "1.26.1",
+)
 go_sdk.nogo(nogo = "//:nogo")
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
@@ -162,9 +115,13 @@ use_repo(
     "io_k8s_sigs_controller_runtime",
     "io_k8s_sigs_controller_runtime_tools_setup_envtest",
     "io_k8s_sigs_controller_tools",
+    "io_k8s_sigs_kind",
+    "io_k8s_sigs_kustomize_kustomize_v5",
     "org_golang_google_grpc",
     "org_golang_google_protobuf",
     "org_golang_x_exp",
+    "org_golang_x_tools",
+    "org_golang_x_tools_gopls",
     "org_uber_go_nilaway",
     "org_uber_go_zap",
 )

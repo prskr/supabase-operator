@@ -7,7 +7,7 @@ go_library(
         "main.go",
     ],
     embedsrcs = ["images.go.tmpl"],
-    importpath = "code.icb4dc0.de/prskr/supabase-operator/internal/codegen/images",
+    importpath = "github.com/prskr/supabase-operator/internal/codegen/images",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/errx",
