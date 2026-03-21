@@ -18,6 +18,26 @@ alias(
     actual = "@rules_go//go",
 )
 
+alias(
+    name = "controller-gen",
+    actual = "@io_k8s_sigs_controller_tools//cmd/controller-gen",
+)
+
+alias(
+    name = "setup-envtest",
+    # sigs.k8s.io/controller-runtime/tools/setup-envtest
+    actual = "@io_k8s_sigs_controller_runtime_tools_setup_envtest//:setup-envtest",
+)
+
+alias(
+    name = "crd-ref-docs",
+    actual = "@com_github_elastic_crd_ref_docs//:crd-ref-docs",
+)
+
+exports_files([
+    "crd-docs.yaml",
+])
+
 gazelle(
     name = "gazelle",
     extra_args = [
@@ -139,7 +159,7 @@ oci_push(
     name = "push",
     image = ":image_multiarch",
     remote_tags = ":stamped",
-    repository = "registry.icb4dc0.de/supabase-operator/controller",
+    repository = "ghcr.io/prskr/supabase-operator/controller",
 )
 
 oci_load(

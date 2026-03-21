@@ -4,10 +4,22 @@
 
 set -o errexit
 
+# --- begin runfiles.bash initialization v3 ---
+# Copy-pasted from the Bazel Bash runfiles library v3.
+set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
+# shellcheck disable=SC1090
+source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$0.runfiles/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
+# --- end runfiles.bash initialization v3 ---
+
 # --- Tool paths passed in from Bazel ---
-KIND="${1:?Usage: $0 <kind_binary> <kubectl_binary>}"
-KUBECTL="${2:?Usage: $0 <kind_binary> <kubectl_binary>}"
-CLUSTER_CONFIG="${3:?Usage: $0 <kind> <kubectl> <cluster_config>}"
+KIND="$(rlocation "${KIND_BIN}")"
+KUBECTL="$(rlocation "${KUBECTL_BIN}")"
+CLUSTER_CONFIG="$(rlocation "${CLUSTER_CONFIG}")"
 
 # 1. Create registry container unless it already exists
 reg_name='kind-registry'

@@ -14,14 +14,11 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
   { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
 # --- end runfiles.bash initialization v3 ---
 
-# --- Tool paths passed in from Bazel ---
-KIND="$(rlocation "${KIND_BIN}")"
+CRD_REF_DOCS="$(rlocation "${CRD_REF_DOCS}")"
 
-reg_name='kind-registry'
-
-"${KIND}" delete cluster --name supabase-operator-debug
-
-if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" == 'true' ]; then
-  docker stop "${reg_name}"
-  docker rm -f "${reg_name}"
-fi
+"${CRD_REF_DOCS}" \
+	    --source-path=./api \
+	    --renderer=markdown \
+	    --config=crd-docs.yaml \
+	    --output-path=./docs/api/ \
+	    --output-mode=group

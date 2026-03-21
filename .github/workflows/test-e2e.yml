@@ -10,41 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone the code
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache-dependency-path: go.sum
-          check-latest: true
-
-      - name: Install the latest version of kind
-        if: ${{ runner.arch }} == 'X64'
-        run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
-
-      - name: Install the latest version of kind
-        if: ${{ runner.arch }} == 'ARM64'
-        run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-arm64
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
-
-      - name: Verify kind installation
-        run: kind version
+        uses: actions/checkout@v6
 
       - name: Create kind cluster
-        run: kind create cluster
+        run: bazel run //dev:start_cluster`
 
       - name: Running Test e2e
         run: |
-          go mod tidy
-          make test-e2e
+          bazel test //test/e2e/...
 
       - name: Cleanup kind cluster
         if: always()
         run: |
-          kind delete cluster
+          bazel run //dev:teardown_cluster

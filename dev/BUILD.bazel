@@ -6,26 +6,64 @@ load("//build:kubectl.bzl", "kubectl_apply")
 sh_binary(
     name = "start_cluster",
     srcs = ["setup_dev_cluster.sh"],
-    args = [
-        "$(rootpath @io_k8s_sigs_kind//:kind)",
-        "$(rootpath @multitool//tools/kubectl:kubectl)",
-        "$(rootpath :cluster.yaml)",
-    ],
     data = [
         "cluster.yaml",
         "@io_k8s_sigs_kind//:kind",
         "@multitool//tools/kubectl",
     ],
+    env = {
+        # rlocationpath evaluates exactly to what the rlocation bash function needs
+        "KIND_BIN": "$(rlocationpath @io_k8s_sigs_kind//:kind)",
+        "KUBECTL_BIN": "$(rlocationpath @multitool//tools/kubectl:kubectl)",
+        "CLUSTER_CONFIG": "$(rlocationpath cluster.yaml)",
+    },
+    deps = ["@rules_shell//shell/runfiles"],
 )
 
 sh_binary(
     name = "teardown_cluster",
     srcs = ["teardown_dev_cluster.sh"],
-    args = [
-        "$(rootpath @io_k8s_sigs_kind//:kind)",
-    ],
+    env = {
+        "KIND_BIN": "$(rlocationpath @io_k8s_sigs_kind//:kind)",
+    },
     data = [
+        "//:crd-docs.yaml",
         "@io_k8s_sigs_kind//:kind",
+    ],
+    deps = ["@rules_shell//shell/runfiles"],
+)
+
+sh_binary(
+    name = "generate_crd_code",
+    srcs = ["generate_crd_code.sh"],
+    env = {
+        "CONTROLLER_GEN": "$(rlocationpath @io_k8s_sigs_controller_tools//cmd/controller-gen)",
+    },
+    data = [
+        "//api/v1alpha1:api-types",
+        "//hack:boilerplate_go",
+        "@rules_go//go",
+        "@io_k8s_sigs_controller_tools//cmd/controller-gen",
+    ],
+    deps = [
+        "@rules_shell//shell/runfiles",
+    ],
+)
+
+sh_binary(
+    name = "generate_crd_docs",
+    srcs = ["generate_crd_docs.sh"],
+    env = {
+        "CRD_REF_DOCS": "$(rlocationpath @com_github_elastic_crd_ref_docs//:crd-ref-docs)",
+        "API_TYPES": "$(locations //api/v1alpha1:api-types)",
+    },
+    data = [
+        "//api/v1alpha1:api-types",
+        "@rules_go//go",
+        "@com_github_elastic_crd_ref_docs//:crd-ref-docs",
+    ],
+    deps = [
+        "@rules_shell//shell/runfiles",
     ],
 )
 

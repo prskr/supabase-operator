@@ -20,6 +20,22 @@ Package v1alpha1 contains API Schema definitions for the supabase v1alpha1 API g
 
 
 
+#### AISpec
+
+
+
+
+
+
+
+_Appears in:_
+- [StudioSpec](#studiospec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `openai` _[OpenAISpec](#openaispec)_ |  |  |  |
+
+
 #### APIGateway
 
 
@@ -153,6 +169,7 @@ _Appears in:_
 | `providers` _[AuthProviders](#authproviders)_ |  |  |  |
 | `workloadTemplate` _[WorkloadSpec](#workloadspec)_ |  |  |  |
 | `emailSignupDisabled` _boolean_ |  |  |  |
+| `observability` _[GoTrueObservabilitySpec](#gotrueobservabilityspec)_ |  |  |  |
 
 
 #### AzureAuthProvider
@@ -578,7 +595,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `host` _string_ |  |  |  |
 | `port` _integer_ |  |  |  |
-| `maxFrequency` _integer_ |  |  |  |
+| `maxFrequency` _[uint](#uint)_ |  |  |  |
 | `credentialsRef` _[SMTPCredentialsReference](#smtpcredentialsreference)_ |  |  |  |
 
 
@@ -645,6 +662,39 @@ _Appears in:_
 
 
 
+#### EnvoyMetricsSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [EnvoyObservabilitySpec](#envoyobservabilityspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `enabled` _boolean_ |  |  |  |
+
+
+#### EnvoyObservabilitySpec
+
+
+
+
+
+
+
+_Appears in:_
+- [EnvoySpec](#envoyspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `metrics` _[EnvoyMetricsSpec](#envoymetricsspec)_ |  |  |  |
+| `traces` _[EnvoyTracesSpec](#envoytracesspec)_ |  |  |  |
+
+
 #### EnvoySpec
 
 
@@ -663,6 +713,7 @@ _Appears in:_
 | `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadTemplate - customize the Envoy deployment |  |  |
 | `disableIPv6` _boolean_ | DisableIPv6 - disable IPv6 for the Envoy instance<br />this will force Envoy to use IPv4 for upstream hosts (mostly for the OAuth2 token endpoint) |  |  |
 | `debugging` _[EnvoyDebuggingOptions](#envoydebuggingoptions)_ |  |  |  |
+| `observability` _[EnvoyObservabilitySpec](#envoyobservabilityspec)_ |  |  |  |
 
 
 #### EnvoyStatus
@@ -679,6 +730,39 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `resourceHash` _integer array_ |  |  |  |
+
+
+#### EnvoyTracesSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [EnvoyObservabilitySpec](#envoyobservabilityspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `otel` _[EnvoyTracingOTELSpec](#envoytracingotelspec)_ |  |  |  |
+
+
+#### EnvoyTracingOTELSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [EnvoyTracesSpec](#envoytracesspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `serviceName` _string_ | The name for the service. This will be populated in the ResourceSpan Resource attributes. If it is not provided, it will default to “<name-of-the-api-gateway>:envoy”. |  |  |
+| `endpoint` _string_ |  |  |  |
 
 
 #### FileBackendSpec
@@ -714,6 +798,52 @@ _Appears in:_
 | `clientID` _string_ |  |  |  |
 | `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ |  |  |  |
 | `url` _string_ |  |  |  |
+
+
+#### GoTrueMetricsSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [GoTrueObservabilitySpec](#gotrueobservabilityspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `enabled` _boolean_ |  |  |  |
+
+
+#### GoTrueObservabilitySpec
+
+
+
+
+
+
+
+_Appears in:_
+- [AuthSpec](#authspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `metrics` _[GoTrueMetricsSpec](#gotruemetricsspec)_ |  |  |  |
+| `tracing` _[GoTrueTracingSpec](#gotruetracingspec)_ |  |  |  |
+
+
+#### GoTrueTracingSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [GoTrueObservabilitySpec](#gotrueobservabilityspec)
+
 
 
 #### ImageProxySpec
@@ -815,6 +945,22 @@ _Appears in:_
 | `url` _string_ |  |  |  |
 
 
+#### OpenAISpec
+
+
+
+
+
+
+
+_Appears in:_
+- [AISpec](#aispec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `apiKey` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ |  |  |  |
+
+
 #### PGMetaSpec
 
 
@@ -847,6 +993,38 @@ _Appears in:_
 | `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not |  |  |
 
 
+#### PostgrestMetricsSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [PostgrestObservabilitySpec](#postgrestobservabilityspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `enabled` _boolean_ |  |  |  |
+
+
+#### PostgrestObservabilitySpec
+
+
+
+
+
+
+
+_Appears in:_
+- [PostgrestSpec](#postgrestspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `metrics` _[PostgrestMetricsSpec](#postgrestmetricsspec)_ |  |  |  |
+
+
 #### PostgrestSpec
 
 
@@ -865,6 +1043,7 @@ _Appears in:_
 | `anonRole` _string_ | AnonRole - name of the anon role | anon |  |
 | `maxRows` _integer_ | MaxRows - maximum number of rows PostgREST will load at a time | 1000 |  |
 | `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadSpec - customize the PostgREST workload |  |  |
+| `observability` _[PostgrestObservabilitySpec](#postgrestobservabilityspec)_ | ObservabilitySpec - customize the PostgREST observability |  |  |
 
 
 #### S3BackendSpec
@@ -923,22 +1102,6 @@ _Appears in:_
 | `credentialsSecretRef` _[S3CredentialsRef](#s3credentialsref)_ | CredentialsSecretRef - reference to the Secret where access key id and access secret key are stored |  |  |
 
 
-#### SMTPCredentialsReference
-
-
-
-
-
-
-
-_Appears in:_
-- [EmailAuthSMTPSpec](#emailauthsmtpspec)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `secretName` _string_ |  |  |  |
-| `usernameKey` _string_ | UsernameKey | username |  |
-| `passwordKey` _string_ | PasswordKey | password |  |
 
 
 #### Storage
@@ -1052,6 +1215,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
+| `ai` _[AISpec](#aispec)_ | AI / LLM integration<br />configure OpenAI API key and optionally base URL |  |  |
 | `jwt` _[JwtSpec](#jwtspec)_ |  |  |  |
 | `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadTemplate - customize the studio deployment |  |  |
 | `gatewayServiceSelector` _object (keys:string, values:string)_ | GatewayServiceSelector - selector to find the service for the API gateway<br />Required to configure the API URL in the studio deployment<br />If you don't run multiple APIGateway instances in the same namespaces, the default will be fine | \{ app.kubernetes.io/component:api-gateway app.kubernetes.io/name:envoy \} |  |

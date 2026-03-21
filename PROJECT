@@ -6,7 +6,7 @@ domain: k8s.icb4dc0.de
 layout:
 - go.kubebuilder.io/v4
 projectName: supabase-operator
-repo: code.icb4dc0.de/prskr/supabase-operator
+repo: github.com/prskr/supabase-operator
 resources:
 - api:
     crdVersion: v1
@@ -15,7 +15,7 @@ resources:
   domain: k8s.icb4dc0.de
   group: supabase
   kind: Core
-  path: code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1
+  path: github.com/prskr/supabase-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
@@ -28,7 +28,7 @@ resources:
   domain: k8s.icb4dc0.de
   group: supabase
   kind: APIGateway
-  path: code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1
+  path: github.com/prskr/supabase-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
@@ -41,7 +41,7 @@ resources:
   domain: k8s.icb4dc0.de
   group: supabase
   kind: Dashboard
-  path: code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1
+  path: github.com/prskr/supabase-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
@@ -54,7 +54,7 @@ resources:
   domain: k8s.icb4dc0.de
   group: supabase
   kind: Storage
-  path: code.icb4dc0.de/prskr/supabase-operator/api/v1alpha1
+  path: github.com/prskr/supabase-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true

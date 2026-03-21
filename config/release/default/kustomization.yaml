@@ -3,7 +3,7 @@ kind: Kustomization
 
 images:
   - name: controller
-    newName: registry.icb4dc0.de/supabase-operator/controller
+    newName: ghcr.io/prskr/supabase-operator/controller
     newTag: 0.1.0-SNAPSHOT-e6c7d68
 
 resources:

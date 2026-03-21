@@ -14,14 +14,13 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
   { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
 # --- end runfiles.bash initialization v3 ---
 
-# --- Tool paths passed in from Bazel ---
-KIND="$(rlocation "${KIND_BIN}")"
+CONTROLLER_GEN="$(rlocation "${CONTROLLER_GEN}")"
 
-reg_name='kind-registry'
+"${CONTROLLER_GEN}" \
+    rbac:roleName=manager-role crd webhook \
+    paths="./..." \
+    output:crd:artifacts:config=config/crd/bases
 
-"${KIND}" delete cluster --name supabase-operator-debug
-
-if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" == 'true' ]; then
-  docker stop "${reg_name}"
-  docker rm -f "${reg_name}"
-fi
+"${CONTROLLER_GEN}" \
+    object:headerFile="hack/boilerplate.go.txt" \
+    paths="./..."

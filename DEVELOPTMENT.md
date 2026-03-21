@@ -45,3 +45,23 @@ No matter, what you prefer, the `//dev:dev` target takes care of the following t
 - apply the rendered Kubernetes manifests to the local dev cluster (including custom resources to bootstrap a Supabase instance)
 
 When starting development, you might need to run the command twice to ensure that the CRDs are installed to the cluster before the custom resources are created.
+
+## Code Genration
+
+### Go code and CRD manifests
+
+To update the generated Go code and the CRD manifests, run:
+
+```shell
+bazel run //dev:generate_crd_code
+```
+
+This will invoke the `controller-gen` CLI to generate all depending code
+
+### CRD documentation
+
+To update the generated CRD documentation, run
+
+```shell
+bazel run //dev:generate_crd_docs
+```

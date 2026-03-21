@@ -5,6 +5,7 @@ filegroup(
     srcs = glob([
         "*_types.go",
     ]) + ["groupversion_info.go"],
+    visibility = ["//:__subpackages__"],
 )
 
 go_library(
