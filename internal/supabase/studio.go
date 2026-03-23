@@ -26,6 +26,7 @@ type studioEnvKeys struct {
 	ServiceKey     secretEnv
 	Host           fixedEnv
 	LogsEnabled    fixedEnv
+	MetaCryptoKey  secretEnv
 }
 
 type studioDefaults struct {
@@ -48,6 +49,7 @@ func studioServiceConfig() serviceConfig[studioEnvKeys, studioDefaults] {
 			ServiceKey:     "SUPABASE_SERVICE_KEY",
 			Host:           fixedEnvOf("HOSTNAME", "0.0.0.0"),
 			LogsEnabled:    fixedEnvOf("NEXT_PUBLIC_ENABLE_LOGS", "false"),
+			MetaCryptoKey:  "PG_META_CRYPTO_KEY",
 		},
 		Defaults: studioDefaults{
 			NodeUID: 1000,

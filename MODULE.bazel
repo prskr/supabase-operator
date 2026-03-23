@@ -68,8 +68,8 @@ supabase_compose = use_repo_rule("//build:extensions.bzl", "supabase_compose")
 
 supabase_compose(
     name = "supabase_compose",
-    sha256 = "ff44c48a501cf1c18103027b3a8b3b0d2fa51766b35bba38832447f8c4863afd",
-    version = "1.25.04",
+    sha256 = "0d55082034a80c7dd441b291589b98e73d9a7399df731af312b30d70b497a65d",
+    version = "v1.26.03",
 )
 
 supabase_migrations = use_repo_rule("//build:extensions.bzl", "supabase_migrations")
@@ -77,15 +77,15 @@ supabase_migrations = use_repo_rule("//build:extensions.bzl", "supabase_migratio
 supabase_migrations(
     name = "supabase_migrations",
     path_prefix = "migrations/db/migrations",
-    sha256 = "f3eec4aff82625f66e382662c2ca03d470baac15433e4a2ee7c72efc588ec900",
-    version = "15.8.1.131",
+    sha256 = "2fbd23f511c296f4542e5298bf9e0a5f4cc80c636e0432f084f976cff21ecf02",
+    version = "15.14.1.101",
 )
 
 supabase_migrations(
     name = "supabase_init_scripts",
     path_prefix = "migrations/db/init-scripts",
-    sha256 = "f3eec4aff82625f66e382662c2ca03d470baac15433e4a2ee7c72efc588ec900",
-    version = "15.8.1.131",
+    sha256 = "2fbd23f511c296f4542e5298bf9e0a5f4cc80c636e0432f084f976cff21ecf02",
+    version = "15.14.1.101",
 )
 
 use_repo(

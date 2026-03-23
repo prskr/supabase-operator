@@ -1,4 +1,4 @@
 common --experimental_isolated_extension_usages
-run --run_in_cwd
+# run --run_in_cwd
 
 try-import %workspace%/user.bazelrc

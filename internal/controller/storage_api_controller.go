@@ -64,7 +64,7 @@ func (r *StorageApiReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	logger.Info("Reconciling Storage API")
 
-	if err := r.reconcileStorageApiDeployment(ctx, &storage); err != nil {
+	if err := r.reconcileStorageAPIDeployment(ctx, &storage); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -86,14 +86,14 @@ func (r *StorageApiReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *StorageApiReconciler) reconcileStorageApiDeployment(
+func (r *StorageApiReconciler) reconcileStorageAPIDeployment(
 	ctx context.Context,
 	storage *supabasev1alpha1.Storage,
 ) error {
 	var (
 		serviceCfg           = supabase.ServiceConfig.Storage
 		apiSpec              = storage.Spec.Api
-		storageApiDeployment = &appsv1.Deployment{
+		storageAPIDeployment = &appsv1.Deployment{
 			ObjectMeta: serviceCfg.ObjectMeta(storage),
 		}
 
@@ -132,13 +132,13 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 		s3ProtocolSecret.Data[apiSpec.S3Protocol.CredentialsSecretRef.AccessSecretKeyKey],
 	))
 
-	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, storageApiDeployment, func() error {
-		storageApiDeployment.Labels = apiSpec.WorkloadSpec.MergeLabels(
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, storageAPIDeployment, func() error {
+		storageAPIDeployment.Labels = apiSpec.WorkloadSpec.MergeLabels(
 			objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.Storage.Tag),
 			storage.Labels,
 		)
 
-		storagApiEnv := []corev1.EnvVar{
+		storagAPIEnv := []corev1.EnvVar{
 			{
 				Name: "DB_USERNAME",
 				ValueFrom: &corev1.EnvVarSource{
@@ -167,30 +167,31 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 			serviceCfg.EnvKeys.JwtJwks.Var(apiSpec.JwtAuth.JwksKeySelector()),
 			serviceCfg.EnvKeys.S3ProtocolPrefix.Var(),
 			serviceCfg.EnvKeys.S3ProtocolAllowForwardedHeader.Var(apiSpec.S3Protocol.AllowForwardedHeader),
-			serviceCfg.EnvKeys.S3ProtocolAccessKeyId.Var(apiSpec.S3Protocol.CredentialsSecretRef.AccessKeyIdSelector()),
+			serviceCfg.EnvKeys.S3ProtocolAccessKeyID.Var(apiSpec.S3Protocol.CredentialsSecretRef.AccessKeyIdSelector()),
 			serviceCfg.EnvKeys.S3ProtocolAccessKeySecret.Var(apiSpec.S3Protocol.CredentialsSecretRef.AccessSecretKeySelector()),
-			serviceCfg.EnvKeys.TusUrlPath.Var(),
+			serviceCfg.EnvKeys.TusURLPath.Var(),
 			serviceCfg.EnvKeys.FileSizeLimit.Var(apiSpec.FileSizeLimit),
 			serviceCfg.EnvKeys.UploadFileSizeLimit.Var(apiSpec.FileSizeLimit),
 			serviceCfg.EnvKeys.UploadFileSizeLimitStandard.Var(apiSpec.FileSizeLimit),
 			serviceCfg.EnvKeys.AnonKey.Var(apiSpec.JwtAuth.AnonKeySelector()),
 			// TODO: https://github.com/supabase/storage-api/issues/55
-			serviceCfg.EnvKeys.FileStorageRegion.Var(),
+			serviceCfg.EnvKeys.FileStorageRegion.Var(*apiSpec.Region),
+			serviceCfg.EnvKeys.TenantID.Var(*apiSpec.TenantID),
 		}
 
 		if storage.Spec.ImageProxy != nil && storage.Spec.ImageProxy.Enable {
-			storagApiEnv = append(storagApiEnv, serviceCfg.EnvKeys.ImgProxyURL.Var(fmt.Sprintf("http://%s.%s.svc:%d", supabase.ServiceConfig.ImgProxy.ObjectName(storage), storage.Namespace, supabase.ServiceConfig.ImgProxy.Defaults.ApiPort)))
+			storagAPIEnv = append(storagAPIEnv, serviceCfg.EnvKeys.ImgProxyURL.Var(fmt.Sprintf("http://%s.%s.svc:%d", supabase.ServiceConfig.ImgProxy.ObjectName(storage), storage.Namespace, supabase.ServiceConfig.ImgProxy.Defaults.ApiPort)))
 		}
 
-		if storageApiDeployment.CreationTimestamp.IsZero() {
-			storageApiDeployment.Spec.Selector = &metav1.LabelSelector{
+		if storageAPIDeployment.CreationTimestamp.IsZero() {
+			storageAPIDeployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: selectorLabels(storage, serviceCfg.Name),
 			}
 		}
 
-		storageApiDeployment.Spec.Replicas = apiSpec.WorkloadSpec.ReplicaCount()
+		storageAPIDeployment.Spec.Replicas = apiSpec.WorkloadSpec.ReplicaCount()
 
-		storageApiDeployment.Spec.Template = corev1.PodTemplateSpec{
+		storageAPIDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					fmt.Sprintf("%s/%s", supabasev1alpha1.GroupVersion.Group, "jwt-hash"):            jwtStateHash,
@@ -205,10 +206,10 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 					Name:            "supabase-storage",
 					Image:           apiSpec.WorkloadSpec.Image(supabase.Images.Storage.String()),
 					ImagePullPolicy: apiSpec.WorkloadSpec.ImagePullPolicy(),
-					Env:             apiSpec.WorkloadSpec.MergeEnv(append(storagApiEnv, slices.Concat(apiSpec.FileBackend.Env(), apiSpec.S3Backend.Env())...)),
+					Env:             apiSpec.WorkloadSpec.MergeEnv(append(storagAPIEnv, slices.Concat(apiSpec.FileBackend.Env(), apiSpec.S3Backend.Env())...)),
 					Ports: []corev1.ContainerPort{{
-						Name:          serviceCfg.Defaults.ApiPortName,
-						ContainerPort: serviceCfg.Defaults.ApiPort,
+						Name:          serviceCfg.Defaults.APIPortName,
+						ContainerPort: serviceCfg.Defaults.APIPort,
 						Protocol:      corev1.ProtocolTCP,
 					}},
 					SecurityContext: apiSpec.WorkloadSpec.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
@@ -227,7 +228,7 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path: serviceCfg.LivenessProbePath,
-								Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.ApiPort},
+								Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.APIPort},
 							},
 						},
 					},
@@ -238,7 +239,7 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path: serviceCfg.LivenessProbePath,
-								Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.ApiPort},
+								Port: intstr.IntOrString{IntVal: serviceCfg.Defaults.APIPort},
 							},
 						},
 					},
@@ -255,7 +256,7 @@ func (r *StorageApiReconciler) reconcileStorageApiDeployment(
 			},
 		}
 
-		if err := controllerutil.SetControllerReference(storage, storageApiDeployment, r.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(storage, storageAPIDeployment, r.Scheme); err != nil {
 			return err
 		}
 
@@ -290,11 +291,11 @@ func (r *StorageApiReconciler) reconcileStorageApiService(
 			Selector: selectorLabels(storage, serviceCfg.Name),
 			Ports: []corev1.ServicePort{
 				{
-					Name:        serviceCfg.Defaults.ApiPortName,
+					Name:        serviceCfg.Defaults.APIPortName,
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: ptrOf("http"),
-					Port:        serviceCfg.Defaults.ApiPort,
-					TargetPort:  intstr.IntOrString{IntVal: serviceCfg.Defaults.ApiPort},
+					Port:        serviceCfg.Defaults.APIPort,
+					TargetPort:  intstr.IntOrString{IntVal: serviceCfg.Defaults.APIPort},
 				},
 			},
 		}

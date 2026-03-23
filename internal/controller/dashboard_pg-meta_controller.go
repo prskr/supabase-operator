@@ -18,6 +18,8 @@ package controller
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -51,6 +53,10 @@ func (r *DashboardPGMetaReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	if err := r.reconcilePGMetaCryptoKeySecret(ctx, &dashboard); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if err := r.reconcilePGMetaDeployment(ctx, &dashboard); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -68,8 +74,46 @@ func (r *DashboardPGMetaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&supabasev1alpha1.Dashboard{}).
 		Owns(new(appsv1.Deployment)).
 		Owns(new(corev1.Service)).
+		Owns(new(corev1.Secret)).
 		Named("dashboard-pgmeta").
 		Complete(r)
+}
+
+func (r *DashboardPGMetaReconciler) reconcilePGMetaCryptoKeySecret(
+	ctx context.Context,
+	dashboard *supabasev1alpha1.Dashboard,
+) error {
+	var (
+		serviceCfg   = supabase.ServiceConfig.PGMeta
+		cryptoSecret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      serviceCfg.CryptoKeySecretName(dashboard),
+				Namespace: dashboard.Namespace,
+			},
+		}
+	)
+
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, cryptoSecret, func() error {
+		if cryptoSecret.Data == nil {
+			cryptoSecret.Data = make(map[string][]byte)
+		}
+
+		if _, ok := cryptoSecret.Data[serviceCfg.Defaults.CryptoKeyKey]; !ok {
+			secret := make([]byte, serviceCfg.Defaults.CryptoKeyLength)
+			if _, err := rand.Read(secret); err != nil {
+				return err
+			}
+			cryptoSecret.Data[serviceCfg.Defaults.CryptoKeyKey] = []byte(hex.EncodeToString(secret))
+		}
+
+		if err := controllerutil.SetControllerReference(dashboard, cryptoSecret, r.Scheme); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
 }
 
 func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
@@ -119,6 +163,7 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
 			serviceCfg.EnvKeys.DBPort.Var(dashboard.Spec.DBSpec.Port),
 			serviceCfg.EnvKeys.DBUser.Var(dashboard.Spec.DBSpec.UserRef()),
 			serviceCfg.EnvKeys.DBPassword.Var(dashboard.Spec.DBSpec.PasswordRef()),
+			serviceCfg.EnvKeys.CryptoKey.Var(serviceCfg.CryptoKeySelector(dashboard)),
 		}
 
 		pgMetaDeployment.Spec.Template = corev1.PodTemplateSpec{

@@ -16,6 +16,11 @@ limitations under the License.
 
 package supabase
 
+import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 type pgMetaEnvKeys struct {
 	APIPort    intEnv[int32]
 	DBHost     stringEnv
@@ -23,32 +28,57 @@ type pgMetaEnvKeys struct {
 	DBName     stringEnv
 	DBUser     secretEnv
 	DBPassword secretEnv
+	CryptoKey  secretEnv
 }
 
 type pgMetaDefaults struct {
-	APIPort int32
-	DBPort  string
-	NodeUID int64
-	NodeGID int64
+	APIPort         int32
+	DBPort          string
+	NodeUID         int64
+	NodeGID         int64
+	CryptoKeyKey    string
+	CryptoKeyLength int
 }
 
-func pgMetaServiceConfig() serviceConfig[pgMetaEnvKeys, pgMetaDefaults] {
-	return serviceConfig[pgMetaEnvKeys, pgMetaDefaults]{
-		Name:              "pg-meta",
-		LivenessProbePath: "/health",
-		EnvKeys: pgMetaEnvKeys{
-			APIPort:    "PG_META_PORT",
-			DBHost:     "PG_META_DB_HOST",
-			DBPort:     "PG_META_DB_PORT",
-			DBName:     "PG_META_DB_NAME",
-			DBUser:     "PG_META_DB_USER",
-			DBPassword: "PG_META_DB_PASSWORD",
+type pgMetaConfig struct {
+	serviceConfig[pgMetaEnvKeys, pgMetaDefaults]
+}
+
+func (c pgMetaConfig) CryptoKeySecretName(obj metav1.Object) string {
+	return c.ObjectName(obj) + "-crypto"
+}
+
+func (c pgMetaConfig) CryptoKeySelector(obj metav1.Object) *corev1.SecretKeySelector {
+	return &corev1.SecretKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: c.CryptoKeySecretName(obj),
 		},
-		Defaults: pgMetaDefaults{
-			APIPort: 8080,
-			DBPort:  "5432",
-			NodeUID: 1000,
-			NodeGID: 1000,
+		Key: c.Defaults.CryptoKeyKey,
+	}
+}
+
+func pgMetaServiceConfig() pgMetaConfig {
+	return pgMetaConfig{
+		serviceConfig: serviceConfig[pgMetaEnvKeys, pgMetaDefaults]{
+			Name:              "pg-meta",
+			LivenessProbePath: "/health",
+			EnvKeys: pgMetaEnvKeys{
+				APIPort:    "PG_META_PORT",
+				DBHost:     "PG_META_DB_HOST",
+				DBPort:     "PG_META_DB_PORT",
+				DBName:     "PG_META_DB_NAME",
+				DBUser:     "PG_META_DB_USER",
+				DBPassword: "PG_META_DB_PASSWORD",
+				CryptoKey:  "PG_META_CRYPTO_KEY",
+			},
+			Defaults: pgMetaDefaults{
+				APIPort:         8080,
+				DBPort:          "5432",
+				NodeUID:         1000,
+				NodeGID:         1000,
+				CryptoKeyKey:    "key",
+				CryptoKeyLength: 32,
+			},
 		},
 	}
 }

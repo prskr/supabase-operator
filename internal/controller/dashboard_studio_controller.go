@@ -72,6 +72,7 @@ func (r *DashboardStudioReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&supabasev1alpha1.Dashboard{}).
 		Owns(new(appsv1.Deployment)).
 		Owns(new(corev1.Service)).
+		Owns(new(corev1.Secret)).
 		Named("dashboard-studio").
 		Complete(r)
 }
@@ -133,6 +134,7 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 			serviceCfg.EnvKeys.AnonKey.Var(studioSpec.JWT.AnonKeySelector()),
 			serviceCfg.EnvKeys.ServiceKey.Var(studioSpec.JWT.ServiceKeySelector()),
 			serviceCfg.EnvKeys.LogsEnabled.Var(),
+			serviceCfg.EnvKeys.MetaCryptoKey.Var(supabase.ServiceConfig.PGMeta.CryptoKeySelector(dashboard)),
 		}
 
 		if studioSpec.AI != nil {

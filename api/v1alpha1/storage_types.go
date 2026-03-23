@@ -111,7 +111,6 @@ func (s *FileBackendSpec) Env() []corev1.EnvVar {
 
 	return []corev1.EnvVar{
 		svcCfg.EnvKeys.StorageBackend.Var("file"),
-		svcCfg.EnvKeys.TenantID.Var(),
 		svcCfg.EnvKeys.FileStorageBackendPath.Var(s.Path),
 		svcCfg.EnvKeys.StorageS3Region.Var("local"),
 		svcCfg.EnvKeys.StorageS3Bucket.Var("stub"),
@@ -147,7 +146,7 @@ func (s *S3BackendSpec) Env() []corev1.EnvVar {
 		svcCfg.EnvKeys.StorageS3ForcePathStyle.Var(s.ForcePathStyle),
 		svcCfg.EnvKeys.StorageS3Bucket.Var(s.Bucket),
 		svcCfg.EnvKeys.StorageS3Region.Var(s.Region),
-		svcCfg.EnvKeys.StorageS3AccessKeyId.Var(s.CredentialsSecretRef.AccessKeyIdSelector()),
+		svcCfg.EnvKeys.StorageS3AccessKeyID.Var(s.CredentialsSecretRef.AccessKeyIdSelector()),
 		svcCfg.EnvKeys.StorageS3AccessSecretKey.Var(s.CredentialsSecretRef.AccessSecretKeySelector()),
 	}
 }
@@ -172,6 +171,10 @@ func (s *UploadTempSpec) VolumeSource() *corev1.EmptyDirVolumeSource {
 }
 
 type StorageApiSpec struct {
+	// +kubebuilder:default="stub"
+	TenantID *string `json:"tenantId,omitempty"`
+	// +kubebuilder:default="stub"
+	Region    *string        `json:"region,omitempty"`
 	S3Backend *S3BackendSpec `json:"s3Backend,omitempty"`
 	// FileBackend - configure the file backend
 	// either S3 or file backend **MUST** be configured

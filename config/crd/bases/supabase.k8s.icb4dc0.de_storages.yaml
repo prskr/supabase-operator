@@ -125,6 +125,9 @@ spec:
                           service JWT from
                         type: string
                     type: object
+                  region:
+                    default: stub
+                    type: string
                   s3:
                     description: S3Protocol - Configure S3 access to the Storage API
                       allowing clients to use any S3 client
@@ -196,6 +199,9 @@ spec:
                     - endpoint
                     - region
                     type: object
+                  tenantId:
+                    default: stub
+                    type: string
                   uploadTemp:
                     description: UploadTemp - configure the emptyDir for storing intermediate
                       files during uploads

@@ -30,7 +30,7 @@ patches:
 configurations:
 - kustomizeconfig/cnpg-cluster.yaml
 images:
-- digest: sha256:8414e945d49f539769622e8974eb402275de28a026129f90c3e7a82399b423f7
+- digest: sha256:66d1164641a11f267340ecda76e380f3a2f48ca7991c3c26e5cc323526835a16
   name: controller
   newName: localhost:5005/supabase-operator
   newTag: latest

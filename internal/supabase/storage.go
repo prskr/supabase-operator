@@ -16,6 +16,8 @@ limitations under the License.
 
 package supabase
 
+import "strconv"
+
 type storageEnvApiKeys struct {
 	AnonKey                        secretEnv
 	ServiceKey                     secretEnv
@@ -27,27 +29,28 @@ type storageEnvApiKeys struct {
 	UploadFileSizeLimitStandard    intEnv[uint64]
 	StorageBackend                 stringEnv
 	FileStorageBackendPath         stringEnv
-	FileStorageRegion              fixedEnv
-	TenantID                       fixedEnv
+	FileStorageRegion              stringEnv
+	TenantID                       stringEnv
 	StorageS3Bucket                stringEnv
 	StorageS3MaxSockets            intEnv[uint8]
 	StorageS3Endpoint              stringEnv
 	StorageS3ForcePathStyle        boolEnv
 	StorageS3Region                stringEnv
-	StorageS3AccessKeyId           secretEnv
+	StorageS3AccessKeyID           secretEnv
 	StorageS3AccessSecretKey       secretEnv
 	EnableImaageTransformation     boolEnv
 	ImgProxyURL                    stringEnv
-	TusUrlPath                     fixedEnv
-	S3ProtocolAccessKeyId          secretEnv
+	TusURLPath                     fixedEnv
+	S3ProtocolAccessKeyID          secretEnv
 	S3ProtocolAccessKeySecret      secretEnv
 	S3ProtocolAllowForwardedHeader boolEnv
 	S3ProtocolPrefix               fixedEnv
+	AllowForwardedPathHeader       fixedEnv
 }
 
 type storageApiDefaults struct {
-	ApiPort     int32
-	ApiPortName string
+	APIPort     int32
+	APIPortName string
 	UID, GID    int64
 }
 
@@ -62,30 +65,31 @@ func storageServiceConfig() serviceConfig[storageEnvApiKeys, storageApiDefaults]
 			JwtJwks:                        "AUTH_JWT_JWKS",
 			StorageBackend:                 "STORAGE_BACKEND",
 			FileStorageBackendPath:         "FILE_STORAGE_BACKEND_PATH",
-			FileStorageRegion:              fixedEnvOf("REGION", "stub"),
+			FileStorageRegion:              "REGION",
 			DatabaseDSN:                    "DATABASE_URL",
 			FileSizeLimit:                  "FILE_SIZE_LIMIT",
 			UploadFileSizeLimit:            "UPLOAD_FILE_SIZE_LIMIT",
 			UploadFileSizeLimitStandard:    "UPLOAD_FILE_SIZE_LIMIT_STANDARD",
-			TenantID:                       fixedEnvOf("TENANT_ID", "stub"),
+			TenantID:                       "TENANT_ID",
 			StorageS3Bucket:                "STORAGE_S3_BUCKET",
 			StorageS3MaxSockets:            "STORAGE_S3_MAX_SOCKETS",
 			StorageS3Endpoint:              "STORAGE_S3_ENDPOINT",
 			StorageS3ForcePathStyle:        "STORAGE_S3_FORCE_PATH_STYLE",
 			StorageS3Region:                "STORAGE_S3_REGION",
-			StorageS3AccessKeyId:           "AWS_ACCESS_KEY_ID",
+			StorageS3AccessKeyID:           "AWS_ACCESS_KEY_ID",
 			StorageS3AccessSecretKey:       "AWS_SECRET_ACCESS_KEY",
 			EnableImaageTransformation:     "ENABLE_IMAGE_TRANSFORMATION",
 			ImgProxyURL:                    "IMGPROXY_URL",
-			TusUrlPath:                     fixedEnvOf("TUS_URL_PATH", "/storage/v1/upload/resumable"),
-			S3ProtocolAccessKeyId:          "S3_PROTOCOL_ACCESS_KEY_ID",
+			TusURLPath:                     fixedEnvOf("TUS_URL_PATH", "/storage/v1/upload/resumable"),
+			S3ProtocolAccessKeyID:          "S3_PROTOCOL_ACCESS_KEY_ID",
 			S3ProtocolAccessKeySecret:      "S3_PROTOCOL_ACCESS_KEY_SECRET",
 			S3ProtocolPrefix:               fixedEnvOf("S3_PROTOCOL_PREFIX", "/storage/v1"),
 			S3ProtocolAllowForwardedHeader: "S3_ALLOW_FORWARDED_HEADER",
+			AllowForwardedPathHeader:       fixedEnvOf("REQUEST_ALLOW_X_FORWARDED_PATH", strconv.FormatBool(true)),
 		},
 		Defaults: storageApiDefaults{
-			ApiPort:     5000,
-			ApiPortName: "api",
+			APIPort:     5000,
+			APIPortName: "api",
 			UID:         1000,
 			GID:         1000,
 		},

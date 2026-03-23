@@ -38,7 +38,7 @@ func (c *StorageApiCluster) Cluster(instance string) []*clusterv3.Cluster {
 	serviceCfg := supabase.ServiceConfig.Storage
 
 	return []*clusterv3.Cluster{
-		c.ServiceCluster.Cluster(fmt.Sprintf("%s@%s", serviceCfg.Name, instance), uint32(serviceCfg.Defaults.ApiPort)),
+		c.ServiceCluster.Cluster(fmt.Sprintf("%s@%s", serviceCfg.Name, instance), uint32(serviceCfg.Defaults.APIPort)),
 	}
 }
 

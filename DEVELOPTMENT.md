@@ -53,8 +53,10 @@ When starting development, you might need to run the command twice to ensure tha
 To update the generated Go code and the CRD manifests, run:
 
 ```shell
-bazel run //dev:generate_crd_code
+bazel run --run_in_cwd //dev:generate_crd_code
 ```
+
+**Note:** the `--run_in_cwd` flag is mandatory to ensure that the generated code is actually written to the working tree, make sure to run the command in the repo-root
 
 This will invoke the `controller-gen` CLI to generate all depending code
 

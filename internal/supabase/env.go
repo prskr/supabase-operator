@@ -52,7 +52,7 @@ func (cfg serviceConfig[TEnvKeys, TDefaults]) ObjectMeta(obj metav1.Object) meta
 var ServiceConfig = struct {
 	Postgrest serviceConfig[postgrestEnvKeys, postgrestConfigDefaults]
 	Auth      serviceConfig[authEnvKeys, authConfigDefaults]
-	PGMeta    serviceConfig[pgMetaEnvKeys, pgMetaDefaults]
+	PGMeta    pgMetaConfig
 	Studio    serviceConfig[studioEnvKeys, studioDefaults]
 	Storage   serviceConfig[storageEnvApiKeys, storageApiDefaults]
 	ImgProxy  serviceConfig[imgProxyEnvKeys, imgProxyDefaults]
