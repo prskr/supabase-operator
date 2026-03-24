@@ -23,10 +23,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
@@ -56,14 +54,10 @@ type StorageCustomValidator struct {
 	client.Client
 }
 
-var _ webhook.CustomValidator = &StorageCustomValidator{}
+var _ admission.Validator[*supabasev1alpha1.Storage] = &StorageCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Storage.
-func (v *StorageCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
-	storage, ok := obj.(*supabasev1alpha1.Storage)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a Storage object but got %T", errObjectTypeMismatch, obj)
-	}
+func (v *StorageCustomValidator) ValidateCreate(ctx context.Context, storage *supabasev1alpha1.Storage) (warnings admission.Warnings, err error) {
 	storagelog.Info("Validation for Storage upon creation", "name", storage.GetName())
 
 	if ws, err := v.validateStorageAPI(ctx, storage); err != nil {
@@ -76,14 +70,10 @@ func (v *StorageCustomValidator) ValidateCreate(ctx context.Context, obj runtime
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Storage.
-func (v *StorageCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (warnings admission.Warnings, err error) {
-	storage, ok := newObj.(*supabasev1alpha1.Storage)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a Storage object for the newObj but got %T", errObjectTypeMismatch, newObj)
-	}
-	storagelog.Info("Validation for Storage upon update", "name", storage.GetName())
+func (v *StorageCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj *supabasev1alpha1.Storage) (warnings admission.Warnings, err error) {
+	storagelog.Info("Validation for Storage upon update", "name", newObj.GetName())
 
-	if ws, err := v.validateStorageAPI(ctx, storage); err != nil {
+	if ws, err := v.validateStorageAPI(ctx, newObj); err != nil {
 		return ws, err
 	} else {
 		warnings = append(warnings, ws...)
@@ -93,11 +83,7 @@ func (v *StorageCustomValidator) ValidateUpdate(ctx context.Context, oldObj, new
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Storage.
-func (v *StorageCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	storage, ok := obj.(*supabasev1alpha1.Storage)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a Storage object but got %T", errObjectTypeMismatch, obj)
-	}
+func (v *StorageCustomValidator) ValidateDelete(ctx context.Context, storage *supabasev1alpha1.Storage) (admission.Warnings, error) {
 	storagelog.Info("Validation for Storage upon deletion", "name", storage.GetName())
 
 	return nil, nil

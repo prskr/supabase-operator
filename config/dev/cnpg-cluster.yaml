@@ -1,4 +1,3 @@
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -44,18 +43,16 @@ metadata:
   namespace: supabase-demo
 spec:
   instances: 1
-  imageName: registry.icb4dc0.de/supabase-operator/postgres:17.5
+  imageName: ghcr.io/prskr/supabase-operator/postgres:17.5
   imagePullPolicy: Always
   postgresUID: 26
   postgresGID: 102
-
   bootstrap:
     initdb:
       database: app
       owner: supabase_admin
       postInitSQL:
         - drop publication if exists supabase_realtime;
-
   postgresql:
     shared_preload_libraries:
       - pg_stat_statements
@@ -73,7 +70,6 @@ spec:
       pgsodium.getkey_script: /projected/bin/pgsodium_getkey.sh
       cron.database_name: app
       auto_explain.log_min_duration: 10s
-
   projectedVolumeTemplate:
     sources:
       - configMap:
@@ -89,7 +85,6 @@ spec:
         secretKeyRef:
           name: pgsodium-key
           key: key
-
   managed:
     roles:
       - name: supabase_admin

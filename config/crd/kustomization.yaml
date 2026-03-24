@@ -7,7 +7,6 @@ resources:
   - bases/supabase.k8s.icb4dc0.de_dashboards.yaml
   - bases/supabase.k8s.icb4dc0.de_storages.yaml
   # +kubebuilder:scaffold:crdkustomizeresource
-
 patches:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD

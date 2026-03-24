@@ -1,4 +1,3 @@
----
 apiVersion: supabase.k8s.icb4dc0.de/v1alpha1
 kind: Dashboard
 metadata:

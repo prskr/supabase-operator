@@ -1,7 +1,5 @@
 ## Append samples of your project ##
-
 namespace: supabase-demo
-
 resources:
   - namespace.yaml
   - supabase_v1alpha1_core.yaml

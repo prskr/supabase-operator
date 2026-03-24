@@ -7,21 +7,21 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: apigateway-editor-role
 rules:
-- apiGroups:
-  - supabase.k8s.icb4dc0.de
-  resources:
-  - apigateways
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - supabase.k8s.icb4dc0.de
-  resources:
-  - apigateways/status
-  verbs:
-  - get
+  - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - apigateways
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - apigateways/status
+    verbs:
+      - get

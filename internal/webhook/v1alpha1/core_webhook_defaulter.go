@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 	"github.com/prskr/supabase-operator/internal/jwk"
@@ -49,15 +49,10 @@ type CoreCustomDefaulter struct {
 	Scheme *runtime.Scheme
 }
 
-var _ webhook.CustomDefaulter = &CoreCustomDefaulter{}
+var _ admission.Defaulter[*supabasev1alpha1.Core] = &CoreCustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Core.
-func (d *CoreCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
-	core, ok := obj.(*supabasev1alpha1.Core)
-
-	if !ok {
-		return fmt.Errorf("%w: expected an Core object but got %T", errObjectTypeMismatch, obj)
-	}
+func (d *CoreCustomDefaulter) Default(ctx context.Context, core *supabasev1alpha1.Core) error {
 	corelog.Info("Defaulting for Core", "name", core.GetName())
 
 	if err := d.defaultJWT(ctx, core); err != nil {

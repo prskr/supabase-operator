@@ -7,17 +7,17 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: dashboard-viewer-role
 rules:
-- apiGroups:
-  - supabase.k8s.icb4dc0.de
-  resources:
-  - dashboards
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - supabase.k8s.icb4dc0.de
-  resources:
-  - dashboards/status
-  verbs:
-  - get
+  - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - dashboards
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - dashboards/status
+    verbs:
+      - get

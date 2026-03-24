@@ -20,9 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 )
@@ -38,15 +37,10 @@ type StorageCustomDefaulter struct {
 	client.Client
 }
 
-var _ webhook.CustomDefaulter = &StorageCustomDefaulter{}
+var _ admission.Defaulter[*supabasev1alpha1.Storage] = &StorageCustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Storage.
-func (d *StorageCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
-	storage, ok := obj.(*supabasev1alpha1.Storage)
-
-	if !ok {
-		return fmt.Errorf("%w: expected an Storage object but got %T", errObjectTypeMismatch, obj)
-	}
+func (d *StorageCustomDefaulter) Default(ctx context.Context, storage *supabasev1alpha1.Storage) error {
 	storagelog.Info("Defaulting for Storage", "name", storage.GetName())
 
 	d.defaultS3Protocol(storage)

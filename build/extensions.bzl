@@ -1,3 +1,5 @@
+"""Rules for fetching Supabase docker-compose.yml and SQL migrations"""
+
 def _supbase_compose_impl(repository_ctx):
     repository_ctx.download(
         "https://raw.githubusercontent.com/supabase/supabase/refs/tags/{}/docker/docker-compose.yml".format(repository_ctx.attr.version),

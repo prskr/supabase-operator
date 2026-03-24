@@ -1,3 +1,5 @@
+"""Rules for applying Kubernetes manifests using kubectl."""
+
 def _kubectl_apply_impl(ctx):
     script = ctx.actions.declare_file("kubectl_apply.sh")
     script_content = """\

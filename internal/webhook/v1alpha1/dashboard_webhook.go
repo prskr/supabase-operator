@@ -18,11 +18,8 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
@@ -43,15 +40,10 @@ type DashboardCustomDefaulter struct {
 	// TODO(user): Add more fields as needed for defaulting
 }
 
-var _ webhook.CustomDefaulter = &DashboardCustomDefaulter{}
+var _ admission.Defaulter[*supabasev1alpha1.Dashboard] = &DashboardCustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Dashboard.
-func (d *DashboardCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
-	dashboard, ok := obj.(*supabasev1alpha1.Dashboard)
-
-	if !ok {
-		return fmt.Errorf("%w: expected an Dashboard object but got %T", errObjectTypeMismatch, obj)
-	}
+func (d *DashboardCustomDefaulter) Default(ctx context.Context, dashboard *supabasev1alpha1.Dashboard) error {
 	dashboardlog.Info("Defaulting for Dashboard", "name", dashboard.GetName())
 
 	// TODO(user): fill in your defaulting logic.
@@ -72,14 +64,10 @@ type DashboardCustomValidator struct {
 	// TODO(user): Add more fields as needed for validation
 }
 
-var _ webhook.CustomValidator = &DashboardCustomValidator{}
+var _ admission.Validator[*supabasev1alpha1.Dashboard] = &DashboardCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Dashboard.
-func (v *DashboardCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	dashboard, ok := obj.(*supabasev1alpha1.Dashboard)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a Dashboard object but got %T", errObjectTypeMismatch, obj)
-	}
+func (v *DashboardCustomValidator) ValidateCreate(ctx context.Context, dashboard *supabasev1alpha1.Dashboard) (admission.Warnings, error) {
 	dashboardlog.Info("Validation for Dashboard upon creation", "name", dashboard.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
@@ -88,12 +76,8 @@ func (v *DashboardCustomValidator) ValidateCreate(ctx context.Context, obj runti
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Dashboard.
-func (v *DashboardCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	dashboard, ok := newObj.(*supabasev1alpha1.Dashboard)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a Dashboard object for the newObj but got %T", errObjectTypeMismatch, newObj)
-	}
-	dashboardlog.Info("Validation for Dashboard upon update", "name", dashboard.GetName())
+func (v *DashboardCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj *supabasev1alpha1.Dashboard) (admission.Warnings, error) {
+	dashboardlog.Info("Validation for Dashboard upon update", "name", newObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
 
@@ -101,11 +85,7 @@ func (v *DashboardCustomValidator) ValidateUpdate(ctx context.Context, oldObj, n
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Dashboard.
-func (v *DashboardCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	dashboard, ok := obj.(*supabasev1alpha1.Dashboard)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a Dashboard object but got %T", errObjectTypeMismatch, obj)
-	}
+func (v *DashboardCustomValidator) ValidateDelete(ctx context.Context, dashboard *supabasev1alpha1.Dashboard) (admission.Warnings, error) {
 	dashboardlog.Info("Validation for Dashboard upon deletion", "name", dashboard.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.

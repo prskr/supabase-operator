@@ -22,11 +22,9 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
@@ -54,14 +52,10 @@ type CoreCustomValidator struct {
 	client.Client
 }
 
-var _ webhook.CustomValidator = &CoreCustomValidator{}
+var _ admission.Validator[*supabasev1alpha1.Core] = &CoreCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Core.
-func (v *CoreCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	core, ok := obj.(*supabasev1alpha1.Core)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a Core object but got %T", errObjectTypeMismatch, obj)
-	}
+func (v *CoreCustomValidator) ValidateCreate(ctx context.Context, core *supabasev1alpha1.Core) (admission.Warnings, error) {
 	corelog.Info("Validation for Core upon creation", "name", core.GetName())
 
 	warns, err := v.validateDb(ctx, core)
@@ -73,14 +67,10 @@ func (v *CoreCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Ob
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Core.
-func (v *CoreCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	core, ok := newObj.(*supabasev1alpha1.Core)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a Core object for the newObj but got %T", errObjectTypeMismatch, newObj)
-	}
-	corelog.Info("Validation for Core upon update", "name", core.GetName())
+func (v *CoreCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj *supabasev1alpha1.Core) (admission.Warnings, error) {
+	corelog.Info("Validation for Core upon update", "name", newObj.GetName())
 
-	warns, err := v.validateDb(ctx, core)
+	warns, err := v.validateDb(ctx, newObj)
 	if err != nil {
 		return nil, err
 	}
@@ -89,11 +79,7 @@ func (v *CoreCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Core.
-func (v *CoreCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	core, ok := obj.(*supabasev1alpha1.Core)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a Core object but got %T", errObjectTypeMismatch, obj)
-	}
+func (v *CoreCustomValidator) ValidateDelete(ctx context.Context, core *supabasev1alpha1.Core) (admission.Warnings, error) {
 	corelog.Info("Validation for Core upon deletion", "name", core.GetName())
 
 	warns, err := v.validateDb(ctx, core)

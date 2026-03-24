@@ -5,6 +5,7 @@ module(
 )
 
 bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+bazel_dep(name = "aspect_rules_lint", version = "2.3.0")
 bazel_dep(name = "bazel_env.bzl", version = "0.7.1")
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2")
 bazel_dep(name = "gazelle", version = "0.47.0")
@@ -90,7 +91,6 @@ supabase_migrations(
 
 use_repo(
     go_deps,
-    "cc_mvdan_gofumpt",
     "com_github_alecthomas_assert_v2",
     "com_github_alecthomas_kong",
     "com_github_elastic_crd_ref_docs",

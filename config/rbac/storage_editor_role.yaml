@@ -4,7 +4,6 @@
 # Grants permissions to create, update, and delete resources within the supabase.k8s.icb4dc0.de.
 # This role is intended for users who need to manage these resources
 # but should not control RBAC or manage permissions for others.
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -13,21 +12,21 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: storage-editor-role
 rules:
-- apiGroups:
-  - supabase.k8s.icb4dc0.de
-  resources:
-  - storages
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - supabase.k8s.icb4dc0.de
-  resources:
-  - storages/status
-  verbs:
-  - get
+  - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - storages
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - storages/status
+    verbs:
+      - get

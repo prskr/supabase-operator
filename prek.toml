@@ -1,0 +1,27 @@
+[[repos]]
+repo = "https://github.com/pre-commit/pre-commit-hooks"
+rev = "v6.0.0"
+hooks = [
+  { id = "check-yaml", args = ["--allow-multiple-documents"] },
+  { id = "end-of-file-fixer" },
+  { id = "check-added-large-files" },
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+  {
+    id = "buildifier",
+    name = "Buildifier",
+    language = "system",
+    entry = "bazel run //:buildifier",
+    files = "BUILD.bazel",
+  },
+  {
+    id = "aspect_rules_lint",
+    name = "Format",
+    language = "system",
+    entry = "bazel run //:format",
+    files = ".*",
+  },
+]

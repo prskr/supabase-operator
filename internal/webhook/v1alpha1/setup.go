@@ -28,19 +28,18 @@ type WebhookConfig struct {
 
 // SetupAPIGatewayWebhookWithManager registers the webhook for APIGateway in the manager.
 func SetupAPIGatewayWebhookWithManager(mgr ctrl.Manager, cfg WebhookConfig) error {
-	mgr.GetEventRecorderFor("apigateway-defaulter")
-	return ctrl.NewWebhookManagedBy(mgr).For(&supabasev1alpha1.APIGateway{}).
-		WithValidator(&APIGatewayCustomValidator{}).
+	return ctrl.NewWebhookManagedBy(mgr, new(supabasev1alpha1.APIGateway)).
+		WithValidator(new(APIGatewayCustomValidator)).
 		WithDefaulter(&APIGatewayCustomDefaulter{
 			CurrentNamespace: cfg.CurrentNamespace,
-			Recorder:         mgr.GetEventRecorderFor("apigateway-defaulter"),
+			Recorder:         mgr.GetEventRecorder("apigateway-defaulter"),
 		}).
 		Complete()
 }
 
 // SetupCoreWebhookWithManager registers the webhook for Core in the manager.
 func SetupCoreWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&supabasev1alpha1.Core{}).
+	return ctrl.NewWebhookManagedBy(mgr, new(supabasev1alpha1.Core)).
 		WithValidator(&CoreCustomValidator{Client: mgr.GetClient()}).
 		WithDefaulter(&CoreCustomDefaulter{Client: mgr.GetClient(), Scheme: mgr.GetScheme()}).
 		Complete()
@@ -48,7 +47,7 @@ func SetupCoreWebhookWithManager(mgr ctrl.Manager) error {
 
 // SetupDashboardWebhookWithManager registers the webhook for Dashboard in the manager.
 func SetupDashboardWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&supabasev1alpha1.Dashboard{}).
+	return ctrl.NewWebhookManagedBy(mgr, new(supabasev1alpha1.Dashboard)).
 		WithValidator(&DashboardCustomValidator{}).
 		WithDefaulter(&DashboardCustomDefaulter{}).
 		Complete()
@@ -56,7 +55,7 @@ func SetupDashboardWebhookWithManager(mgr ctrl.Manager) error {
 
 // SetupStorageWebhookWithManager registers the webhook for Storage in the manager.
 func SetupStorageWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&supabasev1alpha1.Storage{}).
+	return ctrl.NewWebhookManagedBy(mgr, new(supabasev1alpha1.Storage)).
 		WithValidator(&StorageCustomValidator{Client: mgr.GetClient()}).
 		WithDefaulter(&StorageCustomDefaulter{Client: mgr.GetClient()}).
 		Complete()

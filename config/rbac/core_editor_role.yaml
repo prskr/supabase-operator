@@ -7,21 +7,21 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: core-editor-role
 rules:
-- apiGroups:
-  - supabase.k8s.icb4dc0.de
-  resources:
-  - cores
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - supabase.k8s.icb4dc0.de
-  resources:
-  - cores/status
-  verbs:
-  - get
+  - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - cores
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - cores/status
+    verbs:
+      - get

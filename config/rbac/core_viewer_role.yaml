@@ -7,17 +7,17 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: core-viewer-role
 rules:
-- apiGroups:
-  - supabase.k8s.icb4dc0.de
-  resources:
-  - cores
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - supabase.k8s.icb4dc0.de
-  resources:
-  - cores/status
-  verbs:
-  - get
+  - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - cores
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - supabase.k8s.icb4dc0.de
+    resources:
+      - cores/status
+    verbs:
+      - get

@@ -1,9 +1,6 @@
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 load("@rules_go//go:def.bzl", "go_library")
-
-ENVOY_REPO = "envoyproxy/envoy"
-
-ENVOY_TAG = "distroless-v1.36.2"
+load("//:versions.bzl", "ENVOY_REPO", "ENVOY_TAG")
 
 genrule(
     name = "supabase-images",

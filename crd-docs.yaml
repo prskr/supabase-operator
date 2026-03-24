@@ -3,7 +3,6 @@ processor:
   ignoreFields:
     - "status$"
     - "TypeMeta$"
-
 render:
   kubernetesVersion: "1.30"
   knownTypes: []

@@ -1,4 +1,3 @@
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -14,7 +13,6 @@ rules:
       - get
       - list
       - watch
-
   - apiGroups:
       - supabase.k8s.icb4dc0.de
     resources:
@@ -24,7 +22,6 @@ rules:
       - list
       - watch
       - update
-
   - apiGroups:
       - supabase.k8s.icb4dc0.de
     resources:
@@ -33,7 +30,6 @@ rules:
       - get
       - patch
       - update
-
   - apiGroups:
       - discovery.k8s.io
     resources:

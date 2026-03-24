@@ -10,7 +10,7 @@ bazel_env(
         "buildifier": "@buildifier_prebuilt//:buildifier",
         "gazelle": "//:gazelle",
         "go": "@rules_go//go",
-        "gofumpt": "@cc_mvdan_gofumpt//:gofumpt",
+        "goimports": "@org_golang_x_tools//cmd/goimports",
         "gopls": "@org_golang_x_tools_gopls//:gopls",
         "controller-gen": "@io_k8s_sigs_controller_tools//cmd/controller-gen",
         "setup-envtest": "@io_k8s_sigs_controller_runtime_tools_setup_envtest//:setup-envtest",

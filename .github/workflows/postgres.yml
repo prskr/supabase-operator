@@ -12,13 +12,10 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
-
 permissions:
   packages: write
-
 env:
   MINOR_VERSIONS: '{"15":"14","16":"10","17":"6","18":"0"}'
-
 jobs:
   build:
     strategy:
@@ -34,14 +31,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-
       - name: Login to Harbor
         uses: redhat-actions/podman-login@v1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build image
         id: build-image
         uses: redhat-actions/buildah-build@v2
@@ -54,11 +49,9 @@ jobs:
           build-args: |
             POSTGRES_MAJOR=${{ matrix.postgres_major }}
             POSTGRES_MINOR=${{ fromJSON(env.MINOR_VERSIONS)[matrix.postgres_major] }}
-
       - name: Push to Harbor
         run: |
           podman push ${{ steps.build-image.outputs.image }}:${{ steps.build-image.outputs.tags }}
-
   manifest:
     strategy:
       matrix:
@@ -77,7 +70,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Create manifest
         run: |
           buildah manifest create \

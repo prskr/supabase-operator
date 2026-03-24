@@ -22,10 +22,9 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 	"github.com/prskr/supabase-operator/internal/oidc"
@@ -41,25 +40,20 @@ import (
 // as it is used only for temporary operations and does not need to be deeply copied.
 type APIGatewayCustomDefaulter struct {
 	CurrentNamespace string
-	Recorder         record.EventRecorder
+	Recorder         events.EventRecorder
 }
 
-var _ webhook.CustomDefaulter = &APIGatewayCustomDefaulter{}
+var _ admission.Defaulter[*supabasev1alpha1.APIGateway] = &APIGatewayCustomDefaulter{}
 
 var errObjectTypeMismatch = errors.New("object type mismatch")
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind APIGateway.
-func (d *APIGatewayCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+func (d *APIGatewayCustomDefaulter) Default(ctx context.Context, apiGateway *supabasev1alpha1.APIGateway) error {
 	const (
 		defaultManagerNamespace = "supabase-system"
 	)
 
 	logger := log.FromContext(ctx)
-	apiGateway, ok := obj.(*supabasev1alpha1.APIGateway)
-
-	if !ok {
-		return fmt.Errorf("%w: expected an APIGateway object but got %T", errObjectTypeMismatch, obj)
-	}
 	apigatewaylog.Info("Defaulting for APIGateway", "name", apiGateway.GetName())
 
 	if apiGateway.Spec.ApiEndpoint == nil {
@@ -93,10 +87,12 @@ func (d *APIGatewayCustomDefaulter) Default(ctx context.Context, obj runtime.Obj
 
 	if apiGateway.Spec.Envoy.ControlPlane == nil {
 		if d.CurrentNamespace == defaultManagerNamespace {
-			d.Recorder.Event(
+			d.Recorder.Eventf(
 				apiGateway,
+				nil,
 				corev1.EventTypeNormal,
-				"Guessing Envoy control plane endpoint",
+				"GuessingEnvoyControlPlaneEndpointDefaultNamespace",
+				"Setting .spec.envoy.controlPlane to a reasonable default",
 				"Making guess of control plane config, most likely this is correct as the current namespace is the default namespace where the operator is deployed but of course it could be wrong as well",
 			)
 
@@ -107,8 +103,10 @@ func (d *APIGatewayCustomDefaulter) Default(ctx context.Context, obj runtime.Obj
 		} else {
 			d.Recorder.Eventf(
 				apiGateway,
+				nil,
 				corev1.EventTypeWarning,
-				"Guessing Envoy control plane endpoint",
+				"GuessingEnvoyControlPlaneEndpointCustomNamespace",
+				"Setting .spec.envoy.controlPlane to a reasonable default",
 				"Making guess of control plane config based on the namespace of the manager (%s) - could be wrong if control plane was manually deployed to another namespace",
 				d.CurrentNamespace,
 			)

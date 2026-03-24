@@ -21,9 +21,7 @@ import (
 	"errors"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
@@ -49,22 +47,18 @@ var (
 // as this struct is used only for temporary operations and does not need to be deeply copied.
 type APIGatewayCustomValidator struct{}
 
-var _ webhook.CustomValidator = &APIGatewayCustomValidator{}
+var _ admission.Validator[*supabasev1alpha1.APIGateway] = &APIGatewayCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type APIGateway.
-func (v *APIGatewayCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	apigateway, ok := obj.(*supabasev1alpha1.APIGateway)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a APIGateway object but got %T", errObjectTypeMismatch, obj)
-	}
-	apigatewaylog.Info("Validation for APIGateway upon creation", "name", apigateway.GetName())
+func (v *APIGatewayCustomValidator) ValidateCreate(ctx context.Context, obj *supabasev1alpha1.APIGateway) (admission.Warnings, error) {
+	apigatewaylog.Info("Validation for APIGateway upon creation", "name", obj.GetName())
 
-	warnings, err := validateEnvoyControlPlane(apigateway)
+	warnings, err := validateEnvoyControlPlane(obj)
 	if err != nil {
 		return warnings, err
 	}
 
-	if warns, err := validateDashboardEndpointSpec(apigateway); err != nil {
+	if warns, err := validateDashboardEndpointSpec(obj); err != nil {
 		return append(warnings, warns...), err
 	} else {
 		warnings = append(warnings, warns...)
@@ -74,19 +68,15 @@ func (v *APIGatewayCustomValidator) ValidateCreate(ctx context.Context, obj runt
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type APIGateway.
-func (v *APIGatewayCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	apigateway, ok := newObj.(*supabasev1alpha1.APIGateway)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a APIGateway object for the newObj but got %T", errObjectTypeMismatch, newObj)
-	}
-	apigatewaylog.Info("Validation for APIGateway upon update", "name", apigateway.GetName())
+func (v *APIGatewayCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj *supabasev1alpha1.APIGateway) (admission.Warnings, error) {
+	apigatewaylog.Info("Validation for APIGateway upon update", "name", newObj.GetName())
 
-	warnings, err := validateEnvoyControlPlane(apigateway)
+	warnings, err := validateEnvoyControlPlane(newObj)
 	if err != nil {
 		return warnings, err
 	}
 
-	if warns, err := validateDashboardEndpointSpec(apigateway); err != nil {
+	if warns, err := validateDashboardEndpointSpec(newObj); err != nil {
 		return append(warnings, warns...), err
 	} else {
 		warnings = append(warnings, warns...)
@@ -96,12 +86,8 @@ func (v *APIGatewayCustomValidator) ValidateUpdate(ctx context.Context, oldObj, 
 }
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type APIGateway.
-func (v *APIGatewayCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	apigateway, ok := obj.(*supabasev1alpha1.APIGateway)
-	if !ok {
-		return nil, fmt.Errorf("%w: expected a APIGateway object but got %T", errObjectTypeMismatch, obj)
-	}
-	apigatewaylog.Info("Validation for APIGateway upon deletion", "name", apigateway.GetName())
+func (v *APIGatewayCustomValidator) ValidateDelete(ctx context.Context, obj *supabasev1alpha1.APIGateway) (admission.Warnings, error) {
+	apigatewaylog.Info("Validation for APIGateway upon deletion", "name", obj.GetName())
 
 	return nil, nil
 }

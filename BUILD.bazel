@@ -34,6 +34,11 @@ alias(
     actual = "@com_github_elastic_crd_ref_docs//:crd-ref-docs",
 )
 
+alias(
+    name = "format",
+    actual = "//tools/format",
+)
+
 exports_files([
     "crd-docs.yaml",
 ])
@@ -49,12 +54,13 @@ gazelle(
 )
 
 buildifier(
-    name = "fmt",
+    name = "buildifier",
     exclude_patterns = [
         "./.git/*",
         "./.ijwb/*",
     ],
     lint_mode = "warn",
+    visibility = ["//:__subpackages__"],
 )
 
 ARCHS = [

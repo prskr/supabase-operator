@@ -1,172 +1,171 @@
----
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: mutating-webhook-configuration
 webhooks:
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /mutate-supabase-k8s-icb4dc0-de-v1alpha1-apigateway
-  failurePolicy: Fail
-  name: mapigateway-v1alpha1.kb.io
-  rules:
-  - apiGroups:
-    - supabase.k8s.icb4dc0.de
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - apigateways
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /mutate-supabase-k8s-icb4dc0-de-v1alpha1-core
-  failurePolicy: Fail
-  name: mcore-v1alpha1.kb.io
-  rules:
-  - apiGroups:
-    - supabase.k8s.icb4dc0.de
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - cores
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /mutate-supabase-k8s-icb4dc0-de-v1alpha1-dashboard
-  failurePolicy: Fail
-  name: mdashboard-v1alpha1.kb.io
-  rules:
-  - apiGroups:
-    - supabase.k8s.icb4dc0.de
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - dashboards
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /mutate-supabase-k8s-icb4dc0-de-v1alpha1-storage
-  failurePolicy: Fail
-  name: mstorage-v1alpha1.kb.io
-  rules:
-  - apiGroups:
-    - supabase.k8s.icb4dc0.de
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - storages
-  sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /mutate-supabase-k8s-icb4dc0-de-v1alpha1-apigateway
+    failurePolicy: Fail
+    name: mapigateway-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - supabase.k8s.icb4dc0.de
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - apigateways
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /mutate-supabase-k8s-icb4dc0-de-v1alpha1-core
+    failurePolicy: Fail
+    name: mcore-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - supabase.k8s.icb4dc0.de
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - cores
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /mutate-supabase-k8s-icb4dc0-de-v1alpha1-dashboard
+    failurePolicy: Fail
+    name: mdashboard-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - supabase.k8s.icb4dc0.de
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - dashboards
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /mutate-supabase-k8s-icb4dc0-de-v1alpha1-storage
+    failurePolicy: Fail
+    name: mstorage-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - supabase.k8s.icb4dc0.de
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - storages
+    sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-webhook-configuration
 webhooks:
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-supabase-k8s-icb4dc0-de-v1alpha1-apigateway
-  failurePolicy: Fail
-  name: vapigateway-v1alpha1.kb.io
-  rules:
-  - apiGroups:
-    - supabase.k8s.icb4dc0.de
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - apigateways
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-supabase-k8s-icb4dc0-de-v1alpha1-core
-  failurePolicy: Fail
-  name: vcore-v1alpha1.kb.io
-  rules:
-  - apiGroups:
-    - supabase.k8s.icb4dc0.de
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - cores
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-supabase-k8s-icb4dc0-de-v1alpha1-dashboard
-  failurePolicy: Fail
-  name: vdashboard-v1alpha1.kb.io
-  rules:
-  - apiGroups:
-    - supabase.k8s.icb4dc0.de
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - dashboards
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-supabase-k8s-icb4dc0-de-v1alpha1-storage
-  failurePolicy: Fail
-  name: vstorage-v1alpha1.kb.io
-  rules:
-  - apiGroups:
-    - supabase.k8s.icb4dc0.de
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - storages
-  sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /validate-supabase-k8s-icb4dc0-de-v1alpha1-apigateway
+    failurePolicy: Fail
+    name: vapigateway-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - supabase.k8s.icb4dc0.de
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - apigateways
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /validate-supabase-k8s-icb4dc0-de-v1alpha1-core
+    failurePolicy: Fail
+    name: vcore-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - supabase.k8s.icb4dc0.de
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - cores
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /validate-supabase-k8s-icb4dc0-de-v1alpha1-dashboard
+    failurePolicy: Fail
+    name: vdashboard-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - supabase.k8s.icb4dc0.de
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - dashboards
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /validate-supabase-k8s-icb4dc0-de-v1alpha1-storage
+    failurePolicy: Fail
+    name: vstorage-v1alpha1.kb.io
+    rules:
+      - apiGroups:
+          - supabase.k8s.icb4dc0.de
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - storages
+    sideEffects: None

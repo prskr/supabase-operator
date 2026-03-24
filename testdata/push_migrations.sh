@@ -7,8 +7,8 @@ kubectl port-forward -n supabase-demo service/cluster-example-rw 5432:5432 &
 kubectl_pid=$!
 
 supabase db push \
-    --include-seed \
-    --db-url "postgresql://supabase_admin:1n1t-R00t!@localhost:5432/app"
+	--include-seed \
+	--db-url "postgresql://supabase_admin:1n1t-R00t!@localhost:5432/app"
 
 kill -SIGTERM $kubectl_pid
 

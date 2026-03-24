@@ -1,19 +1,16 @@
 # Adds namespace to all resources.
 namespace: supabase-system
-
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
 # "wordpress" becomes "alices-wordpress".
 # Note that it should also match with the prefix (text before '-') of the namespace
 # field above.
 namePrefix: supabase-
-
 # Labels to add to all resources and selectors.
 #labels:
 #- includeSelectors: true
 #  pairs:
 #    someName: someValue
-
 resources:
   - ../crd
   - ../rbac
@@ -38,11 +35,9 @@ patches:
     target:
       kind: Deployment
       name: controller-manager
-
   # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
   # crd/kustomization.yaml
   - path: manager_webhook_patch.yaml
-
 replacements:
   - source:
       kind: Service
@@ -93,7 +88,6 @@ replacements:
           delimiter: "."
           index: 1
           create: true
-
   - source: # Uncomment the following block if you have a ValidatingWebhook (--programmatic-validation)
       kind: Certificate
       group: cert-manager.io
@@ -124,7 +118,6 @@ replacements:
           delimiter: "/"
           index: 1
           create: true
-
   - source: # Uncomment the following block if you have a DefaultingWebhook (--defaulting )
       kind: Certificate
       group: cert-manager.io

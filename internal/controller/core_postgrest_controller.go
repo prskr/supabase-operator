@@ -311,7 +311,7 @@ func (r *CorePostgrestReconiler) reconcilePodMonitor(
 					Params: map[string][]string{
 						"histogram_buckets": {"cumulative"},
 					},
-					Scheme:        "http",
+					Scheme:        new(monitoringv1.SchemeHTTP),
 					ScrapeTimeout: "5s",
 					Interval:      "30s",
 				},
