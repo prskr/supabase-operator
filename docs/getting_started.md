@@ -4,7 +4,10 @@
 
 The operator has the following dependencies:
 
-- [cert-manager](https://cert-manager.io/) (to issue webhook certificates)
+- [cert-manager](https://cert-manager.io/) - to issue webhook certificates)
+- [Prometheus Operator](https://prometheus-operator.dev/) - to manage `PodMonitor` instance to collect metrics
+
+**Note:** in the future the availability of the Prometheus Operator might be detected dynamically to avoid the hard coupling but given that this is currently more of a PoC this is out of scope for now.
 
 ## Deploying the operator
 
@@ -15,7 +18,7 @@ kubectl apply --server-side -f manifest.yaml
 ```
 
 The manifest is rendered as part of the release workflow and based on [kustomize](https://kustomize.io/).
-If you want to customize the deployment, you can start from the [release/default](https://github.com/prskr/supabase-operator/src/branch/main/config/release/default) layer and build your own manifest.
+If you want to customize the deployment, you can start from the [release/default](https://github.com/prskr/supabase-operator/tree/main/config/release/default) layer and build your own manifest.
 
 ## Deploying a basic Supabase instance
 

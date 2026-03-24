@@ -5,9 +5,7 @@ site_description: |
   Documentation for the Supabase Operator, a Kubernetes operator for managing Supabase instances.
 repo_name: prskr/supabase-operator
 repo_url: https://github.com/prskr/supabase-operator
-
 dev_addr: "127.0.0.1:8001"
-
 theme:
   name: material
   custom_dir: docs/overrides
@@ -18,12 +16,10 @@ theme:
     - toc.integrate
     - content.code.copy
     - content.footnote.tooltips
-
 plugins:
   - search
   - kroki:
       HttpMethod: POST
-
 nav:
   - Home:
       - About: index.md
@@ -40,7 +36,7 @@ nav:
   - API Reference: api/supabase.k8s.icb4dc0.de.md
   - Development:
       - Tools: development/tools.md
-
+      - Local Development: development/local_dev.md
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
