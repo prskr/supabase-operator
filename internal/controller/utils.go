@@ -34,10 +34,6 @@ import (
 	"github.com/prskr/supabase-operator/api"
 )
 
-func ptrOf[T any](val T) *T {
-	return &val
-}
-
 func boolValueOf(ptr *bool) bool {
 	if ptr == nil {
 		return false
@@ -85,7 +81,8 @@ func MergeEnv(source []corev1.EnvVar, toAppend ...corev1.EnvVar) []corev1.EnvVar
 
 func ValueOrFallback[T any](value, fallback T) T {
 	rval := reflect.ValueOf(value)
-	if rval.IsZero() {
+
+	if !rval.IsValid() || rval.IsZero() {
 		return fallback
 	}
 

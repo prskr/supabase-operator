@@ -60,12 +60,30 @@ spec:
                       type: object
                     dbName:
                       type: string
+                    extraSearchPath:
+                      default:
+                        - public
+                      description: |-
+                        ExtraSearchPath - Extra schemas to add to the search_path of every request.
+                        These schemas tables, views and functions don’t get API endpoints, they can only be referred from the database objects inside your db-schemas.
+                      items:
+                        type: string
+                      type: array
                     host:
                       type: string
                     port:
                       default: 5432
                       description: Port - Database port, typically 5432
                       type: integer
+                    schemas:
+                      default:
+                        - public
+                        - storage
+                        - graphql_public
+                      description: Schemas - schema where PostgREST is looking for objects (tables, views, functions, ...)
+                      items:
+                        type: string
+                      type: array
                   required:
                     - dbCredentialsRef
                     - dbName

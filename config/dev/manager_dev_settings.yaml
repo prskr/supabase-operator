@@ -1,6 +1,9 @@
 - op: add
   path: /spec/template/spec/containers/0/args/1
   value: --logging.development=true
+- op: add
+  path: /spec/template/spec/containers/0/args/2
+  value: --logging.level=debug
 - op: replace
   path: /spec/template/spec/containers/0/resources
   value:

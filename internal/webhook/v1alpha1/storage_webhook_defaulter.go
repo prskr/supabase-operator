@@ -49,12 +49,12 @@ func (d *StorageCustomDefaulter) Default(ctx context.Context, storage *supabasev
 }
 
 func (d *StorageCustomDefaulter) defaultS3Protocol(storage *supabasev1alpha1.Storage) {
-	if storage.Spec.Api.S3Protocol == nil {
-		storage.Spec.Api.S3Protocol = new(supabasev1alpha1.S3ProtocolSpec)
+	if storage.Spec.API.S3Protocol == nil {
+		storage.Spec.API.S3Protocol = new(supabasev1alpha1.S3ProtocolSpec)
 	}
 
-	if storage.Spec.Api.S3Protocol.CredentialsSecretRef == nil {
-		storage.Spec.Api.S3Protocol.CredentialsSecretRef = &supabasev1alpha1.S3CredentialsRef{
+	if storage.Spec.API.S3Protocol.CredentialsSecretRef == nil {
+		storage.Spec.API.S3Protocol.CredentialsSecretRef = &supabasev1alpha1.S3CredentialsRef{
 			SecretName: fmt.Sprintf("%s-storage-protocol-s3-credentials", storage.Name),
 		}
 	}

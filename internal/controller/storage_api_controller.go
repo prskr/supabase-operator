@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -37,10 +38,11 @@ import (
 	"github.com/prskr/supabase-operator/internal/supabase"
 )
 
-// StorageApiReconciler reconciles a Storage object
-type StorageApiReconciler struct {
+// StorageAPIReconciler reconciles a Storage object
+type StorageAPIReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder events.EventRecorder
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -48,7 +50,7 @@ type StorageApiReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.4/pkg/reconcile
-func (r *StorageApiReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *StorageAPIReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var (
 		storage supabasev1alpha1.Storage
 		logger  = log.FromContext(ctx)
@@ -68,7 +70,7 @@ func (r *StorageApiReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileStorageApiService(ctx, &storage); err != nil {
+	if err := r.reconcileStorageAPIService(ctx, &storage); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -76,7 +78,7 @@ func (r *StorageApiReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *StorageApiReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *StorageAPIReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&supabasev1alpha1.Storage{}).
 		Named("storage-api").
@@ -86,13 +88,13 @@ func (r *StorageApiReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *StorageApiReconciler) reconcileStorageAPIDeployment(
+func (r *StorageAPIReconciler) reconcileStorageAPIDeployment(
 	ctx context.Context,
 	storage *supabasev1alpha1.Storage,
 ) error {
 	var (
 		serviceCfg           = supabase.ServiceConfig.Storage
-		apiSpec              = storage.Spec.Api
+		apiSpec              = storage.Spec.API
 		storageAPIDeployment = &appsv1.Deployment{
 			ObjectMeta: serviceCfg.ObjectMeta(storage),
 		}
@@ -128,9 +130,47 @@ func (r *StorageApiReconciler) reconcileStorageAPIDeployment(
 	}
 
 	s3ProtoCredentialsStateHash = base64.StdEncoding.EncodeToString(HashBytes(
-		s3ProtocolSecret.Data[apiSpec.S3Protocol.CredentialsSecretRef.AccessKeyIdKey],
+		s3ProtocolSecret.Data[apiSpec.S3Protocol.CredentialsSecretRef.AccessKeyIDKey],
 		s3ProtocolSecret.Data[apiSpec.S3Protocol.CredentialsSecretRef.AccessSecretKeyKey],
 	))
+
+	var postgrestURL string
+	if len(apiSpec.PostgRESTServiceMatchLabels) > 0 {
+		var serviceList corev1.ServiceList
+		if err := r.List(ctx, &serviceList, client.InNamespace(storage.Namespace), client.MatchingLabels(apiSpec.PostgRESTServiceMatchLabels)); err != nil {
+			return err
+		}
+
+		if len(serviceList.Items) == 1 {
+			svc := serviceList.Items[0]
+			port := supabase.ServiceConfig.Postgrest.Defaults.ServerPort
+			for _, p := range svc.Spec.Ports {
+				if p.Name == supabase.ServiceConfig.Postgrest.Defaults.ServerPortName {
+					port = p.Port
+					break
+				}
+			}
+			postgrestURL = fmt.Sprintf("http://%s.%s.svc:%d", svc.Name, svc.Namespace, port)
+		} else {
+			r.Recorder.Eventf(
+				storage,
+				storage,
+				corev1.EventTypeWarning,
+				"AmbiguousPostgRESTService",
+				"The link to the PostgREST service cannot be determined",
+				"Make sure that the configured selector matches a single service",
+			)
+		}
+	} else {
+		r.Recorder.Eventf(
+			storage,
+			storage,
+			corev1.EventTypeWarning,
+			"PostgRESTServiceSelectorEmpty",
+			"PostgRESTServiceMatchLabels is empty, PostgREST URL will not be configured",
+			"This should never happen because the selector has a sane default",
+		)
+	}
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, storageAPIDeployment, func() error {
 		storageAPIDeployment.Labels = apiSpec.WorkloadSpec.MergeLabels(
@@ -165,9 +205,10 @@ func (r *StorageApiReconciler) reconcileStorageAPIDeployment(
 			serviceCfg.EnvKeys.ServiceKey.Var(apiSpec.JwtAuth.ServiceKeySelector()),
 			serviceCfg.EnvKeys.JwtSecret.Var(apiSpec.JwtAuth.SecretKeySelector()),
 			serviceCfg.EnvKeys.JwtJwks.Var(apiSpec.JwtAuth.JwksKeySelector()),
+			serviceCfg.EnvKeys.PostgrestURL.Var(postgrestURL),
 			serviceCfg.EnvKeys.S3ProtocolPrefix.Var(),
 			serviceCfg.EnvKeys.S3ProtocolAllowForwardedHeader.Var(apiSpec.S3Protocol.AllowForwardedHeader),
-			serviceCfg.EnvKeys.S3ProtocolAccessKeyID.Var(apiSpec.S3Protocol.CredentialsSecretRef.AccessKeyIdSelector()),
+			serviceCfg.EnvKeys.S3ProtocolAccessKeyID.Var(apiSpec.S3Protocol.CredentialsSecretRef.AccessKeyIDSelector()),
 			serviceCfg.EnvKeys.S3ProtocolAccessKeySecret.Var(apiSpec.S3Protocol.CredentialsSecretRef.AccessSecretKeySelector()),
 			serviceCfg.EnvKeys.TusURLPath.Var(),
 			serviceCfg.EnvKeys.FileSizeLimit.Var(apiSpec.FileSizeLimit),
@@ -177,6 +218,8 @@ func (r *StorageApiReconciler) reconcileStorageAPIDeployment(
 			// TODO: https://github.com/supabase/storage-api/issues/55
 			serviceCfg.EnvKeys.FileStorageRegion.Var(*apiSpec.Region),
 			serviceCfg.EnvKeys.TenantID.Var(*apiSpec.TenantID),
+			serviceCfg.EnvKeys.AllowForwardedPathHeader.Var(),
+			serviceCfg.EnvKeys.PGQeueEnabled.Var(false),
 		}
 
 		if storage.Spec.ImageProxy != nil && storage.Spec.ImageProxy.Enable {
@@ -201,7 +244,7 @@ func (r *StorageApiReconciler) reconcileStorageAPIDeployment(
 			},
 			Spec: corev1.PodSpec{
 				ImagePullSecrets:             apiSpec.WorkloadSpec.PullSecrets(),
-				AutomountServiceAccountToken: ptrOf(false),
+				AutomountServiceAccountToken: new(false),
 				Containers: []corev1.Container{{
 					Name:            "supabase-storage",
 					Image:           apiSpec.WorkloadSpec.Image(supabase.Images.Storage.String()),
@@ -266,41 +309,41 @@ func (r *StorageApiReconciler) reconcileStorageAPIDeployment(
 	return err
 }
 
-func (r *StorageApiReconciler) reconcileStorageApiService(
+func (r *StorageAPIReconciler) reconcileStorageAPIService(
 	ctx context.Context,
 	storage *supabasev1alpha1.Storage,
 ) error {
 	var (
 		serviceCfg        = supabase.ServiceConfig.Storage
-		storageApiService = &corev1.Service{
+		storageAPIService = &corev1.Service{
 			ObjectMeta: supabase.ServiceConfig.Storage.ObjectMeta(storage),
 		}
 	)
 
-	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, storageApiService, func() error {
-		storageApiService.Labels = storage.Spec.Api.WorkloadSpec.MergeLabels(
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, storageAPIService, func() error {
+		storageAPIService.Labels = storage.Spec.API.WorkloadSpec.MergeLabels(
 			objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.Storage.Tag),
 			storage.Labels,
 		)
 
-		if _, ok := storageApiService.Labels[meta.SupabaseLabel.ApiGatewayTarget]; !ok {
-			storageApiService.Labels[meta.SupabaseLabel.ApiGatewayTarget] = ""
+		if _, ok := storageAPIService.Labels[meta.SupabaseLabel.ApiGatewayTarget]; !ok {
+			storageAPIService.Labels[meta.SupabaseLabel.ApiGatewayTarget] = ""
 		}
 
-		storageApiService.Spec = corev1.ServiceSpec{
+		storageAPIService.Spec = corev1.ServiceSpec{
 			Selector: selectorLabels(storage, serviceCfg.Name),
 			Ports: []corev1.ServicePort{
 				{
 					Name:        serviceCfg.Defaults.APIPortName,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptrOf("http"),
+					AppProtocol: new("http"),
 					Port:        serviceCfg.Defaults.APIPort,
 					TargetPort:  intstr.IntOrString{IntVal: serviceCfg.Defaults.APIPort},
 				},
 			},
 		}
 
-		if err := controllerutil.SetControllerReference(storage, storageApiService, r.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(storage, storageAPIService, r.Scheme); err != nil {
 			return err
 		}
 

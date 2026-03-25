@@ -54,6 +54,7 @@ sh_binary(
     name = "generate_crd_docs",
     srcs = ["generate_crd_docs.sh"],
     data = [
+        "//:crd-docs.yaml",
         "//api/v1alpha1:api-types",
         "@com_github_elastic_crd_ref_docs//:crd-ref-docs",
         "@rules_go//go",

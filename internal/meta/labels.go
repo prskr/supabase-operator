@@ -41,7 +41,9 @@ var WellKnownLabel = struct {
 var SupabaseLabel = struct {
 	Reload           string
 	ApiGatewayTarget string
+	SecretKind       string
 }{
 	Reload:           supabasev1alpha1.GroupVersion.Group + "/reload",
 	ApiGatewayTarget: supabasev1alpha1.GroupVersion.Group + "/api-gateway-target",
+	SecretKind:       supabasev1alpha1.GroupVersion.Group + "/secret-kind",
 }

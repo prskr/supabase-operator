@@ -46,7 +46,6 @@ MIGRATION_SCRIPTS = [
     "migrations/20250220051611_pg_net_perms_fix.sql",
     "migrations/20250402065937_alter_internal_event_triggers_owner_to_supabase_admin.sql",
     "migrations/20250402093753_grant_subscription_to_postgres_16_and_above.sql",
-    "migrations/20250421084701_revoke_admin_roles_from_postgres.sql",
     "migrations/20250605172253_grant_with_admin_to_postgres_16_and_above.sql",
     "migrations/20250623125453_tmp_grant_storage_tables_to_postgres_with_grant_option.sql",
     "migrations/20250709135250_grant_storage_schema_to_postgres_with_grant_option.sql",
@@ -60,6 +59,8 @@ genrule(
     cmd = """
     mkdir -p \"$(@D)/init-scripts/\"
     cp -rf $(locations @supabase_init_scripts//:supabase_init_scripts) \"$(@D)/init-scripts/\"
+
+    grep -ril "ON DATABASE postgres" \"$(@D)/init-scripts/\" | xargs -I {} perl -pi -e 's/ON DATABASE postgres/ON DATABASE {{ .DbName }}/gi' {}
     """,
 )
 
@@ -70,7 +71,7 @@ genrule(
     cmd = """
     mkdir -p \"$(@D)/migrations/\"
     cp -rf $(locations @supabase_migrations//:supabase_migrations) \"$(@D)/migrations/\"
-    ignored=("10000000000000_demote-postgres.sql" "20250312095419_pgbouncer_ownership.sql" "20250417190610_update_pgbouncer_get_auth.sql")
+    ignored=("10000000000000_demote-postgres.sql" "20250312095419_pgbouncer_ownership.sql" "20250417190610_update_pgbouncer_get_auth.sql" "20250421084701_revoke_admin_roles_from_postgres.sql")
     for file in "$${ignored[@]}"; do
     rm -f \"$(@D)/migrations/$$file\"
     done
@@ -130,7 +131,6 @@ go_library(
         "migrations/20250220051611_pg_net_perms_fix.sql",
         "migrations/20250402065937_alter_internal_event_triggers_owner_to_supabase_admin.sql",
         "migrations/20250402093753_grant_subscription_to_postgres_16_and_above.sql",
-        "migrations/20250421084701_revoke_admin_roles_from_postgres.sql",
         "migrations/20250605172253_grant_with_admin_to_postgres_16_and_above.sql",
         "migrations/20250623125453_tmp_grant_storage_tables_to_postgres_with_grant_option.sql",
         "migrations/20250709135250_grant_storage_schema_to_postgres_with_grant_option.sql",

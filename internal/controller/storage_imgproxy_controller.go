@@ -109,8 +109,8 @@ func (r *StorageImgProxyReconciler) reconcileImgProxyDeployment(
 			serviceCfg.EnvKeys.EnableWebPDetection.Var(imgProxySpec.EnabledWebPDetection),
 		}
 
-		if storage.Spec.Api.FileBackend != nil {
-			imgProxyEnv = append(imgProxyEnv, serviceCfg.EnvKeys.LocalFileSystemRoot.Var(storage.Spec.Api.FileBackend.Path))
+		if storage.Spec.API.FileBackend != nil {
+			imgProxyEnv = append(imgProxyEnv, serviceCfg.EnvKeys.LocalFileSystemRoot.Var(storage.Spec.API.FileBackend.Path))
 		}
 
 		if imgProxyDeployment.CreationTimestamp.IsZero() {
@@ -127,7 +127,7 @@ func (r *StorageImgProxyReconciler) reconcileImgProxyDeployment(
 			},
 			Spec: corev1.PodSpec{
 				ImagePullSecrets:             imgProxySpec.WorkloadSpec.PullSecrets(),
-				AutomountServiceAccountToken: ptrOf(false),
+				AutomountServiceAccountToken: new(false),
 				Containers: []corev1.Container{{
 					Name:            "supabase-imgproxy",
 					Image:           imgProxySpec.WorkloadSpec.Image(supabase.Images.ImgProxy.String()),
@@ -190,7 +190,7 @@ func (r *StorageImgProxyReconciler) reconcileImgProxyService(
 	)
 
 	_, err := controllerutil.CreateOrPatch(ctx, r.Client, imgProxyService, func() error {
-		imgProxyService.Labels = storage.Spec.Api.WorkloadSpec.MergeLabels(
+		imgProxyService.Labels = storage.Spec.API.WorkloadSpec.MergeLabels(
 			objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.ImgProxy.Tag),
 			storage.Labels,
 		)
@@ -201,7 +201,7 @@ func (r *StorageImgProxyReconciler) reconcileImgProxyService(
 				{
 					Name:        serviceCfg.Defaults.ApiPortName,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptrOf("http"),
+					AppProtocol: new("http"),
 					Port:        serviceCfg.Defaults.ApiPort,
 					TargetPort:  intstr.IntOrString{IntVal: serviceCfg.Defaults.ApiPort},
 				},

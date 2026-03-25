@@ -17,9 +17,12 @@ limitations under the License.
 package db
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"iter"
+	"text/template"
 
 	"github.com/jackc/pgx/v5"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -32,13 +35,21 @@ type Migrator struct {
 	Conn *pgx.Conn
 }
 
+type migrationTemplateContext struct {
+	DbName string
+}
+
 func (m Migrator) ApplyAll(
 	ctx context.Context,
 	status *supabasev1alpha1.CoreStatus,
 	seq iter.Seq2[migrations.Script, error],
 	areInitScripts bool,
 ) (appliedSomething bool, err error) {
-	logger := log.FromContext(ctx)
+	logger := log.FromContext(ctx).WithValues("db_name", m.Conn.Config().Database)
+
+	tmplCtx := migrationTemplateContext{
+		DbName: m.Conn.Config().Database,
+	}
 
 	for s, err := range seq {
 		if err != nil {
@@ -53,7 +64,21 @@ func (m Migrator) ApplyAll(
 		}
 
 		logger.Info("Applying missing or outdated migration", "filename", s.FileName)
-		err := status.Database.RecordMigrationCondition(s.FileName, s.Hash, m.Apply(ctx, s.Content))
+
+		tmpl, err := template.New(s.FileName).Parse(s.Content)
+		if err != nil {
+			return false, fmt.Errorf("failed to parse migration template %s: %w", s.FileName, err)
+		}
+
+		var buf bytes.Buffer
+		if err := tmpl.Execute(&buf, tmplCtx); err != nil {
+			return false, fmt.Errorf("failed to execute migration template %s: %w", s.FileName, err)
+		}
+
+		script := buf.String()
+		logger.V(1).Info("Trying to apply migration", "script", script)
+
+		err = status.Database.RecordMigrationCondition(s.FileName, s.Hash, m.Apply(ctx, script))
 		if err != nil {
 			logger.Error(err, "Failed to apply migrations", "filename", s.FileName)
 			continue

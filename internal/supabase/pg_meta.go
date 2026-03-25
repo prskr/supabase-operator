@@ -28,6 +28,7 @@ type pgMetaEnvKeys struct {
 	DBName     stringEnv
 	DBUser     secretEnv
 	DBPassword secretEnv
+	DBSSLMode  stringEnv
 	CryptoKey  secretEnv
 }
 
@@ -69,7 +70,8 @@ func pgMetaServiceConfig() pgMetaConfig {
 				DBName:     "PG_META_DB_NAME",
 				DBUser:     "PG_META_DB_USER",
 				DBPassword: "PG_META_DB_PASSWORD",
-				CryptoKey:  "PG_META_CRYPTO_KEY",
+				DBSSLMode:  "PG_META_DB_SSL_MODE",
+				CryptoKey:  "CRYPTO_KEY",
 			},
 			Defaults: pgMetaDefaults{
 				APIPort:         8080,

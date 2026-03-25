@@ -94,6 +94,12 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaCryptoKeySecret(
 	)
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, cryptoSecret, func() error {
+		if cryptoSecret.Labels == nil {
+			cryptoSecret.Labels = make(map[string]string)
+		}
+
+		cryptoSecret.Labels[meta.SupabaseLabel.SecretKind] = "pg-meta-crypto-key"
+
 		if cryptoSecret.Data == nil {
 			cryptoSecret.Data = make(map[string][]byte)
 		}
@@ -163,6 +169,7 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
 			serviceCfg.EnvKeys.DBPort.Var(dashboard.Spec.DBSpec.Port),
 			serviceCfg.EnvKeys.DBUser.Var(dashboard.Spec.DBSpec.UserRef()),
 			serviceCfg.EnvKeys.DBPassword.Var(dashboard.Spec.DBSpec.PasswordRef()),
+			// serviceCfg.EnvKeys.DBSSLMode.Var("require"),
 			serviceCfg.EnvKeys.CryptoKey.Var(serviceCfg.CryptoKeySelector(dashboard)),
 		}
 
@@ -172,7 +179,7 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaDeployment(
 			},
 			Spec: corev1.PodSpec{
 				ImagePullSecrets:             pgMetaSpec.WorkloadSpec.PullSecrets(),
-				AutomountServiceAccountToken: ptrOf(false),
+				AutomountServiceAccountToken: new(false),
 				Containers: []corev1.Container{{
 					Name:            "supabase-meta",
 					Image:           pgMetaSpec.WorkloadSpec.Image(supabase.Images.PostgresMeta.String()),
@@ -252,7 +259,7 @@ func (r *DashboardPGMetaReconciler) reconcilePGMetaService(
 				{
 					Name:        "api",
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptrOf("http"),
+					AppProtocol: new("http"),
 					Port:        supabase.ServiceConfig.PGMeta.Defaults.APIPort,
 					TargetPort:  intstr.IntOrString{IntVal: supabase.ServiceConfig.PGMeta.Defaults.APIPort},
 				},

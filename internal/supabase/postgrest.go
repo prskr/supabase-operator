@@ -60,8 +60,8 @@ func postgrestServiceConfig() serviceConfig[postgrestEnvKeys, postgrestConfigDef
 		},
 		Defaults: postgrestConfigDefaults{
 			AnonRole:        "anon",
-			Schemas:         []string{"public", "graphql_public"},
-			ExtraSearchPath: []string{"public", "extensions"},
+			Schemas:         []string{"public", "storage", "graphql_public"},
+			ExtraSearchPath: []string{"public"},
 			UID:             1000,
 			GID:             1000,
 			ServerPort:      3000,

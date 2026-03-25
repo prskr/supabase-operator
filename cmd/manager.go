@@ -145,8 +145,9 @@ func (m manager) Run(ctx context.Context) error {
 	}
 
 	if err = (&controller.DashboardStudioReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorder("dashboard-studio-controller"),
 	}).SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("unable to create controller Dashboard PG-Meta: %w", err)
 	}
@@ -159,9 +160,10 @@ func (m manager) Run(ctx context.Context) error {
 		return fmt.Errorf("unable to create controller APIGateway: %w", err)
 	}
 
-	if err = (&controller.StorageApiReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+	if err = (&controller.StorageAPIReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorder("storage-api-controller"),
 	}).SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("unable to create controller APIGateway: %w", err)
 	}

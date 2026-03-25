@@ -102,7 +102,7 @@ $$;
 
 -- Supabase dashboard user
 CREATE ROLE dashboard_user NOSUPERUSER CREATEDB CREATEROLE REPLICATION;
-GRANT ALL ON DATABASE postgres TO dashboard_user;
+GRANT ALL ON DATABASE {{ .DbName }} TO dashboard_user;
 GRANT ALL ON SCHEMA auth TO dashboard_user;
 GRANT ALL ON SCHEMA extensions TO dashboard_user;
 GRANT ALL ON ALL TABLES IN SCHEMA auth TO dashboard_user;

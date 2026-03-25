@@ -11,6 +11,7 @@ bazel-*
 user.bazelrc
 
 # IntelliJ
+.air/
 .idea/
 .ijwb/
 *.iml

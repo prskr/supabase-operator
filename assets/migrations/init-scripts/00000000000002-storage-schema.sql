@@ -4,7 +4,7 @@ CREATE SCHEMA IF NOT EXISTS storage AUTHORIZATION supabase_admin;
 
 CREATE USER supabase_storage_admin NOINHERIT CREATEROLE LOGIN NOREPLICATION;
 ALTER USER supabase_storage_admin SET search_path = "storage";
-GRANT CREATE ON DATABASE postgres TO supabase_storage_admin;
+GRANT CREATE ON DATABASE {{ .DbName }} TO supabase_storage_admin;
 
 do $$
 begin

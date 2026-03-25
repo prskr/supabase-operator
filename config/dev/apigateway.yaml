@@ -20,16 +20,18 @@ spec:
       cert:
         secretName: dashboard-tls-cert
     auth:
-      oauth2:
-        openIdIssuer: "https://login.microsoftonline.com/f4e80111-1571-477a-b56d-c5fe517676b7/"
-        clientId: 3528016b-f6e3-49be-8fb3-f9a9a2ab6c3f
-        scopes:
-          - openid
-          - profile
-          - email
-        clientSecretRef:
-          name: studio-sample-oauth2
-          key: clientSecret
+      basic:
+        plaintextUsersSecretRef: studio-sample-basic-auth
+        # oauth2:
+        #   openIdIssuer: "https://login.microsoftonline.com/f4e80111-1571-477a-b56d-c5fe517676b7/"
+        #   clientId: 3528016b-f6e3-49be-8fb3-f9a9a2ab6c3f
+        #   scopes:
+        #     - openid
+        #     - profile
+        #     - email
+        #   clientSecretRef:
+        #     name: studio-sample-oauth2
+        #     key: clientSecret
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate

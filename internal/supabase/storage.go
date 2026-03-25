@@ -23,6 +23,7 @@ type storageEnvApiKeys struct {
 	ServiceKey                     secretEnv
 	JwtSecret                      secretEnv
 	JwtJwks                        secretEnv
+	PostgrestURL                   stringEnv
 	DatabaseDSN                    stringEnv
 	FileSizeLimit                  intEnv[uint64]
 	UploadFileSizeLimit            intEnv[uint64]
@@ -46,23 +47,25 @@ type storageEnvApiKeys struct {
 	S3ProtocolAllowForwardedHeader boolEnv
 	S3ProtocolPrefix               fixedEnv
 	AllowForwardedPathHeader       fixedEnv
+	PGQeueEnabled                  boolEnv
 }
 
-type storageApiDefaults struct {
+type storageAPIDefaults struct {
 	APIPort     int32
 	APIPortName string
 	UID, GID    int64
 }
 
-func storageServiceConfig() serviceConfig[storageEnvApiKeys, storageApiDefaults] {
-	return serviceConfig[storageEnvApiKeys, storageApiDefaults]{
+func storageServiceConfig() serviceConfig[storageEnvApiKeys, storageAPIDefaults] {
+	return serviceConfig[storageEnvApiKeys, storageAPIDefaults]{
 		Name:              "storage-api",
 		LivenessProbePath: "/status",
 		EnvKeys: storageEnvApiKeys{
 			AnonKey:                        "ANON_KEY",
 			ServiceKey:                     "SERVICE_KEY",
-			JwtSecret:                      "AUTH_JWT_SECRET",
-			JwtJwks:                        "AUTH_JWT_JWKS",
+			JwtSecret:                      "PGRST_JWT_SECRET",
+			JwtJwks:                        "JWT_JWKS",
+			PostgrestURL:                   "POSTGREST_URL",
 			StorageBackend:                 "STORAGE_BACKEND",
 			FileStorageBackendPath:         "FILE_STORAGE_BACKEND_PATH",
 			FileStorageRegion:              "REGION",
@@ -86,8 +89,9 @@ func storageServiceConfig() serviceConfig[storageEnvApiKeys, storageApiDefaults]
 			S3ProtocolPrefix:               fixedEnvOf("S3_PROTOCOL_PREFIX", "/storage/v1"),
 			S3ProtocolAllowForwardedHeader: "S3_ALLOW_FORWARDED_HEADER",
 			AllowForwardedPathHeader:       fixedEnvOf("REQUEST_ALLOW_X_FORWARDED_PATH", strconv.FormatBool(true)),
+			PGQeueEnabled:                  "PG_QUEUE_ENABLE",
 		},
-		Defaults: storageApiDefaults{
+		Defaults: storageAPIDefaults{
 			APIPort:     5000,
 			APIPortName: "api",
 			UID:         1000,

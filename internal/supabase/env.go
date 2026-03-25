@@ -54,7 +54,7 @@ var ServiceConfig = struct {
 	Auth      serviceConfig[authEnvKeys, authConfigDefaults]
 	PGMeta    pgMetaConfig
 	Studio    serviceConfig[studioEnvKeys, studioDefaults]
-	Storage   serviceConfig[storageEnvApiKeys, storageApiDefaults]
+	Storage   serviceConfig[storageEnvApiKeys, storageAPIDefaults]
 	ImgProxy  serviceConfig[imgProxyEnvKeys, imgProxyDefaults]
 	Envoy     envoyServiceConfig
 	JWT       jwtConfig

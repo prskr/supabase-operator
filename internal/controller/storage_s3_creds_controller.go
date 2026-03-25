@@ -60,7 +60,7 @@ func (r *StorageS3CredentialsReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
-	if storage.Spec.Api.S3Backend != nil {
+	if storage.Spec.API.S3Backend != nil {
 		if err := r.reconcileS3StorageSecret(ctx, &storage); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -82,13 +82,13 @@ func (r *StorageS3CredentialsReconciler) reconcileS3StorageSecret(
 	ctx context.Context,
 	storage *supabasev1alpha1.Storage,
 ) error {
-	if storage.Spec.Api.S3Backend.CredentialsSecretRef == nil {
+	if storage.Spec.API.S3Backend.CredentialsSecretRef == nil {
 		return errS3CredentialsSecretEmpty
 	}
 
 	s3CredsSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      storage.Spec.Api.S3Backend.CredentialsSecretRef.SecretName,
+			Name:      storage.Spec.API.S3Backend.CredentialsSecretRef.SecretName,
 			Namespace: storage.Namespace,
 		},
 	}
@@ -112,7 +112,7 @@ func (r *StorageS3CredentialsReconciler) reconcileS3ProtoSecret(
 	)
 	s3ProtoSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      storage.Spec.Api.S3Protocol.CredentialsSecretRef.SecretName,
+			Name:      storage.Spec.API.S3Protocol.CredentialsSecretRef.SecretName,
 			Namespace: storage.Namespace,
 		},
 	}
@@ -133,12 +133,12 @@ func (r *StorageS3CredentialsReconciler) reconcileS3ProtoSecret(
 			s3ProtoSecret.Data = make(map[string][]byte, acccessKeyIdAndSecret)
 		}
 
-		if _, ok := s3ProtoSecret.Data[storage.Spec.Api.S3Protocol.CredentialsSecretRef.AccessKeyIdKey]; !ok {
-			s3ProtoSecret.Data[storage.Spec.Api.S3Protocol.CredentialsSecretRef.AccessKeyIdKey] = pw.GeneratePW(32, nil)
+		if _, ok := s3ProtoSecret.Data[storage.Spec.API.S3Protocol.CredentialsSecretRef.AccessKeyIDKey]; !ok {
+			s3ProtoSecret.Data[storage.Spec.API.S3Protocol.CredentialsSecretRef.AccessKeyIDKey] = pw.GeneratePW(32, nil)
 		}
 
-		if _, ok := s3ProtoSecret.Data[storage.Spec.Api.S3Protocol.CredentialsSecretRef.AccessSecretKeyKey]; !ok {
-			s3ProtoSecret.Data[storage.Spec.Api.S3Protocol.CredentialsSecretRef.AccessSecretKeyKey] = pw.GeneratePW(64, nil)
+		if _, ok := s3ProtoSecret.Data[storage.Spec.API.S3Protocol.CredentialsSecretRef.AccessSecretKeyKey]; !ok {
+			s3ProtoSecret.Data[storage.Spec.API.S3Protocol.CredentialsSecretRef.AccessSecretKeyKey] = pw.GeneratePW(64, nil)
 		}
 
 		return nil

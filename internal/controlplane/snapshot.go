@@ -34,6 +34,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -375,6 +376,7 @@ func (s *EnvoyServices) apiTransportSocket(ctx context.Context) (*corev3.Transpo
 		Name: SocketNameTLS,
 		ConfigType: &corev3.TransportSocket_TypedConfig{
 			TypedConfig: MustAny(&tlsv3.DownstreamTlsContext{
+				RequireClientCertificate: &wrapperspb.BoolValue{Value: false},
 				CommonTlsContext: &tlsv3.CommonTlsContext{
 					TlsCertificates: []*tlsv3.TlsCertificate{{
 						CertificateChain: &corev3.DataSource{

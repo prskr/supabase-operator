@@ -78,7 +78,7 @@ func (r *CoreDbReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	}
 
 	logger.Info("Sync credentials for Supabase roles")
-	if err := r.ensureDbRolesSecrets(ctx, dsn, conn, &core); err != nil {
+	if err := r.ensureDBRolesSecrets(ctx, dsn, conn, &core); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -129,7 +129,7 @@ func (r *CoreDbReconciler) applyMissingMigrations(
 	return nil
 }
 
-func (r *CoreDbReconciler) ensureDbRolesSecrets(
+func (r *CoreDbReconciler) ensureDBRolesSecrets(
 	ctx context.Context,
 	dsn string,
 	conn *pgx.Conn,

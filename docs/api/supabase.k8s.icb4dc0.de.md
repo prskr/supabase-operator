@@ -316,6 +316,25 @@ _Appears in:_
 
 
 
+#### DBCredentialsReference
+
+
+
+
+
+
+
+_Appears in:_
+- [DashboardDBSpec](#dashboarddbspec)
+- [StorageAPIDBSpec](#storageapidbspec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `secretName` _string_ |  |  |  |
+| `usernameKey` _string_ | UsernameKey | username |  |
+| `passwordKey` _string_ | PasswordKey | password |  |
+
+
 #### Dashboard
 
 
@@ -371,7 +390,7 @@ _Appears in:_
 | `plaintextUsersSecretRef` _string_ | PlaintextUsersSecretRef - name of a secret that contains plaintext credentials in key-value form<br />if not empty, credentials will be merged with inline users |  |  |
 
 
-#### DashboardDbSpec
+#### DashboardDBSpec
 
 
 
@@ -387,7 +406,9 @@ _Appears in:_
 | `host` _string_ |  |  |  |
 | `port` _integer_ | Port - Database port, typically 5432 | 5432 |  |
 | `dbName` _string_ |  |  |  |
-| `dbCredentialsRef` _[DbCredentialsReference](#dbcredentialsreference)_ | DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from<br />Credentials need to be stored in basic auth form |  |  |
+| `dbCredentialsRef` _[DBCredentialsReference](#dbcredentialsreference)_ | DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from<br />Credentials need to be stored in basic auth form |  |  |
+| `schemas` _string array_ | Schemas - schema where PostgREST is looking for objects (tables, views, functions, ...) | [public storage graphql_public] |  |
+| `extraSearchPath` _string array_ | ExtraSearchPath - Extra schemas to add to the search_path of every request.<br />These schemas tables, views and functions don’t get API endpoints, they can only be referred from the database objects inside your db-schemas. | [public] |  |
 
 
 #### DashboardEndpointSpec
@@ -460,7 +481,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `db` _[DashboardDbSpec](#dashboarddbspec)_ |  |  |  |
+| `db` _[DashboardDBSpec](#dashboarddbspec)_ |  |  |  |
 | `pgMeta` _[PGMetaSpec](#pgmetaspec)_ | PGMeta |  |  |
 | `studio` _[StudioSpec](#studiospec)_ | Studio |  |  |
 
@@ -537,25 +558,6 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `migrationConditions` _[MigrationScriptCondition](#migrationscriptcondition) array_ |  |  |  |
 | `roles` _object (keys:string, values:integer array)_ |  |  |  |
-
-
-#### DbCredentialsReference
-
-
-
-
-
-
-
-_Appears in:_
-- [DashboardDbSpec](#dashboarddbspec)
-- [StorageApiDbSpec](#storageapidbspec)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `secretName` _string_ |  |  |  |
-| `usernameKey` _string_ | UsernameKey | username |  |
-| `passwordKey` _string_ | PasswordKey | password |  |
 
 
 #### EmailAuthProvider
@@ -774,7 +776,7 @@ _Appears in:_
 
 
 _Appears in:_
-- [StorageApiSpec](#storageapispec)
+- [StorageAPISpec](#storageapispec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -891,7 +893,7 @@ _Appears in:_
 
 _Appears in:_
 - [CoreJwtSpec](#corejwtspec)
-- [StorageApiSpec](#storageapispec)
+- [StorageAPISpec](#storageapispec)
 - [StudioSpec](#studiospec)
 
 | Field | Description | Default | Validation |
@@ -1038,8 +1040,8 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `schemas` _string array_ | Schemas - schema where PostgREST is looking for objects (tables, views, functions, ...) | [public graphql_public] |  |
-| `extraSearchPath` _string array_ | ExtraSearchPath - Extra schemas to add to the search_path of every request.<br />These schemas tables, views and functions don’t get API endpoints, they can only be referred from the database objects inside your db-schemas. | [public extensions] |  |
+| `schemas` _string array_ | Schemas - schema where PostgREST is looking for objects (tables, views, functions, ...) | [public storage graphql_public] |  |
+| `extraSearchPath` _string array_ | ExtraSearchPath - Extra schemas to add to the search_path of every request.<br />These schemas tables, views and functions don’t get API endpoints, they can only be referred from the database objects inside your db-schemas. | [public] |  |
 | `anonRole` _string_ | AnonRole - name of the anon role | anon |  |
 | `maxRows` _integer_ | MaxRows - maximum number of rows PostgREST will load at a time | 1000 |  |
 | `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadSpec - customize the PostgREST workload |  |  |
@@ -1055,7 +1057,7 @@ _Appears in:_
 
 
 _Appears in:_
-- [StorageApiSpec](#storageapispec)
+- [StorageAPISpec](#storageapispec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -1081,7 +1083,7 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `secretName` _string_ |  |  |  |
-| `accessKeyIdKey` _string_ | AccessKeyIdKey - key in Secret where access key id will be referenced from | accessKeyId |  |
+| `accessKeyIdKey` _string_ | AccessKeyIDKey - key in Secret where access key id will be referenced from | accessKeyId |  |
 | `accessSecretKeyKey` _string_ | AccessSecretKeyKey - key in Secret where access secret key will be referenced from | secretAccessKey |  |
 
 
@@ -1094,7 +1096,7 @@ _Appears in:_
 
 
 _Appears in:_
-- [StorageApiSpec](#storageapispec)
+- [StorageAPISpec](#storageapispec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -1123,7 +1125,7 @@ _Appears in:_
 | `spec` _[StorageSpec](#storagespec)_ |  |  |  |
 
 
-#### StorageApiDbSpec
+#### StorageAPIDBSpec
 
 
 
@@ -1132,17 +1134,17 @@ _Appears in:_
 
 
 _Appears in:_
-- [StorageApiSpec](#storageapispec)
+- [StorageAPISpec](#storageapispec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `host` _string_ |  |  |  |
 | `port` _integer_ | Port - Database port, typically 5432 | 5432 |  |
 | `dbName` _string_ |  |  |  |
-| `dbCredentialsRef` _[DbCredentialsReference](#dbcredentialsreference)_ | DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from<br />Credentials need to be stored in basic auth form |  |  |
+| `dbCredentialsRef` _[DBCredentialsReference](#dbcredentialsreference)_ | DBCredentialsRef - reference to a Secret key where the DB credentials can be retrieved from<br />Credentials need to be stored in basic auth form |  |  |
 
 
-#### StorageApiSpec
+#### StorageAPISpec
 
 
 
@@ -1155,14 +1157,17 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
+| `tenantId` _string_ |  | stub |  |
+| `region` _string_ |  | stub |  |
 | `s3Backend` _[S3BackendSpec](#s3backendspec)_ |  |  |  |
 | `fileBackend` _[FileBackendSpec](#filebackendspec)_ | FileBackend - configure the file backend<br />either S3 or file backend **MUST** be configured |  |  |
 | `fileSizeLimit` _integer_ | FileSizeLimit - maximum file upload size in bytes | 52428800 |  |
 | `jwtAuth` _[JwtSpec](#jwtspec)_ | JwtAuth - Configure the JWT authentication parameters.<br />This includes where to retrieve anon and service key from as well as JWT secret and JWKS references<br />needed to validate JWTs send to the API |  |  |
-| `db` _[StorageApiDbSpec](#storageapidbspec)_ | DBSpec - Configure access to the Postgres database<br />In most cases this will reference the supabase-storage-admin credentials secret provided by the Core resource |  |  |
+| `db` _[StorageAPIDBSpec](#storageapidbspec)_ | DBSpec - Configure access to the Postgres database<br />In most cases this will reference the supabase-storage-admin credentials secret provided by the Core resource |  |  |
 | `s3` _[S3ProtocolSpec](#s3protocolspec)_ | S3Protocol - Configure S3 access to the Storage API allowing clients to use any S3 client |  |  |
 | `uploadTemp` _[UploadTempSpec](#uploadtempspec)_ | UploadTemp - configure the emptyDir for storing intermediate files during uploads |  |  |
 | `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadTemplate - customize the Storage API workload |  |  |
+| `postgRESTServiceSelector` _object (keys:string, values:string)_ | PostgrestServiceSelector - selector to find the service for the PostgREST API<br />Required to configure the API URL in the studio deployment<br />If you don't run multiple PostgREST instances in the same namespaces, the default will be fine | \{ app.kubernetes.io/component:core app.kubernetes.io/name:postgrest \} |  |
 
 
 #### StorageList
@@ -1196,7 +1201,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `api` _[StorageApiSpec](#storageapispec)_ | Api - configure the Storage API |  |  |
+| `api` _[StorageAPISpec](#storageapispec)_ | API - configure the Storage API |  |  |
 | `imageProxy` _[ImageProxySpec](#imageproxyspec)_ | ImageProxy - optionally enable and configure the image proxy<br />the image proxy scale images to lower resolutions on demand to reduce traffic for instance for mobile devices |  |  |
 
 
@@ -1250,7 +1255,7 @@ _Appears in:_
 
 
 _Appears in:_
-- [StorageApiSpec](#storageapispec)
+- [StorageAPISpec](#storageapispec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -1272,7 +1277,7 @@ _Appears in:_
 - [ImageProxySpec](#imageproxyspec)
 - [PGMetaSpec](#pgmetaspec)
 - [PostgrestSpec](#postgrestspec)
-- [StorageApiSpec](#storageapispec)
+- [StorageAPISpec](#storageapispec)
 - [StudioSpec](#studiospec)
 
 | Field | Description | Default | Validation |
@@ -1282,5 +1287,3 @@ _Appears in:_
 | `additionalLabels` _object (keys:string, values:string)_ |  |  |  |
 | `container` _[ContainerTemplate](#containertemplate)_ | ContainerSpec - customize the container template of the workload |  |  |
 | `additionalVolumes` _[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#volume-v1-core) array_ |  |  |  |
-
-

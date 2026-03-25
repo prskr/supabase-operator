@@ -171,7 +171,7 @@ func (r *CorePostgrestReconiler) reconilePostgrestDeployment(
 			},
 			Spec: corev1.PodSpec{
 				ImagePullSecrets:             postgrestSpec.WorkloadSpec.PullSecrets(),
-				AutomountServiceAccountToken: ptrOf(false),
+				AutomountServiceAccountToken: new(false),
 				Containers: []corev1.Container{
 					{
 						Name:            "supabase-rest",
@@ -260,7 +260,7 @@ func (r *CorePostgrestReconiler) reconcilePostgrestService(
 				{
 					Name:        serviceCfg.Defaults.ServerPortName,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptrOf("http"),
+					AppProtocol: new("http"),
 					Port:        serviceCfg.Defaults.ServerPort,
 					TargetPort:  intstr.IntOrString{IntVal: serviceCfg.Defaults.ServerPort},
 				},
@@ -303,7 +303,7 @@ func (r *CorePostgrestReconiler) reconcilePodMonitor(
 				MatchLabels: selectorLabels(core, serviceCfg.Name),
 			},
 			JobLabel:               meta.WellKnownLabel.Instance,
-			FallbackScrapeProtocol: ptrOf(monitoringv1.PrometheusText1_0_0),
+			FallbackScrapeProtocol: new(monitoringv1.PrometheusText1_0_0),
 			PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 				{
 					Port: &serviceCfg.Defaults.AdminPortName,

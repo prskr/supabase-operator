@@ -39,6 +39,7 @@ var (
 	errInvalidSecretRef                     = errors.New("invalid secret reference")
 	errMissingSecretKey                     = errors.New("missing secret key")
 	errEmptySecretKey                       = errors.New("empty secret key")
+	errEmptyPostgRESTServiceSelector        = errors.New(".spec.api.postgRESTServiceSelector may not be empty")
 )
 
 // NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
@@ -92,7 +93,26 @@ func (v *StorageCustomValidator) ValidateDelete(ctx context.Context, storage *su
 func (v *StorageCustomValidator) validateStorageAPI(ctx context.Context, storage *supabasev1alpha1.Storage) (admission.Warnings, error) {
 	var warnings admission.Warnings
 
-	apiSpec := storage.Spec.Api
+	apiSpec := storage.Spec.API
+
+	if len(apiSpec.PostgRESTServiceMatchLabels) < 1 {
+		return nil, errEmptyPostgRESTServiceSelector
+	}
+
+	var serviceList corev1.ServiceList
+	if err := v.List(
+		ctx,
+		&serviceList,
+		client.InNamespace(storage.Namespace),
+		client.MatchingLabels(apiSpec.PostgRESTServiceMatchLabels),
+	); err != nil {
+		return nil, fmt.Errorf("fetching PostgREST service list: %w", err)
+	}
+	if matchedServices := len(serviceList.Items); matchedServices < 1 {
+		warnings = append(warnings, "No service matched the postgRESTServiceSelector")
+	} else if matchedServices > 1 {
+		warnings = append(warnings, "Could not determine the PostgREST service to link to: multiple services match the selector")
+	}
 
 	if (apiSpec.FileBackend == nil) == (apiSpec.S3Backend == nil) {
 		return nil, fmt.Errorf("%w: it is not possible to configure both or no backend at all - please configure either file or S3 backend", errAmbiguousStorageBackendConfiguration)
@@ -116,10 +136,10 @@ func (v *StorageCustomValidator) validateStorageAPI(ctx context.Context, storage
 				return nil, err
 			}
 		} else {
-			if accessKeyID, ok := s3CredentialsSecret.Data[apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIdKey]; !ok {
-				return warnings, fmt.Errorf("%w: %q does not contain an access key ID with key %q", errMissingSecretKey, apiSpec.S3Backend.CredentialsSecretRef.SecretName, apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIdKey)
+			if accessKeyID, ok := s3CredentialsSecret.Data[apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIDKey]; !ok {
+				return warnings, fmt.Errorf("%w: %q does not contain an access key ID with key %q", errMissingSecretKey, apiSpec.S3Backend.CredentialsSecretRef.SecretName, apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIDKey)
 			} else if len(accessKeyID) == 0 {
-				return warnings, fmt.Errorf("%w: key %q in Secret %q", errEmptySecretKey, apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIdKey, apiSpec.S3Backend.CredentialsSecretRef.SecretName)
+				return warnings, fmt.Errorf("%w: key %q in Secret %q", errEmptySecretKey, apiSpec.S3Backend.CredentialsSecretRef.AccessKeyIDKey, apiSpec.S3Backend.CredentialsSecretRef.SecretName)
 			}
 
 			if accessSecretKey, ok := s3CredentialsSecret.Data[apiSpec.S3Backend.CredentialsSecretRef.AccessSecretKeyKey]; !ok {

@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -41,7 +42,8 @@ var errAmbiguousGatewayService = errors.New("ambiguous gateway service matches")
 
 type DashboardStudioReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder events.EventRecorder
 }
 
 func (r *DashboardStudioReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -86,8 +88,10 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 		studioDeployment = &appsv1.Deployment{
 			ObjectMeta: serviceCfg.ObjectMeta(dashboard),
 		}
-		studioSpec         = dashboard.Spec.Studio
-		gatewayServiceList corev1.ServiceList
+		studioSpec             = dashboard.Spec.Studio
+		gatewayServiceList     corev1.ServiceList
+		dbSchemasValue         = ValueOrFallback(dashboard.Spec.DBSpec.Schemas, serviceCfg.Defaults.Schemas)
+		extraDBSearchPathValue = ValueOrFallback(dashboard.Spec.DBSpec.ExtraSearchPath, serviceCfg.Defaults.ExtraSearchPath)
 	)
 
 	if studioSpec == nil {
@@ -104,8 +108,28 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 		return fmt.Errorf("selecting gateway service: %w", err)
 	}
 
-	if itemCount := len(gatewayServiceList.Items); itemCount != 1 {
-		return fmt.Errorf("%w: %d", errAmbiguousGatewayService, itemCount)
+	if itemCount := len(gatewayServiceList.Items); itemCount < 1 {
+		r.Recorder.Eventf(
+			dashboard,
+			dashboard,
+			corev1.EventTypeWarning,
+			"GatewayServiceNotFound",
+			"Cannot configure link from Studio to API Gateway",
+			"Make sure that the API Gateway is deployed and a matching selector is configured in order to get a functioning Studio deployment",
+		)
+
+		return fmt.Errorf("%w: no matching service found", errAmbiguousGatewayService)
+	} else if itemCount > 1 {
+		r.Recorder.Eventf(
+			dashboard,
+			dashboard,
+			corev1.EventTypeWarning,
+			"AmbiguousGatewayServicesFound",
+			"Cannot configure link from Studio to API Gateway",
+			"Make sure that the API Gateway is deployed and a matching selector is configured in order to get a functioning Studio deployment",
+		)
+
+		return fmt.Errorf("%w: multiple ( %d ) matching services found", errAmbiguousGatewayService, itemCount)
 	}
 
 	gatewayService := gatewayServiceList.Items[0]
@@ -128,7 +152,13 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 			serviceCfg.EnvKeys.PGMetaURL.Var(fmt.Sprintf("http://%s.%s.svc:%d", supabase.ServiceConfig.PGMeta.ObjectName(dashboard), dashboard.Namespace, supabase.ServiceConfig.PGMeta.Defaults.APIPort)),
 			serviceCfg.EnvKeys.Host.Var(),
 			serviceCfg.EnvKeys.ApiUrl.Var(fmt.Sprintf("http://%s.%s.svc:8000", gatewayService.Name, gatewayService.Namespace)),
+			serviceCfg.EnvKeys.DBHost.Var(dashboard.Spec.DBSpec.Host),
+			serviceCfg.EnvKeys.DBPort.Var(dashboard.Spec.DBSpec.Port),
+			serviceCfg.EnvKeys.DBName.Var(dashboard.Spec.DBSpec.DBName),
 			serviceCfg.EnvKeys.DBPassword.Var(dashboard.Spec.DBSpec.PasswordRef()),
+			serviceCfg.EnvKeys.DBSchemas.Var(dbSchemasValue),
+			serviceCfg.EnvKeys.DBExtraSearchPath.Var(extraDBSearchPathValue),
+			serviceCfg.EnvKeys.DBMaxRows.Var(serviceCfg.Defaults.MaxRows),
 			serviceCfg.EnvKeys.APIExternalURL.Var(studioSpec.APIExternalURL),
 			serviceCfg.EnvKeys.JwtSecret.Var(studioSpec.JWT.SecretKeySelector()),
 			serviceCfg.EnvKeys.AnonKey.Var(studioSpec.JWT.AnonKeySelector()),
@@ -147,7 +177,7 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 			},
 			Spec: corev1.PodSpec{
 				ImagePullSecrets:             studioSpec.WorkloadSpec.PullSecrets(),
-				AutomountServiceAccountToken: ptrOf(false),
+				AutomountServiceAccountToken: new(false),
 				Containers: []corev1.Container{{
 					Name:            "supabase-studio",
 					Image:           studioSpec.WorkloadSpec.Image(supabase.Images.Studio.String()),
@@ -194,7 +224,7 @@ func (r *DashboardStudioReconciler) reconcileStudioDeployment(
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							Medium:    corev1.StorageMediumDefault,
-							SizeLimit: ptrOf(resource.MustParse("300Mi")),
+							SizeLimit: new(resource.MustParse("300Mi")),
 						},
 					},
 				}},
@@ -239,7 +269,7 @@ func (r *DashboardStudioReconciler) reconcileStudioService(
 				{
 					Name:        "studio",
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptrOf("http"),
+					AppProtocol: new("http"),
 					Port:        supabase.ServiceConfig.Studio.Defaults.APIPort,
 					TargetPort:  intstr.IntOrString{IntVal: supabase.ServiceConfig.Studio.Defaults.APIPort},
 				},

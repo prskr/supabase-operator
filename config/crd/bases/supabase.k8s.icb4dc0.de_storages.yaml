@@ -39,7 +39,7 @@ spec:
               description: StorageSpec defines the desired state of Storage.
               properties:
                 api:
-                  description: Api - configure the Storage API
+                  description: API - configure the Storage API
                   properties:
                     db:
                       description: |-
@@ -119,6 +119,17 @@ spec:
                           description: ServiceKey - key in secret where to read the service JWT from
                           type: string
                       type: object
+                    postgRESTServiceSelector:
+                      additionalProperties:
+                        type: string
+                      default:
+                        app.kubernetes.io/component: core
+                        app.kubernetes.io/name: postgrest
+                      description: |-
+                        PostgrestServiceSelector - selector to find the service for the PostgREST API
+                        Required to configure the API URL in the studio deployment
+                        If you don't run multiple PostgREST instances in the same namespaces, the default will be fine
+                      type: object
                     region:
                       default: stub
                       type: string
@@ -134,7 +145,7 @@ spec:
                           properties:
                             accessKeyIdKey:
                               default: accessKeyId
-                              description: AccessKeyIdKey - key in Secret where access key id will be referenced from
+                              description: AccessKeyIDKey - key in Secret where access key id will be referenced from
                               type: string
                             accessSecretKeyKey:
                               default: secretAccessKey
@@ -157,7 +168,7 @@ spec:
                           properties:
                             accessKeyIdKey:
                               default: accessKeyId
-                              description: AccessKeyIdKey - key in Secret where access key id will be referenced from
+                              description: AccessKeyIDKey - key in Secret where access key id will be referenced from
                               type: string
                             accessSecretKeyKey:
                               default: secretAccessKey

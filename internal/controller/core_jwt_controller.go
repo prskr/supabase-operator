@@ -73,6 +73,7 @@ func (r *CoreJwtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		}
 
 		jwtSecret.Labels[meta.SupabaseLabel.Reload] = ""
+		jwtSecret.Labels[meta.SupabaseLabel.SecretKind] = "jwt"
 
 		if err := controllerutil.SetControllerReference(&core, jwtSecret, r.Scheme); err != nil {
 			return err

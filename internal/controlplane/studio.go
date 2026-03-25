@@ -42,6 +42,7 @@ import (
 	matcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -309,6 +310,7 @@ func (s *StudioCluster) dashboardTransportSocket(
 		Name: SocketNameTLS,
 		ConfigType: &corev3.TransportSocket_TypedConfig{
 			TypedConfig: MustAny(&tlsv3.DownstreamTlsContext{
+				RequireClientCertificate: &wrapperspb.BoolValue{Value: false},
 				CommonTlsContext: &tlsv3.CommonTlsContext{
 					TlsCertificates: []*tlsv3.TlsCertificate{{
 						CertificateChain: &corev3.DataSource{

@@ -186,11 +186,11 @@ func (s CoreJwtSpec) ExpiryAsEnv(key string) corev1.EnvVar {
 
 type PostgrestSpec struct {
 	// Schemas - schema where PostgREST is looking for objects (tables, views, functions, ...)
-	// +kubebuilder:default={"public","graphql_public"}
+	// +kubebuilder:default={"public","storage","graphql_public"}
 	Schemas []string `json:"schemas,omitempty"`
 	// ExtraSearchPath - Extra schemas to add to the search_path of every request.
 	// These schemas tables, views and functions don’t get API endpoints, they can only be referred from the database objects inside your db-schemas.
-	// +kubebuilder:default={"public","extensions"}
+	// +kubebuilder:default={"public"}
 	ExtraSearchPath []string `json:"extraSearchPath,omitempty"`
 	// AnonRole - name of the anon role
 	// +kubebuilder:default=anon

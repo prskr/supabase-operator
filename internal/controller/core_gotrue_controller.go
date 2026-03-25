@@ -163,7 +163,7 @@ func (r *CoreAuthReconciler) reconcileAuthDeployment(
 			},
 			Spec: corev1.PodSpec{
 				ImagePullSecrets:             authSpec.WorkloadTemplate.PullSecrets(),
-				AutomountServiceAccountToken: ptrOf(false),
+				AutomountServiceAccountToken: new(false),
 				InitContainers: []corev1.Container{{
 					Name:            "supabase-auth-migrations",
 					Image:           authSpec.WorkloadTemplate.Image(supabase.Images.Gotrue.String()),
@@ -250,7 +250,7 @@ func (r *CoreAuthReconciler) reconcileAuthService(
 				{
 					Name:        "api",
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptrOf("http"),
+					AppProtocol: new("http"),
 					Port:        9999,
 					TargetPort:  intstr.IntOrString{IntVal: 9999},
 				},

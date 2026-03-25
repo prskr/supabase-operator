@@ -33,10 +33,10 @@ nav:
       - Email: auth/email.md
       - Social Providers:
           - Azure: auth/providers/azure.md
-  - API Reference: api/supabase.k8s.icb4dc0.de.md
   - Development:
       - Tools: development/tools.md
       - Local Development: development/local_dev.md
+  - API Reference: api/supabase.k8s.icb4dc0.de.md
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true

@@ -465,7 +465,7 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 			},
 			Spec: corev1.PodSpec{
 				ImagePullSecrets:             envoySpec.WorkloadSpec.PullSecrets(),
-				AutomountServiceAccountToken: ptrOf(false),
+				AutomountServiceAccountToken: new(false),
 				Containers: []corev1.Container{
 					{
 						Name:            "envoy-proxy",
@@ -622,14 +622,14 @@ func (r *APIGatewayReconciler) reconcileEnvoyService(
 				{
 					Name:        serviceCfg.Defaults.StudioPortName,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptrOf("http"),
+					AppProtocol: new("http"),
 					Port:        serviceCfg.Defaults.StudioPort,
 					TargetPort:  intstr.IntOrString{IntVal: serviceCfg.Defaults.StudioPort},
 				},
 				{
 					Name:        serviceCfg.Defaults.ApiPortName,
 					Protocol:    corev1.ProtocolTCP,
-					AppProtocol: ptrOf("http"),
+					AppProtocol: new("http"),
 					Port:        serviceCfg.Defaults.ApiPort,
 					TargetPort:  intstr.IntOrString{IntVal: serviceCfg.Defaults.ApiPort},
 				},
@@ -671,7 +671,7 @@ func (r *APIGatewayReconciler) reconcilePodMonitor(
 			JobLabel: meta.WellKnownLabel.Instance,
 			PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 				{
-					Port: ptrOf("admin"),
+					Port: new("admin"),
 					Path: "/stats/prometheus",
 					Params: map[string][]string{
 						"histogram_buckets": {"cumulative"},
