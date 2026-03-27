@@ -41,7 +41,6 @@ type storageEnvApiKeys struct {
 	StorageS3AccessSecretKey       secretEnv
 	EnableImaageTransformation     boolEnv
 	ImgProxyURL                    stringEnv
-	TusURLPath                     fixedEnv
 	S3ProtocolAccessKeyID          secretEnv
 	S3ProtocolAccessKeySecret      secretEnv
 	S3ProtocolAllowForwardedHeader boolEnv
@@ -83,7 +82,6 @@ func storageServiceConfig() serviceConfig[storageEnvApiKeys, storageAPIDefaults]
 			StorageS3AccessSecretKey:       "AWS_SECRET_ACCESS_KEY",
 			EnableImaageTransformation:     "ENABLE_IMAGE_TRANSFORMATION",
 			ImgProxyURL:                    "IMGPROXY_URL",
-			TusURLPath:                     fixedEnvOf("TUS_URL_PATH", "/storage/v1/upload/resumable"),
 			S3ProtocolAccessKeyID:          "S3_PROTOCOL_ACCESS_KEY_ID",
 			S3ProtocolAccessKeySecret:      "S3_PROTOCOL_ACCESS_KEY_SECRET",
 			S3ProtocolPrefix:               fixedEnvOf("S3_PROTOCOL_PREFIX", "/storage/v1"),

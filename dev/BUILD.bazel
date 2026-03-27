@@ -8,6 +8,7 @@ sh_binary(
     srcs = ["setup_dev_cluster.sh"],
     data = [
         "cluster.yaml",
+        "dex_config.yaml",
         "@io_k8s_sigs_kind//:kind",
         "@multitool//tools/kubectl",
     ],
@@ -16,6 +17,7 @@ sh_binary(
         "KIND_BIN": "$(rlocationpath @io_k8s_sigs_kind//:kind)",
         "KUBECTL_BIN": "$(rlocationpath @multitool//tools/kubectl:kubectl)",
         "CLUSTER_CONFIG": "$(rlocationpath cluster.yaml)",
+        "DEX_IDP_CONFIG": "$(rlocationpath dex_config.yaml)",
     },
     deps = ["@rules_shell//shell/runfiles"],
 )

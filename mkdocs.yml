@@ -36,6 +36,7 @@ nav:
   - Development:
       - Tools: development/tools.md
       - Local Development: development/local_dev.md
+      - Studio: development/studio.md
   - API Reference: api/supabase.k8s.icb4dc0.de.md
 markdown_extensions:
   - pymdownx.highlight:

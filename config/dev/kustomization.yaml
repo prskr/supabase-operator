@@ -6,9 +6,10 @@ resources:
   - ca.yaml
   - namespace.yaml
   - cnpg-cluster.yaml
-  - minio.yaml
   - ../prometheus-operator
+  - ../seaweedfs
   - ../default
+  - object_store_credentials.yaml
   - studio-plaintext-users.yaml
   - studio-credentials-secret.yaml
   - core.yaml
@@ -27,7 +28,7 @@ patches:
 configurations:
   - kustomizeconfig/cnpg-cluster.yaml
 images:
-  - digest: sha256:d348d7c92f4b159101896edaa2dfb4726c5ab0dc8a4c42bbb01d045715492078
+  - digest: sha256:0c60007e250a0cbf609a9ba0e9644216745f718f33ae983f261a97ca7e6890ab
     name: controller
     newName: localhost:5005/supabase-operator
     newTag: latest

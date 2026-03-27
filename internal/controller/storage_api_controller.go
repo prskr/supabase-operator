@@ -210,7 +210,6 @@ func (r *StorageAPIReconciler) reconcileStorageAPIDeployment(
 			serviceCfg.EnvKeys.S3ProtocolAllowForwardedHeader.Var(apiSpec.S3Protocol.AllowForwardedHeader),
 			serviceCfg.EnvKeys.S3ProtocolAccessKeyID.Var(apiSpec.S3Protocol.CredentialsSecretRef.AccessKeyIDSelector()),
 			serviceCfg.EnvKeys.S3ProtocolAccessKeySecret.Var(apiSpec.S3Protocol.CredentialsSecretRef.AccessSecretKeySelector()),
-			serviceCfg.EnvKeys.TusURLPath.Var(),
 			serviceCfg.EnvKeys.FileSizeLimit.Var(apiSpec.FileSizeLimit),
 			serviceCfg.EnvKeys.UploadFileSizeLimit.Var(apiSpec.FileSizeLimit),
 			serviceCfg.EnvKeys.UploadFileSizeLimitStandard.Var(apiSpec.FileSizeLimit),

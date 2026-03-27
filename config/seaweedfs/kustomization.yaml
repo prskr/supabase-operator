@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: seaweedfs
+images:
+  - digest: sha256:186de7ef977a20343ee9a5544073f081976a29e2d29ecf8379891e7bf177fbe9
+    name: seaweedfs
+    newName: chrislusf/seaweedfs
+    newTag: "4.17"
+resources:
+  - namespace.yaml
+  - credentials.yaml
+  - workload.yaml
+  - service.yaml

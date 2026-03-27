@@ -57,7 +57,7 @@ type EnvoyServices struct {
 	Gateway         *supabasev1alpha1.APIGateway
 	Postgrest       *PostgrestCluster
 	GoTrue          *GoTrueCluster
-	StorageApi      *StorageApiCluster
+	StorageAPI      *StorageApiCluster
 	PGMeta          *PGMetaCluster
 	Studio          *StudioCluster
 }
@@ -76,10 +76,10 @@ func (s *EnvoyServices) UpsertEndpointSlices(endpointSlices ...discoveryv1.Endpo
 			}
 			s.GoTrue.AddOrUpdateEndpoints(eps)
 		case supabase.ServiceConfig.Storage.Name:
-			if s.StorageApi == nil {
-				s.StorageApi = new(StorageApiCluster)
+			if s.StorageAPI == nil {
+				s.StorageAPI = new(StorageApiCluster)
 			}
-			s.StorageApi.AddOrUpdateEndpoints(eps)
+			s.StorageAPI.AddOrUpdateEndpoints(eps)
 		case supabase.ServiceConfig.PGMeta.Name:
 			if s.PGMeta == nil {
 				s.PGMeta = new(PGMetaCluster)
@@ -106,8 +106,8 @@ func (s EnvoyServices) Targets() map[string][]string {
 		targets[supabase.ServiceConfig.Auth.Name] = s.GoTrue.Targets()
 	}
 
-	if s.StorageApi != nil {
-		targets[supabase.ServiceConfig.Storage.Name] = s.StorageApi.Targets()
+	if s.StorageAPI != nil {
+		targets[supabase.ServiceConfig.Storage.Name] = s.StorageAPI.Targets()
 	}
 
 	if s.PGMeta != nil {
@@ -179,7 +179,7 @@ func (s *EnvoyServices) snapshot(
 		slices.Concat(
 			s.Postgrest.Cluster(instance),
 			s.GoTrue.Cluster(instance),
-			s.StorageApi.Cluster(instance),
+			s.StorageAPI.Cluster(instance),
 			s.PGMeta.Cluster(instance),
 			studioClusters,
 		)...)
@@ -313,12 +313,12 @@ func (s *EnvoyServices) apiConnectionManager() *hcm.HttpConnectionManager {
 		},
 		HttpFilters: []*hcm.HttpFilter{
 			{
-				Name:       FilterNameJwtAuthn,
-				ConfigType: &hcm.HttpFilter_TypedConfig{TypedConfig: MustAny(JWTFilterConfig())},
-			},
-			{
 				Name:       FilterNameCORS,
 				ConfigType: &hcm.HttpFilter_TypedConfig{TypedConfig: MustAny(Cors())},
+			},
+			{
+				Name:       FilterNameJwtAuthn,
+				ConfigType: &hcm.HttpFilter_TypedConfig{TypedConfig: MustAny(JWTFilterConfig())},
 			},
 			{
 				Name:       FilterNameHttpRouter,
@@ -341,7 +341,7 @@ func (s *EnvoyServices) apiRouteConfiguration(instance string) *routev3.RouteCon
 			Routes: slices.Concat(
 				s.Postgrest.Routes(instance),
 				s.GoTrue.Routes(instance),
-				s.StorageApi.Routes(instance),
+				s.StorageAPI.Routes(instance),
 				s.PGMeta.Routes(instance),
 			),
 		}},
@@ -357,14 +357,14 @@ func (s *EnvoyServices) apiTransportSocket(ctx context.Context) (*corev3.Transpo
 		return nil, nil
 	}
 
-	apiTlsSecret := corev1.Secret{
+	apiTLSSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      tlsSpec.Cert.SecretName,
 			Namespace: s.Gateway.Namespace,
 		},
 	}
 
-	if err := s.Get(ctx, client.ObjectKeyFromObject(&apiTlsSecret), &apiTlsSecret); err != nil {
+	if err := s.Get(ctx, client.ObjectKeyFromObject(&apiTLSSecret), &apiTLSSecret); err != nil {
 		if client.IgnoreNotFound(err) == nil {
 			return nil, nil
 		}
@@ -381,12 +381,12 @@ func (s *EnvoyServices) apiTransportSocket(ctx context.Context) (*corev3.Transpo
 					TlsCertificates: []*tlsv3.TlsCertificate{{
 						CertificateChain: &corev3.DataSource{
 							Specifier: &corev3.DataSource_InlineBytes{
-								InlineBytes: apiTlsSecret.Data[corev1.TLSCertKey],
+								InlineBytes: apiTLSSecret.Data[corev1.TLSCertKey],
 							},
 						},
 						PrivateKey: &corev3.DataSource{
 							Specifier: &corev3.DataSource_InlineBytes{
-								InlineBytes: apiTlsSecret.Data[corev1.TLSPrivateKeyKey],
+								InlineBytes: apiTLSSecret.Data[corev1.TLSPrivateKeyKey],
 							},
 						},
 					}},
@@ -394,7 +394,7 @@ func (s *EnvoyServices) apiTransportSocket(ctx context.Context) (*corev3.Transpo
 						ValidationContext: &tlsv3.CertificateValidationContext{
 							TrustedCa: &corev3.DataSource{
 								Specifier: &corev3.DataSource_InlineBytes{
-									InlineBytes: apiTlsSecret.Data["ca.crt"],
+									InlineBytes: apiTLSSecret.Data["ca.crt"],
 								},
 							},
 						},

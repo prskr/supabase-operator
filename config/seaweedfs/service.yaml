@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweedfs
+spec:
+  selector:
+    app.kubernetes.io/name: seaweedfs
+  ports:
+    - name: s3
+      protocol: TCP
+      port: 8333
+      targetPort: 8333
+    - name: admin
+      protocol: TCP
+      port: 23646
+      targetPort: 23646

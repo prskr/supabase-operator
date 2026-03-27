@@ -27,6 +27,7 @@ set -e
 KIND="$(rlocation "${KIND_BIN}")"
 KUBECTL="$(rlocation "${KUBECTL_BIN}")"
 CLUSTER_CONFIG="$(rlocation "${CLUSTER_CONFIG}")"
+DEX_IDP_CONFIG="$(rlocation "${DEX_IDP_CONFIG}")"
 
 # 1. Create registry container unless it already exists
 reg_name='kind-registry'
@@ -36,6 +37,17 @@ if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true
 	docker run \
 		-d --restart=always -p "127.0.0.1:${reg_port}:5000" --network bridge --name "${reg_name}" \
 		registry:2
+fi
+
+idp_name='studio-idp'
+idp_port='5556'
+
+if [ "$(docker inspect -f '{{.State.Running}}' "${idp_name}" 2>/dev/null || true)" != 'true' ]; then
+	docker run \
+		-d --restart=always -p "127.0.0.1:${idp_port}:5556" --network bridge --name "${idp_name}" \
+		-v "${DEX_IDP_CONFIG}":/etc/dex/config.yaml \
+		ghcr.io/dexidp/dex \
+		dex serve /etc/dex/config.yaml
 fi
 
 # 2. Create kind cluster (no more nested bazel run)
@@ -53,6 +65,11 @@ done
 # 4. Connect the registry to the cluster network if not already connected
 if [ "$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "${reg_name}")" = 'null' ]; then
 	docker network connect "kind" "${reg_name}"
+fi
+
+# Connect the IDP to the cluster network if not already connected
+if [ "$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "${idp_name}")" = 'null' ]; then
+	docker network connect "kind" "${idp_name}"
 fi
 
 # 5. Document the local registry
