@@ -42,17 +42,18 @@ func (c *GoTrueCluster) Cluster(instance string) []*clusterv3.Cluster {
 }
 
 func (c *GoTrueCluster) Routes(instance string) []*routev3.Route {
+	const openAuthPathsRegex = `/auth/v1/(callback|verify|authorize|.well-known/jwks.json|.well-known/openid-configuration)`
 	if c == nil {
 		return nil
 	}
 
 	return []*routev3.Route{
 		{
-			Name: "GoTrue (Open) /auth/v1/(callback|verify) -> http://auth:9999/$1",
+			Name: "GoTrue (Open) /auth/v1/(callback|verify|authorize|.well-known/jwks.json|.well-known/openid-configuration) -> http://auth:9999/$1",
 			Match: &routev3.RouteMatch{
 				PathSpecifier: &routev3.RouteMatch_SafeRegex{
 					SafeRegex: &matcherv3.RegexMatcher{
-						Regex: `/auth/v1/(callback|verify|authorize)`,
+						Regex: openAuthPathsRegex,
 					},
 				},
 			},
@@ -63,9 +64,28 @@ func (c *GoTrueCluster) Routes(instance string) []*routev3.Route {
 					},
 					RegexRewrite: &matcherv3.RegexMatchAndSubstitute{
 						Pattern: &matcherv3.RegexMatcher{
-							Regex: `/auth/v1/(callback|verify|authorize)`,
+							Regex: openAuthPathsRegex,
 						},
 						Substitution: `/\1`,
+					},
+				},
+			},
+			TypedPerFilterConfig: map[string]*anypb.Any{
+				FilterNameRBAC:     MustAny(RBACPerRoute(RBACAllowAllConfig())),
+				FilterNameJwtAuthn: MustAny(JWTAllowAll()),
+			},
+		},
+		{
+			Name: "Auth: /.well-known/oauth-authorization-server -> http://auth:9999/.well-known/oauth-authorization-server",
+			Match: &routev3.RouteMatch{
+				PathSpecifier: &routev3.RouteMatch_Path{
+					Path: "/.well-known/oauth-authorization-server",
+				},
+			},
+			Action: &routev3.Route_Route{
+				Route: &routev3.RouteAction{
+					ClusterSpecifier: &routev3.RouteAction_Cluster{
+						Cluster: fmt.Sprintf("%s@%s", supabase.ServiceConfig.Auth.Name, instance),
 					},
 				},
 			},
