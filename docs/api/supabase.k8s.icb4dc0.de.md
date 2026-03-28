@@ -128,7 +128,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not |  |  |
+| `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not | true |  |
 
 
 #### AuthProviders
@@ -185,10 +185,10 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not |  |  |
-| `clientID` _string_ |  |  |  |
-| `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ |  |  |  |
-| `url` _string_ |  |  |  |
+| `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not | true |  |
+| `clientID` _string_ | ClientID - OAuth2 client ID |  |  |
+| `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ | ClientSecretRef - reference to a secret containing the OAuth2 client secret in the same namespace as the `Core` resource |  |  |
+| `url` _string_ | URL - OAuth2 provider URL. Only necessary for Gitlab and Keycloak where custom base URLs are used |  |  |
 
 
 
@@ -573,7 +573,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not |  |  |
+| `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not | true |  |
 | `adminEmail` _string_ |  |  |  |
 | `senderName` _string_ |  |  |  |
 | `autoconfirmEmail` _boolean_ |  |  |  |
@@ -796,10 +796,10 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not |  |  |
-| `clientID` _string_ |  |  |  |
-| `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ |  |  |  |
-| `url` _string_ |  |  |  |
+| `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not | true |  |
+| `clientID` _string_ | ClientID - OAuth2 client ID |  |  |
+| `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ | ClientSecretRef - reference to a secret containing the OAuth2 client secret in the same namespace as the `Core` resource |  |  |
+| `url` _string_ | URL - OAuth2 provider URL. Only necessary for Gitlab and Keycloak where custom base URLs are used |  |  |
 
 
 #### GoTrueMetricsSpec
@@ -942,9 +942,9 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `clientID` _string_ |  |  |  |
-| `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ |  |  |  |
-| `url` _string_ |  |  |  |
+| `clientID` _string_ | ClientID - OAuth2 client ID |  |  |
+| `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ | ClientSecretRef - reference to a secret containing the OAuth2 client secret in the same namespace as the `Core` resource |  |  |
+| `url` _string_ | URL - OAuth2 provider URL. Only necessary for Gitlab and Keycloak where custom base URLs are used |  |  |
 
 
 #### OpenAISpec
@@ -992,7 +992,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not |  |  |
+| `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not | true |  |
 
 
 #### PostgrestMetricsSpec

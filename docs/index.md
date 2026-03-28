@@ -1,4 +1,4 @@
-# About
+# Introduction
 
 This is a Kubernetes operator for managing self-hosted [Supabase](https://supabase.com/) instances.
 It is built using the [Kubebuilder](https://book.kubebuilder.io/) framework.

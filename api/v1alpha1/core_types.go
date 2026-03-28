@@ -244,6 +244,7 @@ func (p *AuthProviders) Vars(apiExternalURL string) []corev1.EnvVar {
 
 type AuthProviderMeta struct {
 	// Enabled - whether the authentication provider is enabled or not
+	// +kubebuilder:default=true
 	Enabled bool `json:"enabled,omitempty"`
 }
 
@@ -293,9 +294,14 @@ func (p *AzureAuthProvider) Vars(apiExternalURL string) []corev1.EnvVar {
 }
 
 type OAuthProvider struct {
-	ClientID        string                    `json:"clientID"`
+	// ClientID - OAuth2 client ID
+	// +k8s:required
+	ClientID string `json:"clientID"`
+	// ClientSecretRef - reference to a secret containing the OAuth2 client secret in the same namespace as the `Core` resource
+	// +k8s:required
 	ClientSecretRef *corev1.SecretKeySelector `json:"clientSecretRef"`
-	URL             string                    `json:"url,omitempty"`
+	// URL - OAuth2 provider URL. Only necessary for Azure, Gitlab and Keycloak where custom base URLs are used
+	URL string `json:"url,omitempty"`
 }
 
 func (p *OAuthProvider) Vars(provider, apiExternalURL string) []corev1.EnvVar {

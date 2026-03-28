@@ -22,7 +22,7 @@ plugins:
       HttpMethod: POST
 nav:
   - Home:
-      - About: index.md
+      - Introduction: index.md
       - Getting Started: getting_started.md
   - Components:
       - Overview: components/overview.md
@@ -33,6 +33,7 @@ nav:
       - Email: auth/email.md
       - Social Providers:
           - Azure: auth/providers/azure.md
+          - GitHub: auth/providers/github.md
   - Development:
       - Tools: development/tools.md
       - Local Development: development/local_dev.md
