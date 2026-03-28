@@ -65,7 +65,7 @@ go_deps.gazelle_override(
     path = "sigs.k8s.io/apiserver-network-proxy/konnectivity-client",
 )
 
-supabase_compose = use_repo_rule("//build:extensions.bzl", "supabase_compose")
+supabase_compose = use_repo_rule("//build/supabase:compose.bzl", "supabase_compose")
 
 supabase_compose(
     name = "supabase_compose",
@@ -73,18 +73,11 @@ supabase_compose(
     version = "v1.26.03",
 )
 
-supabase_migrations = use_repo_rule("//build:extensions.bzl", "supabase_migrations")
+supabase_migrations = use_repo_rule("//build/supabase:migrations.bzl", "supabase_migrations")
 
 supabase_migrations(
     name = "supabase_migrations",
-    path_prefix = "migrations/db/migrations",
-    sha256 = "2fbd23f511c296f4542e5298bf9e0a5f4cc80c636e0432f084f976cff21ecf02",
-    version = "15.14.1.101",
-)
-
-supabase_migrations(
-    name = "supabase_init_scripts",
-    path_prefix = "migrations/db/init-scripts",
+    path_prefix = "migrations/db",
     sha256 = "2fbd23f511c296f4542e5298bf9e0a5f4cc80c636e0432f084f976cff21ecf02",
     version = "15.14.1.101",
 )

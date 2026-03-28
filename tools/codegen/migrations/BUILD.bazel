@@ -1,0 +1,15 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "migrations_lib",
+    srcs = ["main.go"],
+    embedsrcs = ["migrations_ignore"],
+    importpath = "github.com/prskr/supabase-operator/tools/codegen/migrations",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "migrations",
+    embed = [":migrations_lib"],
+    visibility = ["//visibility:public"],
+)

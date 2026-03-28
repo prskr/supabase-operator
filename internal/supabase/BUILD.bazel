@@ -9,14 +9,14 @@ genrule(
     ],
     outs = ["images.go"],
     cmd = """
-        $(execpath //internal/codegen/images:images) \
+        $(execpath //tools/codegen/images:images) \
             -source-file=$(location @supabase_compose//:docker-compose) \
             -out-file=$@ \
             -envoy-repo={} \
             -envoy-tag={}
     """.format(ENVOY_REPO, ENVOY_TAG),
     tools = [
-        "//internal/codegen/images",
+        "//tools/codegen/images",
     ],
 )
 

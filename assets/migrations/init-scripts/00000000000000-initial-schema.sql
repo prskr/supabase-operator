@@ -13,7 +13,7 @@ create user supabase_replication_admin with login replication;
 -- Supabase etl user
 create user supabase_etl_admin with login replication bypassrls;
 grant pg_read_all_data to supabase_etl_admin;
-grant create ON DATABASE {{ .DbName }} to supabase_etl_admin;
+grant create on database {{ .DbName }} to supabase_etl_admin;
 
 -- Supabase read-only user
 create role supabase_read_only_user with login bypassrls;

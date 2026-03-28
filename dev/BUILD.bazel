@@ -1,7 +1,7 @@
 load("@rules_multirun//:defs.bzl", "command", "multirun")
 load("@rules_oci//oci:defs.bzl", "oci_push")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
-load("//build:kubectl.bzl", "kubectl_apply")
+load("//build/k8s:kubectl.bzl", "kubectl_apply")
 
 sh_binary(
     name = "start_cluster",
