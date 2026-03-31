@@ -4,7 +4,7 @@ on:
     branches:
       - main
     tags:
-      - 'v*'
+      - '*'
   pull_request:
     branches:
       - main
@@ -51,12 +51,15 @@ jobs:
           OUTPUT: CHANGELOG.md
       - name: Release
         if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "Pushing image..."
           bazel --bazelrc=.github/workflows/ci.bazelrc run //:push
 
           mkdir release
-          sh -c "cd config/release/default && kustomize edit set image supabase-operator=ghcr.io/prskr/supabase-operator/controller:{{ github.ref_name }}"
+          echo "Setting controller image to ghcr.io/prskr/supabase-operator/controller:${{ github.ref_name }}"
+          sh -c "cd config/release/default && kustomize edit set image controller=ghcr.io/prskr/supabase-operator/controller:${{ github.ref_name }}"
           kustomize build config/release/default > release/operator_manifest.yaml
 
           gh release create ${{ github.ref_name }} \
