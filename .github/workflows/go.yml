@@ -58,8 +58,8 @@ jobs:
           bazel --bazelrc=.github/workflows/ci.bazelrc run //:push
 
           mkdir release
-          echo "Setting controller image to ghcr.io/prskr/supabase-operator/controller:${{ github.ref_name }}"
-          sh -c "cd config/release/default && kustomize edit set image controller=ghcr.io/prskr/supabase-operator/controller:${{ github.ref_name }}"
+          echo "Setting controller image to ghcr.io/prskr/supabase-operator/controller:${GITHUB_REF_NAME#v}"
+          sh -c "cd config/release/default && kustomize edit set image controller=ghcr.io/prskr/supabase-operator/controller:${GITHUB_REF_NAME#v}"
           kustomize build config/release/default > release/operator_manifest.yaml
 
           gh release create ${{ github.ref_name }} \
