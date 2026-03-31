@@ -29,6 +29,10 @@ jobs:
         with:
           fetch-depth: '0'
           fetch-tags: 'true'
+      - name: Build app and images
+        run: |
+          bazel --bazelrc=.github/workflows/ci.bazelrc test //... || true
+          bazel --bazelrc=.github/workflows/ci.bazelrc build //:image_multiarch
       - name: Log in to ghcr.io
         uses: redhat-actions/podman-login@v1
         if: github.ref_type == 'tag'
@@ -36,24 +40,26 @@ jobs:
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
           registry: ${{ env.IMAGE_REGISTRY }}
-      - name: Build app and images
-        run: |
-          bazel --bazelrc=.github/workflows/ci.bazelrc test //... || true
-          bazel --bazelrc=.github/workflows/ci.bazelrc build //:image_multiarch
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v4
+        if: github.ref_type == 'tag'
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: --current
+        env:
+          OUTPUT: CHANGELOG.md
       - name: Release
         if: github.ref_type == 'tag'
         run: |
           echo "Pushing image..."
           bazel --bazelrc=.github/workflows/ci.bazelrc run //:push
 
-          echo "Generating release notes..."
           mkdir release
-          git-cliff --current --output release/release-notes.md
-
           sh -c "cd config/release/default && kustomize edit set image supabase-operator=ghcr.io/prskr/supabase-operator/controller:{{ github.ref_name }}"
           kustomize build config/release/default > release/operator_manifest.yaml
 
           gh release create ${{ github.ref_name }} \
             --title "${{ github.ref_name }}" \
-            --notes-file release-notes.md \
+            --notes-file ${{ steps.git-cliff.outputs.changelog }} \
             release/operator_manifest.yaml
