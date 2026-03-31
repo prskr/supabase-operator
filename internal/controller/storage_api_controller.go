@@ -231,6 +231,10 @@ func (r *StorageAPIReconciler) reconcileStorageAPIDeployment(
 			}
 		}
 
+		if apiSpec.WorkloadSpec != nil {
+			storageAPIDeployment.Spec.Strategy = *apiSpec.WorkloadSpec.Strategy
+		}
+
 		storageAPIDeployment.Spec.Replicas = apiSpec.WorkloadSpec.ReplicaCount()
 
 		storageAPIDeployment.Spec.Template = corev1.PodTemplateSpec{

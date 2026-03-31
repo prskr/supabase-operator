@@ -19,7 +19,7 @@ theme:
 plugins:
   - search
   - kroki:
-      HttpMethod: POST
+      http_method: POST
 nav:
   - Home:
       - Introduction: index.md
@@ -28,6 +28,7 @@ nav:
       - Overview: components/overview.md
       - Core: components/core.md
       - APIGateway: components/apigateway.md
+      - Storage: components/storage.md
   - Auth:
       - Overview: auth/overview.md
       - Email: auth/email.md

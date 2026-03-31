@@ -188,7 +188,7 @@ _Appears in:_
 | `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not | true |  |
 | `clientID` _string_ | ClientID - OAuth2 client ID |  |  |
 | `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ | ClientSecretRef - reference to a secret containing the OAuth2 client secret in the same namespace as the `Core` resource |  |  |
-| `url` _string_ | URL - OAuth2 provider URL. Only necessary for Gitlab and Keycloak where custom base URLs are used |  |  |
+| `url` _string_ | URL - OAuth2 provider URL. Only necessary for Azure, Gitlab and Keycloak where custom base URLs are used |  |  |
 
 
 
@@ -202,6 +202,7 @@ _Appears in:_
 
 
 _Appears in:_
+- [StorageWorkloadSpec](#storageworkloadspec)
 - [WorkloadSpec](#workloadspec)
 
 | Field | Description | Default | Validation |
@@ -799,7 +800,7 @@ _Appears in:_
 | `enabled` _boolean_ | Enabled - whether the authentication provider is enabled or not | true |  |
 | `clientID` _string_ | ClientID - OAuth2 client ID |  |  |
 | `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ | ClientSecretRef - reference to a secret containing the OAuth2 client secret in the same namespace as the `Core` resource |  |  |
-| `url` _string_ | URL - OAuth2 provider URL. Only necessary for Gitlab and Keycloak where custom base URLs are used |  |  |
+| `url` _string_ | URL - OAuth2 provider URL. Only necessary for Azure, Gitlab and Keycloak where custom base URLs are used |  |  |
 
 
 #### GoTrueMetricsSpec
@@ -944,7 +945,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `clientID` _string_ | ClientID - OAuth2 client ID |  |  |
 | `clientSecretRef` _[SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#secretkeyselector-v1-core)_ | ClientSecretRef - reference to a secret containing the OAuth2 client secret in the same namespace as the `Core` resource |  |  |
-| `url` _string_ | URL - OAuth2 provider URL. Only necessary for Gitlab and Keycloak where custom base URLs are used |  |  |
+| `url` _string_ | URL - OAuth2 provider URL. Only necessary for Azure, Gitlab and Keycloak where custom base URLs are used |  |  |
 
 
 #### OpenAISpec
@@ -1166,7 +1167,7 @@ _Appears in:_
 | `db` _[StorageAPIDBSpec](#storageapidbspec)_ | DBSpec - Configure access to the Postgres database<br />In most cases this will reference the supabase-storage-admin credentials secret provided by the Core resource |  |  |
 | `s3` _[S3ProtocolSpec](#s3protocolspec)_ | S3Protocol - Configure S3 access to the Storage API allowing clients to use any S3 client |  |  |
 | `uploadTemp` _[UploadTempSpec](#uploadtempspec)_ | UploadTemp - configure the emptyDir for storing intermediate files during uploads |  |  |
-| `workloadSpec` _[WorkloadSpec](#workloadspec)_ | WorkloadTemplate - customize the Storage API workload |  |  |
+| `workloadSpec` _[StorageWorkloadSpec](#storageworkloadspec)_ | WorkloadTemplate - customize the Storage API workload |  |  |
 | `postgRESTServiceSelector` _object (keys:string, values:string)_ | PostgrestServiceSelector - selector to find the service for the PostgREST API<br />Required to configure the API URL in the studio deployment<br />If you don't run multiple PostgREST instances in the same namespaces, the default will be fine | \{ app.kubernetes.io/component:core app.kubernetes.io/name:postgrest \} |  |
 
 
@@ -1205,6 +1206,27 @@ _Appears in:_
 | `imageProxy` _[ImageProxySpec](#imageproxyspec)_ | ImageProxy - optionally enable and configure the image proxy<br />the image proxy scale images to lower resolutions on demand to reduce traffic for instance for mobile devices |  |  |
 
 
+
+
+#### StorageWorkloadSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [StorageAPISpec](#storageapispec)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `replicas` _integer_ |  |  |  |
+| `securityContext` _[PodSecurityContext](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#podsecuritycontext-v1-core)_ |  |  |  |
+| `additionalLabels` _object (keys:string, values:string)_ |  |  |  |
+| `container` _[ContainerTemplate](#containertemplate)_ | ContainerSpec - customize the container template of the workload |  |  |
+| `additionalVolumes` _[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#volume-v1-core) array_ |  |  |  |
+| `strategy` _[DeploymentStrategy](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#deploymentstrategy-v1-apps)_ |  |  |  |
 
 
 #### StudioSpec
@@ -1277,7 +1299,7 @@ _Appears in:_
 - [ImageProxySpec](#imageproxyspec)
 - [PGMetaSpec](#pgmetaspec)
 - [PostgrestSpec](#postgrestspec)
-- [StorageAPISpec](#storageapispec)
+- [StorageWorkloadSpec](#storageworkloadspec)
 - [StudioSpec](#studiospec)
 
 | Field | Description | Default | Validation |

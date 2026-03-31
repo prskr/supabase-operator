@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,6 +69,11 @@ type ImageProxySpec struct {
 	WorkloadSpec *WorkloadSpec `json:"workloadSpec,omitempty"`
 }
 
+type StorageWorkloadSpec struct {
+	WorkloadSpec `json:",inline"`
+	Strategy     *appsv1.DeploymentStrategy `json:"strategy,omitempty"`
+}
+
 type StorageAPISpec struct {
 	// +kubebuilder:default="stub"
 	TenantID *string `json:"tenantId,omitempty"`
@@ -92,7 +98,7 @@ type StorageAPISpec struct {
 	// UploadTemp - configure the emptyDir for storing intermediate files during uploads
 	UploadTemp *UploadTempSpec `json:"uploadTemp,omitempty"`
 	// WorkloadTemplate - customize the Storage API workload
-	WorkloadSpec *WorkloadSpec `json:"workloadSpec,omitempty"`
+	WorkloadSpec *StorageWorkloadSpec `json:"workloadSpec,omitempty"`
 	// PostgrestServiceSelector - selector to find the service for the PostgREST API
 	// Required to configure the API URL in the studio deployment
 	// If you don't run multiple PostgREST instances in the same namespaces, the default will be fine
