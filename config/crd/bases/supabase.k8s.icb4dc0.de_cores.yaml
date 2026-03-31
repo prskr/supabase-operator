@@ -67,9 +67,10 @@ spec:
                         azure:
                           properties:
                             clientID:
+                              description: ClientID - OAuth2 client ID
                               type: string
                             clientSecretRef:
-                              description: SecretKeySelector selects a key of a Secret.
+                              description: ClientSecretRef - reference to a secret containing the OAuth2 client secret in the same namespace as the `Core` resource
                               properties:
                                 key:
                                   description: The key of the secret to select from.  Must be a valid secret key.
@@ -91,9 +92,11 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             enabled:
+                              default: true
                               description: Enabled - whether the authentication provider is enabled or not
                               type: boolean
                             url:
+                              description: URL - OAuth2 provider URL. Only necessary for Azure, Gitlab and Keycloak where custom base URLs are used
                               type: string
                           required:
                             - clientID
@@ -106,6 +109,7 @@ spec:
                             autoconfirmEmail:
                               type: boolean
                             enabled:
+                              default: true
                               description: Enabled - whether the authentication provider is enabled or not
                               type: boolean
                             senderName:
@@ -151,9 +155,10 @@ spec:
                         github:
                           properties:
                             clientID:
+                              description: ClientID - OAuth2 client ID
                               type: string
                             clientSecretRef:
-                              description: SecretKeySelector selects a key of a Secret.
+                              description: ClientSecretRef - reference to a secret containing the OAuth2 client secret in the same namespace as the `Core` resource
                               properties:
                                 key:
                                   description: The key of the secret to select from.  Must be a valid secret key.
@@ -175,9 +180,11 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             enabled:
+                              default: true
                               description: Enabled - whether the authentication provider is enabled or not
                               type: boolean
                             url:
+                              description: URL - OAuth2 provider URL. Only necessary for Azure, Gitlab and Keycloak where custom base URLs are used
                               type: string
                           required:
                             - clientID
@@ -186,6 +193,7 @@ spec:
                         phone:
                           properties:
                             enabled:
+                              default: true
                               description: Enabled - whether the authentication provider is enabled or not
                               type: boolean
                           type: object

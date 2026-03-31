@@ -26,8 +26,9 @@ CONTROLLER_GEN="$(rlocation "${CONTROLLER_GEN}")"
 "${CONTROLLER_GEN}" \
 	rbac:roleName=manager-role crd webhook \
 	paths="./..." \
-	output:crd:artifacts:config=config/crd/bases
+	"output:crd:artifacts:config=${BUILD_WORKSPACE_DIRECTORY}/config/crd/bases"
 
 "${CONTROLLER_GEN}" \
 	object:headerFile="hack/boilerplate.go.txt" \
-	paths="./..."
+	paths="./api/v1alpha1/..." \
+	"output:dir=${BUILD_WORKSPACE_DIRECTORY}/api/v1alpha1"
