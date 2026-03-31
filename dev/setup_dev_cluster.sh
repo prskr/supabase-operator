@@ -2,12 +2,10 @@
 
 # see https://kind.sigs.k8s.io/docs/user/local-registry/
 
-set -o errexit
+set -euo pipefail
 
 # --- begin runfiles.bash initialization v3 ---
 # Copy-pasted from the Bazel Bash runfiles library v3.
-set -uo pipefail
-set +e
 f=bazel_tools/tools/bash/runfiles/runfiles.bash
 # shellcheck disable=SC1090
 source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null ||
