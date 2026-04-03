@@ -26,7 +26,6 @@ sh_binary(
     name = "teardown_cluster",
     srcs = ["teardown_dev_cluster.sh"],
     data = [
-        "//:crd-docs.yaml",
         "@io_k8s_sigs_kind//:kind",
     ],
     env = {
@@ -39,31 +38,19 @@ sh_binary(
     name = "generate_crd_code",
     srcs = ["generate_crd_code.sh"],
     data = [
+        "//:crd-docs.yaml",
         "//api/v1alpha1:api-types",
+        "//dev/templates",
         "//hack:boilerplate_go",
+        "//internal/controller:reconciler_src",
+        "@com_github_elastic_crd_ref_docs//:crd-ref-docs",
         "@io_k8s_sigs_controller_tools//cmd/controller-gen",
         "@rules_go//go",
     ],
     env = {
-        "CONTROLLER_GEN": "$(rlocationpath @io_k8s_sigs_controller_tools//cmd/controller-gen)",
-    },
-    deps = [
-        "@rules_shell//shell/runfiles",
-    ],
-)
-
-sh_binary(
-    name = "generate_crd_docs",
-    srcs = ["generate_crd_docs.sh"],
-    data = [
-        "//:crd-docs.yaml",
-        "//api/v1alpha1:api-types",
-        "@com_github_elastic_crd_ref_docs//:crd-ref-docs",
-        "@rules_go//go",
-    ],
-    env = {
-        "CRD_REF_DOCS": "$(rlocationpath @com_github_elastic_crd_ref_docs//:crd-ref-docs)",
         "API_TYPES": "$(locations //api/v1alpha1:api-types)",
+        "CONTROLLER_GEN": "$(rlocationpath @io_k8s_sigs_controller_tools//cmd/controller-gen)",
+        "CRD_REF_DOCS": "$(rlocationpath @com_github_elastic_crd_ref_docs//:crd-ref-docs)",
     },
     deps = [
         "@rules_shell//shell/runfiles",

@@ -19,10 +19,12 @@ rules:
       - watch
   - apiGroups:
       - ""
+      - events.k8s.io
     resources:
       - events
     verbs:
       - create
+      - patch
   - apiGroups:
       - apps
     resources:

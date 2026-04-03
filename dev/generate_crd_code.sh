@@ -22,13 +22,23 @@ set -e
 # --- end runfiles.bash initialization v3 ---
 
 CONTROLLER_GEN="$(rlocation "${CONTROLLER_GEN}")"
+CRD_REF_DOCS="$(rlocation "${CRD_REF_DOCS}")"
 
 "${CONTROLLER_GEN}" \
 	rbac:roleName=manager-role crd webhook \
 	paths="./..." \
-	"output:crd:artifacts:config=${BUILD_WORKSPACE_DIRECTORY}/config/crd/bases"
+	"output:crd:artifacts:config=${BUILD_WORKSPACE_DIRECTORY}/config/crd/bases" \
+	"output:rbac:artifacts:config=${BUILD_WORKSPACE_DIRECTORY}/config/rbac"
 
 "${CONTROLLER_GEN}" \
 	object:headerFile="hack/boilerplate.go.txt" \
 	paths="./api/v1alpha1/..." \
 	"output:dir=${BUILD_WORKSPACE_DIRECTORY}/api/v1alpha1"
+
+"${CRD_REF_DOCS}" \
+	--source-path=./api \
+	--renderer=markdown \
+	--config=crd-docs.yaml \
+	--output-path="${BUILD_WORKSPACE_DIRECTORY}/docs/content/docs/api/" \
+	--output-mode=group \
+	--templates-dir=./dev/templates
