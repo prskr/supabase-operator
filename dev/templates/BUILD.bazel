@@ -1,0 +1,10 @@
+filegroup(
+    name = "templates",
+    srcs = [
+        "gv_details.tpl",
+        "gv_list.tpl",
+        "type.tpl",
+        "type_members.tpl",
+    ],
+    visibility = ["//:__subpackages__"],
+)

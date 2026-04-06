@@ -1,5 +1,33 @@
 {
   "$schema": "https://raw.githubusercontent.com/theoremlp/rules_multitool/main/lockfile.schema.json",
+  "hugo": {
+    "binaries": [
+      {
+        "kind": "archive",
+        "file": "hugo",
+        "url": "https://github.com/gohugoio/hugo/releases/download/v0.159.2/hugo_extended_0.159.2_linux-amd64.tar.gz",
+        "sha256": "b6441fdcaed32a8648d374a4acc01f8826fb8340266fcac836acfba66c1e527f",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "archive",
+        "file": "hugo",
+        "url": "https://github.com/gohugoio/hugo/releases/download/v0.159.2/hugo_extended_0.159.2_linux-arm64.tar.gz",
+        "sha256": "869f1a49172da7666c2d1053ef7497fd1758461e26af5596ba7d0ec680e1226a",
+        "os": "linux",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "pkg",
+        "file": "Payload/hugo",
+        "url": "https://github.com/gohugoio/hugo/releases/download/v0.159.2/hugo_extended_0.159.2_darwin-universal.pkg",
+        "sha256": "29cf19a62dbf20cbddd2fb5bb68aa86375659a156a24d850a9cd239042983c06",
+        "os": "macos",
+        "cpu": "arm64"
+      }
+    ]
+  },
   "kubectl": {
     "binaries": [
       {

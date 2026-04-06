@@ -1,4 +1,5 @@
 load("@bazel_env.bzl", "bazel_env")
+load("@gazelle//:go_tools.bzl", "GO_TOOLS")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -10,13 +11,7 @@ bazel_env(
         "buildifier": "@buildifier_prebuilt//:buildifier",
         "gazelle": "//:gazelle",
         "go": "@rules_go//go",
-        "goimports": "@org_golang_x_tools//cmd/goimports",
-        "gopls": "@org_golang_x_tools_gopls//:gopls",
-        "controller-gen": "@io_k8s_sigs_controller_tools//cmd/controller-gen",
-        "setup-envtest": "@io_k8s_sigs_controller_runtime_tools_setup_envtest//:setup-envtest",
-        "crd-ref-docs": "@com_github_elastic_crd_ref_docs//:crd-ref-docs",
+        "hugo": "@multitool//tools/hugo:hugo",
         "kubectl": "@multitool//tools/kubectl:kubectl",
-        "kustomize": "@io_k8s_sigs_kustomize_kustomize_v5//:v5",
-        "kind": "@io_k8s_sigs_kind//:kind",
-    },
+    } | GO_TOOLS,
 )

@@ -2,7 +2,7 @@ bin/
 out/
 .idea/
 .venv/
-site/
+_site/
 dist/
 
 

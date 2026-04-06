@@ -1,0 +1,38 @@
+baseURL = "https://prskr.github.io/supabase-operator/"
+locale = "en-us"
+title = "Supabase Operator"
+contentDir = "content"
+enableEmoji = true
+
+[module]
+[[module.imports]]
+path = "github.com/colinwilson/lotusdocs"
+disable = false
+
+[[module.imports]]
+path = "github.com/gohugoio/hugo-mod-bootstrap-scss/v5"
+disable = false
+
+[markup]
+[markup.tableOfContents]
+endLevel = 4
+startLevel = 1
+
+[markup.goldmark]
+[markup.goldmark.renderer]
+unsafe = true
+hardWraps = true
+
+[markup.goldmark.parser]
+wrapStandAloneImageWithinParagraph = false
+
+[markup.goldmark.parser.attribute]
+block = true
+
+[markup.highlight]
+lineNos = "inline"
+
+[caches]
+[caches.images]
+dir = ":resourceDir/_gen"
+maxAge = -1
