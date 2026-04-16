@@ -24,8 +24,10 @@ set -e
 # --- Tool paths passed in from Bazel ---
 KIND="$(rlocation "${KIND_BIN}")"
 KUBECTL="$(rlocation "${KUBECTL_BIN}")"
+KUSTOMIZE="$(rlocation "${KUSTOMIZE_BIN}")"
 CLUSTER_CONFIG="$(rlocation "${CLUSTER_CONFIG}")"
 DEX_IDP_CONFIG="$(rlocation "${DEX_IDP_CONFIG}")"
+CONFIG_DEPS="$(rlocation "${CONFIG_DEPS}")"
 
 # 1. Create registry container unless it already exists
 reg_name='kind-registry'
@@ -48,8 +50,10 @@ if [ "$(docker inspect -f '{{.State.Running}}' "${idp_name}" 2>/dev/null || true
 		dex serve /etc/dex/config.yaml
 fi
 
-# 2. Create kind cluster (no more nested bazel run)
-"${KIND}" create cluster --config "${CLUSTER_CONFIG}"
+# 2. Create kind cluster only if it doesn't already exist
+if ! "${KIND}" get clusters | grep -q "supabase-operator-debug"; then
+	"${KIND}" create cluster --config "${CLUSTER_CONFIG}"
+fi
 
 # 3. Add the registry config to the nodes
 REGISTRY_DIR="/etc/containerd/certs.d/localhost:${reg_port}"
@@ -82,3 +86,24 @@ data:
     host: "localhost:${reg_port}"
     help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
 EOF
+
+# Retry the kustomize build and apply command up to 5 times with 3-second intervals
+max_attempts=5
+attempt=1
+success=false
+
+while [ $attempt -le $max_attempts ]; do
+	if "${KUSTOMIZE}" build "$(dirname "${CONFIG_DEPS}")" | "${KUBECTL}" apply --server-side=true --force-conflicts -f -; then
+		success=true
+		break
+	else
+		echo "Attempt $attempt failed. Retrying in 3 seconds..."
+		sleep 3
+		attempt=$((attempt + 1))
+	fi
+done
+
+if [ "$success" = false ]; then
+	echo "Failed to apply kustomize configuration after $max_attempts attempts."
+	exit 1
+fi

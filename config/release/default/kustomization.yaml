@@ -5,4 +5,5 @@ images:
     newName: ghcr.io/prskr/supabase-operator/controller
     newTag: 0.1.0-SNAPSHOT-e6c7d68
 resources:
+  - ../../crd
   - ../../default

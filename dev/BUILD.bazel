@@ -9,15 +9,19 @@ sh_binary(
     data = [
         "cluster.yaml",
         "dex_config.yaml",
+        "//config/deps",
         "@io_k8s_sigs_kind//:kind",
+        "@io_k8s_sigs_kustomize_kustomize_v5//:v5",
         "@multitool//tools/kubectl",
     ],
     env = {
         # rlocationpath evaluates exactly to what the rlocation bash function needs
         "KIND_BIN": "$(rlocationpath @io_k8s_sigs_kind//:kind)",
         "KUBECTL_BIN": "$(rlocationpath @multitool//tools/kubectl:kubectl)",
+        "KUSTOMIZE_BIN": "$(rlocationpath @io_k8s_sigs_kustomize_kustomize_v5//:v5)",
         "CLUSTER_CONFIG": "$(rlocationpath cluster.yaml)",
         "DEX_IDP_CONFIG": "$(rlocationpath dex_config.yaml)",
+        "CONFIG_DEPS": "$(rlocationpath //config/deps)",
     },
     deps = ["@rules_shell//shell/runfiles"],
 )

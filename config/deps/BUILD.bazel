@@ -1,0 +1,7 @@
+filegroup(
+    name = "deps",
+    srcs = [
+        "kustomization.yaml",
+    ],
+    visibility = ["//:__subpackages__"],
+)

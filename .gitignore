@@ -1,3 +1,8 @@
+# Agents #
+.pi/
+
+# Directories #
+
 bin/
 out/
 .idea/
@@ -15,5 +20,3 @@ user.bazelrc
 .idea/
 .ijwb/
 *.iml
-
-.serena/
