@@ -23,14 +23,11 @@
       "binary": {
         "ignore_system_version": true,
         "path": "bazel",
-        "arguments": [
-          "run",
-          "--run_in_cwd",
-          "@org_golang_x_tools_gopls//:gopls",
-        ],
+        "arguments": ["run", "--run_in_cwd", "@org_golang_x_tools_gopls//:gopls"],
       },
       "initialization_options": {
         "local": "github.com/prskr/supabase-operator",
+        "buildFlags": ["-tags", "e2e"],
       },
     },
   },

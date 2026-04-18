@@ -31,7 +31,7 @@ jobs:
           fetch-tags: 'true'
       - name: Build app and images
         run: |
-          bazel --bazelrc=.github/workflows/ci.bazelrc test //... || true
+          bazel --bazelrc=.github/workflows/ci.bazelrc test //... --test_env "KUBEBUILDER_ASSETS=$bazel --bazelrc=.github/workflows/ci.bazelrc run --run_in_cwd @io_k8s_sigs_controller_runtime_tools_setup_envtest//:setup-envtest -- use -p path)" || true
           bazel --bazelrc=.github/workflows/ci.bazelrc build //:image_multiarch
       - name: Log in to ghcr.io
         uses: redhat-actions/podman-login@v1

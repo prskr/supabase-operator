@@ -37,9 +37,9 @@ var (
 	skipPrometheusInstall  = os.Getenv("PROMETHEUS_INSTALL_SKIP") == "true"
 	skipCertManagerInstall = os.Getenv("CERT_MANAGER_INSTALL_SKIP") == "true"
 	// isPrometheusOperatorAlreadyInstalled will be set true when prometheus CRDs be found on the cluster
-	isPrometheusOperatorAlreadyInstalled = false
+	isPrometheusOperatorAlreadyInstalled = true
 	// isCertManagerAlreadyInstalled will be set true when CertManager CRDs be found on the cluster
-	isCertManagerAlreadyInstalled = false
+	isCertManagerAlreadyInstalled = true
 
 	// projectImage is the name of the image which will be build and loaded
 	// with the code source changes to be tested.

@@ -1,0 +1,5 @@
+filegroup(
+    name = "crd_bases",
+    srcs = glob(["*.yaml"]),
+    visibility = ["//:__subpackages__"],
+)

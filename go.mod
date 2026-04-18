@@ -30,18 +30,18 @@ require (
 	github.com/kisielk/errcheck v1.10.0
 	github.com/lasiar/canonicalheader v1.1.2
 	github.com/lestrrat-go/jwx/v2 v2.1.6
-	github.com/onsi/ginkgo/v2 v2.27.2
-	github.com/onsi/gomega v1.38.3
+	github.com/onsi/ginkgo/v2 v2.27.4
+	github.com/onsi/gomega v1.39.0
 	github.com/sivchari/containedctx v1.0.3
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/nilaway v0.0.0-20260318203545-ad240b12fb4c
 	go.uber.org/zap v1.27.1
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	google.golang.org/grpc v1.79.3
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.35.3
-	k8s.io/apimachinery v0.35.3
+	k8s.io/apimachinery v0.36.0-beta.0
 	k8s.io/client-go v0.35.3
 	sigs.k8s.io/controller-runtime v0.23.3
 )
@@ -71,6 +71,7 @@ require (
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
+	github.com/spf13/afero v1.15.0 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20251023183803-a4bb9ffd2546 // indirect
@@ -113,6 +114,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
+	github.com/go-faker/faker/v4 v4.7.0
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-openapi/jsonpointer v0.22.5 // indirect
@@ -163,7 +165,6 @@ require (
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
-	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
@@ -186,7 +187,7 @@ require (
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/term v0.41.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	golang.org/x/tools v0.43.0 // indirect
 	golang.org/x/tools/gopls v0.21.1 // indirect
@@ -203,7 +204,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20260319004828-5883c5ee87b9 // indirect
 	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.33.0 // indirect
-	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20250205174817-cd644c0ad54f // indirect
+	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20260405152528-6210f847b2c1
 	sigs.k8s.io/controller-tools v0.19.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect

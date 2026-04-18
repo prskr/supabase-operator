@@ -17,12 +17,15 @@ limitations under the License.
 package controller
 
 import (
-	"context"
+	"fmt"
+	"hash/fnv"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,43 +37,99 @@ var _ = Describe("Core Controller", func() {
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
 
-		ctx := context.Background()
-
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
+			Namespace: "default",
 		}
-		core := &supabasev1alpha1.Core{}
+		core := new(supabasev1alpha1.Core)
 
-		BeforeEach(func() {
+		testClient := k8sClient
+
+		BeforeEach(func(ctx SpecContext) {
+			hash := fnv.New32()
+			_, _ = hash.Write([]byte(ctx.SpecReport().FileName()))
+
+			namespace := &v1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: fmt.Sprintf("app-%x", hash.Sum(nil)),
+				},
+			}
+
+			Expect(k8sClient.Create(ctx, namespace)).To(Succeed())
+
+			testClient = client.NewNamespacedClient(k8sClient, namespace.Name)
+
+			By("Preparing the environment")
+			secretName := types.NamespacedName{Name: "database-credentials", Namespace: namespace.Name}
+			databaseCredentialsSecret := new(v1.Secret)
+			err := testClient.Get(ctx, secretName, databaseCredentialsSecret)
+			if err != nil && errors.IsNotFound(err) {
+				databaseCredentialsSecret = &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "database-credentials",
+						Namespace: namespace.Name,
+					},
+					Data: map[string][]byte{
+						"url": []byte("postgresql://postgres:postgres@database_host:5432/app"),
+					},
+				}
+				Expect(testClient.Create(ctx, databaseCredentialsSecret)).To(Succeed())
+			}
 			By("creating the custom resource for the Kind Core")
-			err := k8sClient.Get(ctx, typeNamespacedName, core)
+			typeNamespacedName.Namespace = namespace.Name
+			err = testClient.Get(ctx, typeNamespacedName, core)
 			if err != nil && errors.IsNotFound(err) {
 				resource := &supabasev1alpha1.Core{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
-						Namespace: "default",
+						Namespace: namespace.Name,
 					},
-					// TODO(user): Specify other spec details if needed.
+					Spec: supabasev1alpha1.CoreSpec{
+						APIExternalURL: "http://localhost:8000/",
+						Database: supabasev1alpha1.Database{
+							Roles: supabasev1alpha1.DatabaseRoles{
+								SelfManaged: true,
+								Secrets: supabasev1alpha1.DatabaseRolesSecrets{
+									Admin:          "admin-role-secret",
+									Authenticator:  "authenticator-role-secret",
+									AuthAdmin:      "auth-admin-role-secret",
+									FunctionsAdmin: "functions-admin-role-secret",
+									StorageAdmin:   "storage-admin-role-secret",
+								},
+							},
+							DSNSecretRef: &v1.SecretKeySelector{
+								LocalObjectReference: v1.LocalObjectReference{
+									Name: "database-credentials",
+								},
+								Key: "url",
+							},
+						},
+						Postgrest: supabasev1alpha1.PostgrestSpec{
+							Schemas:         []string{"public", "storage", "graphql_public"},
+							ExtraSearchPath: []string{"public"},
+							AnonRole:        "anon",
+							MaxRows:         1000,
+						},
+					},
 				}
-				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
+				Expect(testClient.Create(ctx, resource)).To(Succeed())
 			}
 		})
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
 			resource := &supabasev1alpha1.Core{}
-			err := k8sClient.Get(ctx, typeNamespacedName, resource)
+			err := testClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Cleanup the specific resource instance Core")
-			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
+			Expect(testClient.Delete(ctx, resource)).To(Succeed())
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
 			controllerReconciler := &CoreDbReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
+				Client: testClient,
+				Scheme: testClient.Scheme(),
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{

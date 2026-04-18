@@ -72,7 +72,7 @@ go_test(
         "storage_s3_creds_controller_test.go",
         "suite_test.go",
     ],
-    data = glob(["testdata/**"]),
+    data = ["//config/crd/bases:crd_bases"] + glob(["testdata/**"]),
     embed = [":controller"],
     deps = [
         "//api/v1alpha1",

@@ -16,7 +16,7 @@ jobs:
       - name: Clone the code
         uses: actions/checkout@v6
       - name: Create kind cluster
-        run: bazel run //dev:start_cluster`
+        run: bazel run //dev:start_cluster
       - name: Running Test e2e
         run: |
           bazel test //test/e2e/...
