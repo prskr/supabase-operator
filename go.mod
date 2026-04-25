@@ -22,7 +22,6 @@ require (
 	code.icb4dc0.de/prskr/bazel-golangci-lint-analyzers v0.0.0-20260128122601-ee4e1e686f74
 	github.com/alecthomas/assert/v2 v2.11.0
 	github.com/alecthomas/kong v1.14.0
-	github.com/bazelbuild/rules_go v0.60.0
 	github.com/envoyproxy/go-control-plane v0.14.0
 	github.com/envoyproxy/go-control-plane/envoy v1.37.0
 	github.com/go-logr/logr v1.4.3

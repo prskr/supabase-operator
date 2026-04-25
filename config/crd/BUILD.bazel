@@ -1,0 +1,17 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+
+filegroup(
+    name = "3rd_party_crds",
+    srcs = [
+        "3rd-party/stripped-down-crds.yaml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+write_source_files(
+    name = "sync_3rd_party_crds",
+    files = {
+        "3rd-party/stripped-down-crds.yaml": "@prometheus_crds//file",
+    },
+    visibility = ["//visibility:public"],
+)

@@ -73,8 +73,8 @@ go_test(
         "suite_test.go",
     ],
     data = [
+        "//config/crd:3rd_party_crds",
         "//config/crd/bases:crd_bases",
-        "@prometheus_crds//file",
     ] + glob([
         "testdata/**",
         "__snapshots__/*.snap",

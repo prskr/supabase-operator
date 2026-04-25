@@ -24,7 +24,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/bazelbuild/rules_go/go/runfiles"
 	"github.com/gkampitakis/go-snaps/snaps"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -70,9 +69,7 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
-
-	prometheusCrds, err := runfiles.Rlocation("prometheus_crds/file/stripped-down-crds.yaml")
-	Expect(err).NotTo(HaveOccurred())
+	prometheusCrds := filepath.Join("..", "..", "config", "crd", "3rd-party", "stripped-down-crds.yaml")
 
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
