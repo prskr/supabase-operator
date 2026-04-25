@@ -39,6 +39,22 @@ sh_binary(
 )
 
 sh_binary(
+    name = "update_snapshots",
+    srcs = ["update_snapshots.sh"],
+    data = [
+        "@io_k8s_sigs_controller_runtime_tools_setup_envtest//:setup-envtest",
+        "@rules_go//go",
+    ],
+    env = {
+        "GO_BIN": "$(rlocationpath @rules_go//go)",
+        "SETUP_ENVTEST": "$(rlocationpath @io_k8s_sigs_controller_runtime_tools_setup_envtest//:setup-envtest)",
+    },
+    deps = [
+        "@rules_shell//shell/runfiles",
+    ],
+)
+
+sh_binary(
     name = "generate_crd_code",
     srcs = ["generate_crd_code.sh"],
     data = [
