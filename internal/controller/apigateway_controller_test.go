@@ -17,15 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/tls"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"math/big"
-	"time"
-
 	"github.com/gkampitakis/go-snaps/match"
 	"github.com/gkampitakis/go-snaps/snaps"
 	. "github.com/onsi/ginkgo/v2"
@@ -140,7 +131,7 @@ var _ = Describe("APIGateway Controller", func() {
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			caCert, err := generateCACert()
+			caCert, err := certs.SelfSignedCACert()
 			Expect(err).NotTo(HaveOccurred())
 
 			controllerReconciler := &APIGatewayReconciler{
@@ -188,44 +179,3 @@ var _ = Describe("APIGateway Controller", func() {
 		})
 	})
 })
-
-func generateCACert() (tls.Certificate, error) {
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return tls.Certificate{}, err
-	}
-
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
-	if err != nil {
-		return tls.Certificate{}, err
-	}
-
-	template := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			Organization: []string{"Test Org"},
-		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(time.Hour * 24),
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
-		BasicConstraintsValid: true,
-		IsCA:                  true,
-	}
-
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
-	if err != nil {
-		return tls.Certificate{}, err
-	}
-
-	pemCert := certs.EncodePublicKeyToPEM(derBytes)
-
-	privBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
-	if err != nil {
-		return tls.Certificate{}, err
-	}
-	pemKey := certs.EncodePrivateKeyToPEM(privBytes)
-
-	return tls.X509KeyPair(pemCert, pemKey)
-}
