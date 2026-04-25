@@ -9,7 +9,6 @@ Use `bazel` to build the project instead of using the go CLI directly.
 - `bazel run //:format` - Format all code.
 - `bazel test //...` - Run unit tests.
 - `bazel test //internal/controller/... --test_env "KUBEBUILDER_ASSETS=$(bazel run --run_in_cwd @io_k8s_sigs_controller_runtime_tools_setup_envtest//:setup-envtest -- use -p path)"` - Run controller tests with `envtest` binaries.
-- `make test-e2e` - Run end-to-end tests.
 - `go list -u -f '{{if (and (not (or .Main .Indirect)) .Update)}}{{.Path}}: {{.Version}} -> {{.Update.Version}}{{end}}' -m all` - Check for dependency updates.
 
 ## Technical Learnings & Patterns

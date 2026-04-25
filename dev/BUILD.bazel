@@ -43,6 +43,7 @@ sh_binary(
     srcs = ["update_snapshots.sh"],
     data = [
         "@io_k8s_sigs_controller_runtime_tools_setup_envtest//:setup-envtest",
+        "@prometheus_crds//file",
         "@rules_go//go",
     ],
     env = {

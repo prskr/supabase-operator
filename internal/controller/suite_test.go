@@ -19,10 +19,13 @@ package controller
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 
+	"github.com/bazelbuild/rules_go/go/runfiles"
+	"github.com/gkampitakis/go-snaps/snaps"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -33,6 +36,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+
 	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
@@ -41,11 +46,12 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg       *rest.Config
-	k8sClient client.Client
-	testEnv   *envtest.Environment
-	ctx       context.Context
-	cancel    context.CancelFunc
+	cfg            *rest.Config
+	k8sClient      client.Client
+	testEnv        *envtest.Environment
+	ctx            context.Context
+	cancel         context.CancelFunc
+	snapshotConfig *snaps.Config = snaps.WithConfig()
 )
 
 func TestControllers(t *testing.T) {
@@ -57,11 +63,22 @@ func TestControllers(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
+	pwd, err := os.Getwd()
+	Expect(err).NotTo(HaveOccurred())
+	snapshotConfig = snaps.WithConfig(snaps.Dir(filepath.Join(pwd, "__snapshots__")))
+
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
+
+	prometheusCrds, err := runfiles.Rlocation("prometheus_crds/file/stripped-down-crds.yaml")
+	Expect(err).NotTo(HaveOccurred())
+
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "..", "config", "crd", "bases"),
+			prometheusCrds,
+		},
 		ErrorIfCRDPathMissing: true,
 
 		// The BinaryAssetsDirectory is only required if you want to run the tests directly
@@ -73,13 +90,15 @@ var _ = BeforeSuite(func() {
 			fmt.Sprintf("1.31.0-%s-%s", runtime.GOOS, runtime.GOARCH)),
 	}
 
-	var err error
 	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
 	err = supabasev1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = monitoringv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme

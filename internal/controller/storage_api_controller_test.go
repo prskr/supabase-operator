@@ -25,7 +25,6 @@ import (
 	"github.com/prskr/supabase-operator/internal/supabase"
 
 	"github.com/gkampitakis/go-snaps/match"
-	"github.com/gkampitakis/go-snaps/snaps"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -257,14 +256,17 @@ var _ = Describe("Storage API Controller", func() {
 			Expect(storageDeployment.Spec.Template.Spec.Containers).To(HaveLen(1))
 			Expect(storageDeployment.Spec.Template.Spec.Containers[0].Name).To(Equal("supabase-storage"))
 
-			snaps.MatchJSON(GinkgoT(), storageDeployment, match.Any(
+			snapshotConfig.MatchJSON(GinkgoT(), storageDeployment, match.Any(
 				"metadata.resourceVersion",
 				"metadata.creationTimestamp",
 				"metadata.uid",
 				"metadata.managedFields",
+				"metadata.namespace",
 				"metadata.ownerReferences.0.uid",
 				"spec.template.metadata.annotations.supabase\\.k8s\\.icb4dc0\\.de/jwt-hash",
 				"spec.template.metadata.annotations.supabase\\.k8s\\.icb4dc0\\.de/s3-credentials-hash",
+				"spec.template.spec.containers.0.env.6.value",
+				"spec.template.spec.containers.0.env.16.value",
 			))
 		})
 
@@ -284,12 +286,15 @@ var _ = Describe("Storage API Controller", func() {
 			Expect(storageService.Spec.Ports).To(HaveLen(1))
 			Expect(storageService.Spec.Ports[0].Port).To(Equal(int32(5000)))
 
-			snaps.MatchJSON(GinkgoT(), storageService, match.Any(
+			snapshotConfig.MatchJSON(GinkgoT(), storageService, match.Any(
 				"metadata.resourceVersion",
 				"metadata.creationTimestamp",
 				"metadata.uid",
 				"metadata.managedFields",
+				"metadata.namespace",
 				"metadata.ownerReferences.0.uid",
+				"spec.clusterIP",
+				"spec.clusterIPs",
 			))
 		})
 	})

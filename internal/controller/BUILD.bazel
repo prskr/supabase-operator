@@ -72,7 +72,10 @@ go_test(
         "storage_s3_creds_controller_test.go",
         "suite_test.go",
     ],
-    data = ["//config/crd/bases:crd_bases"] + glob([
+    data = [
+        "//config/crd/bases:crd_bases",
+        "@prometheus_crds//file",
+    ] + glob([
         "testdata/**",
         "__snapshots__/*.snap",
     ]),
@@ -85,6 +88,7 @@ go_test(
         "@com_github_gkampitakis_go_snaps//snaps",
         "@com_github_onsi_ginkgo_v2//:ginkgo",
         "@com_github_onsi_gomega//:gomega",
+        "@com_github_prometheus_operator_prometheus_operator_pkg_apis_monitoring//v1:monitoring",
         "@com_github_stretchr_testify//assert",
         "@io_k8s_api//apps/v1:apps",
         "@io_k8s_api//core/v1:core",
@@ -102,5 +106,6 @@ go_test(
         "@io_k8s_sigs_controller_runtime//pkg/log",
         "@io_k8s_sigs_controller_runtime//pkg/log/zap",
         "@io_k8s_sigs_controller_runtime//pkg/reconcile",
+        "@rules_go//go/runfiles",
     ],
 )

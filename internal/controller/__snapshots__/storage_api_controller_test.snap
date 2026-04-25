@@ -1,66 +1,4 @@
 
-[Storage API Controller When reconciling a Storage resource should create the Storage API Service - 1]
-{
- "metadata": {
-  "creationTimestamp": "<Any value>",
-  "labels": {
-   "app.kubernetes.io/component": "storage",
-   "app.kubernetes.io/instance": "test-resource",
-   "app.kubernetes.io/managed-by": "supabase-operator",
-   "app.kubernetes.io/name": "storage-api",
-   "app.kubernetes.io/part-of": "supabase",
-   "app.kubernetes.io/version": "v1.37.8",
-   "supabase.k8s.icb4dc0.de/api-gateway-target": ""
-  },
-  "managedFields": "<Any value>",
-  "name": "test-resource-storage-api",
-  "namespace": "storage-api-503460dd-458ed0f4",
-  "ownerReferences": [
-   {
-    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
-    "blockOwnerDeletion": true,
-    "controller": true,
-    "kind": "Storage",
-    "name": "test-resource",
-    "uid": "<Any value>"
-   }
-  ],
-  "resourceVersion": "<Any value>",
-  "uid": "<Any value>"
- },
- "spec": {
-  "clusterIP": "10.0.0.224",
-  "clusterIPs": [
-   "10.0.0.224"
-  ],
-  "internalTrafficPolicy": "Cluster",
-  "ipFamilies": [
-   "IPv4"
-  ],
-  "ipFamilyPolicy": "SingleStack",
-  "ports": [
-   {
-    "appProtocol": "http",
-    "name": "api",
-    "port": 5000,
-    "protocol": "TCP",
-    "targetPort": 5000
-   }
-  ],
-  "selector": {
-   "app.kubernetes.io/instance": "test-resource",
-   "app.kubernetes.io/name": "storage-api",
-   "app.kubernetes.io/part-of": "supabase"
-  },
-  "sessionAffinity": "None",
-  "type": "ClusterIP"
- },
- "status": {
-  "loadBalancer": {}
- }
-}
----
-
 [Storage API Controller When reconciling a Storage resource should create the Storage API Deployment - 1]
 {
  "metadata": {
@@ -76,7 +14,7 @@
   },
   "managedFields": "<Any value>",
   "name": "test-resource-storage-api",
-  "namespace": "storage-api-3ac3ce39-3d5bcfc5",
+  "namespace": "<Any value>",
   "ownerReferences": [
    {
     "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
@@ -179,7 +117,7 @@
        },
        {
         "name": "POSTGREST_URL",
-        "value": "http://postgrest.storage-api-3ac3ce39-3d5bcfc5.svc:3000"
+        "value": "<Any value>"
        },
        {
         "name": "S3_PROTOCOL_PREFIX",
@@ -224,7 +162,7 @@
        },
        {
         "name": "IMGPROXY_URL",
-        "value": "http://test-resource-imgproxy.storage-api-3ac3ce39-3d5bcfc5.svc:5001"
+        "value": "<Any value>"
        },
        {
         "name": "STORAGE_BACKEND",
@@ -340,5 +278,65 @@
   }
  },
  "status": {}
+}
+---
+
+[Storage API Controller When reconciling a Storage resource should create the Storage API Service - 1]
+{
+ "metadata": {
+  "creationTimestamp": "<Any value>",
+  "labels": {
+   "app.kubernetes.io/component": "storage",
+   "app.kubernetes.io/instance": "test-resource",
+   "app.kubernetes.io/managed-by": "supabase-operator",
+   "app.kubernetes.io/name": "storage-api",
+   "app.kubernetes.io/part-of": "supabase",
+   "app.kubernetes.io/version": "v1.37.8",
+   "supabase.k8s.icb4dc0.de/api-gateway-target": ""
+  },
+  "managedFields": "<Any value>",
+  "name": "test-resource-storage-api",
+  "namespace": "<Any value>",
+  "ownerReferences": [
+   {
+    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
+    "blockOwnerDeletion": true,
+    "controller": true,
+    "kind": "Storage",
+    "name": "test-resource",
+    "uid": "<Any value>"
+   }
+  ],
+  "resourceVersion": "<Any value>",
+  "uid": "<Any value>"
+ },
+ "spec": {
+  "clusterIP": "<Any value>",
+  "clusterIPs": "<Any value>",
+  "internalTrafficPolicy": "Cluster",
+  "ipFamilies": [
+   "IPv4"
+  ],
+  "ipFamilyPolicy": "SingleStack",
+  "ports": [
+   {
+    "appProtocol": "http",
+    "name": "api",
+    "port": 5000,
+    "protocol": "TCP",
+    "targetPort": 5000
+   }
+  ],
+  "selector": {
+   "app.kubernetes.io/instance": "test-resource",
+   "app.kubernetes.io/name": "storage-api",
+   "app.kubernetes.io/part-of": "supabase"
+  },
+  "sessionAffinity": "None",
+  "type": "ClusterIP"
+ },
+ "status": {
+  "loadBalancer": {}
+ }
 }
 ---
