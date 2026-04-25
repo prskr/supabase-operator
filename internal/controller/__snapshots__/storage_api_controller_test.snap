@@ -1,0 +1,342 @@
+
+[Storage API Controller When reconciling a Storage resource should create the Storage API Deployment - 1]
+{
+ "metadata": {
+  "creationTimestamp": "<Any value>",
+  "generation": 1,
+  "labels": {
+   "app.kubernetes.io/component": "storage",
+   "app.kubernetes.io/instance": "test-resource",
+   "app.kubernetes.io/managed-by": "supabase-operator",
+   "app.kubernetes.io/name": "storage-api",
+   "app.kubernetes.io/part-of": "supabase",
+   "app.kubernetes.io/version": "v1.37.8"
+  },
+  "managedFields": "<Any value>",
+  "name": "test-resource-storage-api",
+  "namespace": "<Any value>",
+  "ownerReferences": [
+   {
+    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
+    "blockOwnerDeletion": true,
+    "controller": true,
+    "kind": "Storage",
+    "name": "test-resource",
+    "uid": "<Any value>"
+   }
+  ],
+  "resourceVersion": "<Any value>",
+  "uid": "<Any value>"
+ },
+ "spec": {
+  "progressDeadlineSeconds": 600,
+  "replicas": 1,
+  "revisionHistoryLimit": 10,
+  "selector": {
+   "matchLabels": {
+    "app.kubernetes.io/instance": "test-resource",
+    "app.kubernetes.io/name": "storage-api",
+    "app.kubernetes.io/part-of": "supabase"
+   }
+  },
+  "strategy": {
+   "rollingUpdate": {
+    "maxSurge": "25%",
+    "maxUnavailable": "25%"
+   },
+   "type": "RollingUpdate"
+  },
+  "template": {
+   "metadata": {
+    "annotations": {
+     "supabase.k8s.icb4dc0.de/jwt-hash": "<Any value>",
+     "supabase.k8s.icb4dc0.de/s3-credentials-hash": "<Any value>"
+    },
+    "labels": {
+     "app.kubernetes.io/component": "storage",
+     "app.kubernetes.io/instance": "test-resource",
+     "app.kubernetes.io/managed-by": "supabase-operator",
+     "app.kubernetes.io/name": "storage-api",
+     "app.kubernetes.io/part-of": "supabase",
+     "app.kubernetes.io/version": "v1.37.8"
+    }
+   },
+   "spec": {
+    "automountServiceAccountToken": false,
+    "containers": [
+     {
+      "env": [
+       {
+        "name": "DB_USERNAME",
+        "valueFrom": {
+         "secretKeyRef": {
+          "key": "username",
+          "name": "test-db-creds"
+         }
+        }
+       },
+       {
+        "name": "DB_PASSWORD",
+        "valueFrom": {
+         "secretKeyRef": {
+          "key": "password",
+          "name": "test-db-creds"
+         }
+        }
+       },
+       {
+        "name": "DATABASE_URL",
+        "value": "postgres://$(DB_USERNAME):$(DB_PASSWORD)@cluster-test-rw.supabase-demo.svc:5432/app"
+       },
+       {
+        "name": "SERVICE_KEY",
+        "valueFrom": {
+         "secretKeyRef": {
+          "key": "service_key",
+          "name": "test-jwt"
+         }
+        }
+       },
+       {
+        "name": "PGRST_JWT_SECRET",
+        "valueFrom": {
+         "secretKeyRef": {
+          "key": "secret",
+          "name": "test-jwt"
+         }
+        }
+       },
+       {
+        "name": "JWT_JWKS",
+        "valueFrom": {
+         "secretKeyRef": {
+          "key": "jwks.json",
+          "name": "test-jwt"
+         }
+        }
+       },
+       {
+        "name": "POSTGREST_URL",
+        "value": "<Any value>"
+       },
+       {
+        "name": "S3_PROTOCOL_PREFIX",
+        "value": "/storage/v1"
+       },
+       {
+        "name": "FILE_SIZE_LIMIT",
+        "value": "52428800"
+       },
+       {
+        "name": "UPLOAD_FILE_SIZE_LIMIT",
+        "value": "52428800"
+       },
+       {
+        "name": "UPLOAD_FILE_SIZE_LIMIT_STANDARD",
+        "value": "52428800"
+       },
+       {
+        "name": "ANON_KEY",
+        "valueFrom": {
+         "secretKeyRef": {
+          "key": "anon_key",
+          "name": "test-jwt"
+         }
+        }
+       },
+       {
+        "name": "REGION",
+        "value": "us-east-1"
+       },
+       {
+        "name": "TENANT_ID",
+        "value": "test-tenant-id"
+       },
+       {
+        "name": "REQUEST_ALLOW_X_FORWARDED_PATH",
+        "value": "true"
+       },
+       {
+        "name": "PG_QUEUE_ENABLE",
+        "value": "false"
+       },
+       {
+        "name": "IMGPROXY_URL",
+        "value": "<Any value>"
+       },
+       {
+        "name": "STORAGE_BACKEND",
+        "value": "s3"
+       },
+       {
+        "name": "STORAGE_S3_ENDPOINT",
+        "value": "http://seaweedfs.seaweedfs.svc:8333"
+       },
+       {
+        "name": "STORAGE_S3_FORCE_PATH_STYLE",
+        "value": "false"
+       },
+       {
+        "name": "STORAGE_S3_BUCKET",
+        "value": "test-bucket"
+       },
+       {
+        "name": "STORAGE_S3_REGION",
+        "value": "us-east-1"
+       },
+       {
+        "name": "AWS_ACCESS_KEY_ID",
+        "valueFrom": {
+         "secretKeyRef": {
+          "key": "accessKeyId",
+          "name": "test-s3-backend-credentials"
+         }
+        }
+       },
+       {
+        "name": "AWS_SECRET_ACCESS_KEY",
+        "valueFrom": {
+         "secretKeyRef": {
+          "key": "secretAccessKey",
+          "name": "test-s3-backend-credentials"
+         }
+        }
+       }
+      ],
+      "image": "supabase/storage-api:v1.37.8",
+      "imagePullPolicy": "IfNotPresent",
+      "livenessProbe": {
+       "failureThreshold": 3,
+       "httpGet": {
+        "path": "/status",
+        "port": 5000,
+        "scheme": "HTTP"
+       },
+       "initialDelaySeconds": 10,
+       "periodSeconds": 5,
+       "successThreshold": 1,
+       "timeoutSeconds": 3
+      },
+      "name": "supabase-storage",
+      "ports": [
+       {
+        "containerPort": 5000,
+        "name": "api",
+        "protocol": "TCP"
+       }
+      ],
+      "readinessProbe": {
+       "failureThreshold": 3,
+       "httpGet": {
+        "path": "/status",
+        "port": 5000,
+        "scheme": "HTTP"
+       },
+       "initialDelaySeconds": 5,
+       "periodSeconds": 3,
+       "successThreshold": 2,
+       "timeoutSeconds": 1
+      },
+      "resources": {},
+      "securityContext": {
+       "allowPrivilegeEscalation": false,
+       "capabilities": {
+        "drop": [
+         "ALL"
+        ]
+       },
+       "privileged": false,
+       "readOnlyRootFilesystem": true,
+       "runAsGroup": 1000,
+       "runAsNonRoot": true,
+       "runAsUser": 1000
+      },
+      "terminationMessagePath": "/dev/termination-log",
+      "terminationMessagePolicy": "File",
+      "volumeMounts": [
+       {
+        "mountPath": "/tmp",
+        "name": "tmp"
+       }
+      ]
+     }
+    ],
+    "dnsPolicy": "ClusterFirst",
+    "restartPolicy": "Always",
+    "schedulerName": "default-scheduler",
+    "securityContext": {
+     "runAsNonRoot": true
+    },
+    "terminationGracePeriodSeconds": 30,
+    "volumes": [
+     {
+      "emptyDir": {},
+      "name": "tmp"
+     }
+    ]
+   }
+  }
+ },
+ "status": {}
+}
+---
+
+[Storage API Controller When reconciling a Storage resource should create the Storage API Service - 1]
+{
+ "metadata": {
+  "creationTimestamp": "<Any value>",
+  "labels": {
+   "app.kubernetes.io/component": "storage",
+   "app.kubernetes.io/instance": "test-resource",
+   "app.kubernetes.io/managed-by": "supabase-operator",
+   "app.kubernetes.io/name": "storage-api",
+   "app.kubernetes.io/part-of": "supabase",
+   "app.kubernetes.io/version": "v1.37.8",
+   "supabase.k8s.icb4dc0.de/api-gateway-target": ""
+  },
+  "managedFields": "<Any value>",
+  "name": "test-resource-storage-api",
+  "namespace": "<Any value>",
+  "ownerReferences": [
+   {
+    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
+    "blockOwnerDeletion": true,
+    "controller": true,
+    "kind": "Storage",
+    "name": "test-resource",
+    "uid": "<Any value>"
+   }
+  ],
+  "resourceVersion": "<Any value>",
+  "uid": "<Any value>"
+ },
+ "spec": {
+  "clusterIP": "<Any value>",
+  "clusterIPs": "<Any value>",
+  "internalTrafficPolicy": "Cluster",
+  "ipFamilies": [
+   "IPv4"
+  ],
+  "ipFamilyPolicy": "SingleStack",
+  "ports": [
+   {
+    "appProtocol": "http",
+    "name": "api",
+    "port": 5000,
+    "protocol": "TCP",
+    "targetPort": 5000
+   }
+  ],
+  "selector": {
+   "app.kubernetes.io/instance": "test-resource",
+   "app.kubernetes.io/name": "storage-api",
+   "app.kubernetes.io/part-of": "supabase"
+  },
+  "sessionAffinity": "None",
+  "type": "ClusterIP"
+ },
+ "status": {
+  "loadBalancer": {}
+ }
+}
+---

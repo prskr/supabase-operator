@@ -85,6 +85,15 @@ supabase_migrations(
     version = "15.14.1.101",
 )
 
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "prometheus_crds",
+    downloaded_file_path = "stripped-down-crds.yaml",
+    sha256 = "c84e5a2e9e146c8f9a25dedf7dc563a9125679c70ee32d2c0d5486e50c0738b0",
+    urls = ["https://github.com/prometheus-operator/prometheus-operator/releases/download/v0.90.1/stripped-down-crds.yaml"],
+)
+
 use_repo(
     go_deps,
     "com_github_alecthomas_assert_v2",
@@ -92,7 +101,7 @@ use_repo(
     "com_github_elastic_crd_ref_docs",
     "com_github_envoyproxy_go_control_plane",
     "com_github_envoyproxy_go_control_plane_envoy",
-    "com_github_go_faker_faker_v4",
+    "com_github_gkampitakis_go_snaps",
     "com_github_go_logr_logr",
     "com_github_gordonklaus_ineffassign",
     "com_github_jackc_pgx_v5",

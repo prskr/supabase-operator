@@ -46,7 +46,7 @@ var Images = struct {
 	},
 	Envoy: ImageRef{
 		Repository: "envoyproxy/envoy",
-		Tag:        "distroless-v1.36.2",
+		Tag:        "distroless-v1.37.1",
 	},
 	Gotrue: ImageRef{
 		Repository: "supabase/gotrue",

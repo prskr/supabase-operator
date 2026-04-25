@@ -1,23 +1,4 @@
 {
-  "context_servers": {
-    "postgres": {
-      "source": "custom",
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "--net=host",
-        "-e",
-        "DATABASE_URI",
-        "crystaldba/postgres-mcp",
-        "--access-mode=unrestricted",
-      ],
-      "env": {
-        "DATABASE_URI": "postgresql://supabase_admin:1n1t-R00t!@localhost:5432/app",
-      },
-    },
-  },
   "lsp": {
     "gopls": {
       "binary": {

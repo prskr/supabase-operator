@@ -421,7 +421,7 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 ) error {
 	const (
 		configVolumeName          = "config"
-		controlPlaneTlsVolumeName = "cp-tls"
+		controlPlaneTLSVolumeName = "cp-tls"
 	)
 	envoyDeployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -578,7 +578,7 @@ func (r *APIGatewayReconciler) reconileEnvoyDeployment(
 						},
 					},
 					{
-						Name: controlPlaneTlsVolumeName,
+						Name: controlPlaneTLSVolumeName,
 						VolumeSource: corev1.VolumeSource{
 							Secret: &corev1.SecretVolumeSource{
 								SecretName: serviceCfg.ControlPlaneClientCertSecretName(gateway),
@@ -681,6 +681,10 @@ func (r *APIGatewayReconciler) reconcilePodMonitor(
 					Interval:      "30s",
 				},
 			},
+		}
+
+		if err := controllerutil.SetControllerReference(gateway, podMonitor, r.Scheme); err != nil {
+			return err
 		}
 
 		return nil

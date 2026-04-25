@@ -210,7 +210,7 @@ func (t *WorkloadSpec) PodSecurityContext() *corev1.PodSecurityContext {
 	}
 
 	return &corev1.PodSecurityContext{
-		RunAsNonRoot: ptrOf(true),
+		RunAsNonRoot: new(true),
 	}
 }
 
@@ -220,20 +220,16 @@ func (t *WorkloadSpec) ContainerSecurityContext(uid, gid int64) *corev1.Security
 	}
 
 	return &corev1.SecurityContext{
-		Privileged:               ptrOf(false),
-		RunAsUser:                ptrOf(uid),
-		RunAsGroup:               ptrOf(gid),
-		RunAsNonRoot:             ptrOf(true),
-		AllowPrivilegeEscalation: ptrOf(false),
-		ReadOnlyRootFilesystem:   ptrOf(true),
+		Privileged:               new(false),
+		RunAsUser:                new(uid),
+		RunAsGroup:               new(gid),
+		RunAsNonRoot:             new(true),
+		AllowPrivilegeEscalation: new(false),
+		ReadOnlyRootFilesystem:   new(true),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
 			},
 		},
 	}
-}
-
-func ptrOf[T any](val T) *T {
-	return &val
 }

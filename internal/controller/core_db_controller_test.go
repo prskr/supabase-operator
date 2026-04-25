@@ -33,8 +33,8 @@ import (
 	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 )
 
-var _ = Describe("Core Controller", func() {
-	Context("When reconciling a resource", func() {
+var _ = Describe("Core DB Controller", func() {
+	Context("When reconciling a Core resource", func() {
 		const resourceName = "test-resource"
 
 		typeNamespacedName := types.NamespacedName{

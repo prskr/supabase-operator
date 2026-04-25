@@ -1,0 +1,426 @@
+
+[APIGateway Controller When reconciling a resource should successfully create the HMAC secret - 1]
+{
+ "data": {
+  "oauth2_hmac_secret": "<Any value>"
+ },
+ "metadata": {
+  "creationTimestamp": "<Any value>",
+  "managedFields": "<Any value>",
+  "name": "test-resource-hmac-secret",
+  "namespace": "<Any value>",
+  "ownerReferences": [
+   {
+    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
+    "blockOwnerDeletion": true,
+    "controller": true,
+    "kind": "APIGateway",
+    "name": "test-resource",
+    "uid": "<Any value>"
+   }
+  ],
+  "resourceVersion": "<Any value>",
+  "uid": "<Any value>"
+ },
+ "type": "Opaque"
+}
+---
+
+[APIGateway Controller When reconciling a resource should successfully create the client certificate secret - 1]
+{
+ "data": {
+  "ca.crt": "<Any value>",
+  "tls.crt": "<Any value>",
+  "tls.key": "<Any value>"
+ },
+ "metadata": {
+  "creationTimestamp": "<Any value>",
+  "managedFields": "<Any value>",
+  "name": "test-resource-cp-client-cert",
+  "namespace": "<Any value>",
+  "ownerReferences": [
+   {
+    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
+    "blockOwnerDeletion": true,
+    "controller": true,
+    "kind": "APIGateway",
+    "name": "test-resource",
+    "uid": "<Any value>"
+   }
+  ],
+  "resourceVersion": "<Any value>",
+  "uid": "<Any value>"
+ },
+ "type": "kubernetes.io/tls"
+}
+---
+
+[APIGateway Controller When reconciling a resource should successfully create the Envoy ConfigMap - 1]
+{
+ "data": {
+  "config.yaml": "<Any value>"
+ },
+ "metadata": {
+  "creationTimestamp": "<Any value>",
+  "labels": {
+   "app.kubernetes.io/component": "api-gateway",
+   "app.kubernetes.io/instance": "test-resource",
+   "app.kubernetes.io/managed-by": "supabase-operator",
+   "app.kubernetes.io/name": "envoy",
+   "app.kubernetes.io/part-of": "supabase",
+   "app.kubernetes.io/version": "distroless-v1.37.1"
+  },
+  "managedFields": "<Any value>",
+  "name": "test-resource-envoy",
+  "namespace": "<Any value>",
+  "ownerReferences": [
+   {
+    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
+    "blockOwnerDeletion": true,
+    "controller": true,
+    "kind": "APIGateway",
+    "name": "test-resource",
+    "uid": "<Any value>"
+   }
+  ],
+  "resourceVersion": "<Any value>",
+  "uid": "<Any value>"
+ }
+}
+---
+
+[APIGateway Controller When reconciling a resource should successfully create the Envoy Deployment - 1]
+{
+ "metadata": {
+  "creationTimestamp": "<Any value>",
+  "generation": 1,
+  "labels": {
+   "app.kubernetes.io/component": "api-gateway",
+   "app.kubernetes.io/instance": "test-resource",
+   "app.kubernetes.io/managed-by": "supabase-operator",
+   "app.kubernetes.io/name": "envoy",
+   "app.kubernetes.io/part-of": "supabase",
+   "app.kubernetes.io/version": "distroless-v1.37.1"
+  },
+  "managedFields": "<Any value>",
+  "name": "test-resource-envoy",
+  "namespace": "<Any value>",
+  "ownerReferences": [
+   {
+    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
+    "blockOwnerDeletion": true,
+    "controller": true,
+    "kind": "APIGateway",
+    "name": "test-resource",
+    "uid": "<Any value>"
+   }
+  ],
+  "resourceVersion": "<Any value>",
+  "uid": "<Any value>"
+ },
+ "spec": {
+  "progressDeadlineSeconds": 600,
+  "replicas": 1,
+  "revisionHistoryLimit": 10,
+  "selector": {
+   "matchLabels": {
+    "app.kubernetes.io/instance": "test-resource",
+    "app.kubernetes.io/name": "envoy",
+    "app.kubernetes.io/part-of": "supabase"
+   }
+  },
+  "strategy": {
+   "rollingUpdate": {
+    "maxSurge": "25%",
+    "maxUnavailable": "25%"
+   },
+   "type": "RollingUpdate"
+  },
+  "template": {
+   "metadata": {
+    "annotations": {
+     "supabase.k8s.icb4dc0.de/config-hash": "<Any value>",
+     "supabase.k8s.icb4dc0.de/jwks-hash": "<Any value>"
+    },
+    "labels": {
+     "app.kubernetes.io/component": "api-gateway",
+     "app.kubernetes.io/instance": "test-resource",
+     "app.kubernetes.io/managed-by": "supabase-operator",
+     "app.kubernetes.io/name": "envoy",
+     "app.kubernetes.io/part-of": "supabase",
+     "app.kubernetes.io/version": "distroless-v1.37.1"
+    }
+   },
+   "spec": {
+    "automountServiceAccountToken": false,
+    "containers": [
+     {
+      "args": [
+       "-c /etc/envoy/config.yaml"
+      ],
+      "image": "envoyproxy/envoy:distroless-v1.37.1",
+      "imagePullPolicy": "IfNotPresent",
+      "livenessProbe": {
+       "failureThreshold": 3,
+       "httpGet": {
+        "path": "/ready",
+        "port": 19000,
+        "scheme": "HTTP"
+       },
+       "initialDelaySeconds": 10,
+       "periodSeconds": 5,
+       "successThreshold": 1,
+       "timeoutSeconds": 3
+      },
+      "name": "envoy-proxy",
+      "ports": [
+       {
+        "containerPort": 3000,
+        "name": "studio",
+        "protocol": "TCP"
+       },
+       {
+        "containerPort": 8000,
+        "name": "api",
+        "protocol": "TCP"
+       },
+       {
+        "containerPort": 19000,
+        "name": "admin",
+        "protocol": "TCP"
+       }
+      ],
+      "readinessProbe": {
+       "failureThreshold": 3,
+       "httpGet": {
+        "path": "/ready",
+        "port": 19000,
+        "scheme": "HTTP"
+       },
+       "initialDelaySeconds": 5,
+       "periodSeconds": 3,
+       "successThreshold": 2,
+       "timeoutSeconds": 1
+      },
+      "resources": {},
+      "securityContext": {
+       "allowPrivilegeEscalation": false,
+       "capabilities": {
+        "drop": [
+         "ALL"
+        ]
+       },
+       "privileged": false,
+       "readOnlyRootFilesystem": true,
+       "runAsGroup": 65532,
+       "runAsNonRoot": true,
+       "runAsUser": 65532
+      },
+      "terminationMessagePath": "/dev/termination-log",
+      "terminationMessagePolicy": "File",
+      "volumeMounts": [
+       {
+        "mountPath": "/etc/envoy",
+        "name": "config",
+        "readOnly": true
+       }
+      ]
+     }
+    ],
+    "dnsPolicy": "ClusterFirst",
+    "restartPolicy": "Always",
+    "schedulerName": "default-scheduler",
+    "securityContext": {
+     "runAsNonRoot": true
+    },
+    "terminationGracePeriodSeconds": 30,
+    "volumes": [
+     {
+      "name": "config",
+      "projected": {
+       "defaultMode": 420,
+       "sources": [
+        {
+         "configMap": {
+          "items": [
+           {
+            "key": "config.yaml",
+            "path": "config.yaml"
+           }
+          ],
+          "name": "test-resource-envoy"
+         }
+        },
+        {
+         "secret": {
+          "items": [
+           {
+            "key": "jwks.json",
+            "path": "jwks.json"
+           }
+          ],
+          "name": "core-sample-jwt"
+         }
+        },
+        {
+         "secret": {
+          "items": [
+           {
+            "key": "ca.crt",
+            "path": "certs/cp/ca.crt"
+           },
+           {
+            "key": "tls.crt",
+            "path": "certs/cp/tls.crt"
+           },
+           {
+            "key": "tls.key",
+            "path": "certs/cp/tls.key"
+           }
+          ],
+          "name": "test-resource-cp-client-cert"
+         }
+        }
+       ]
+      }
+     },
+     {
+      "name": "cp-tls",
+      "secret": {
+       "defaultMode": 420,
+       "secretName": "test-resource-cp-client-cert"
+      }
+     }
+    ]
+   }
+  }
+ },
+ "status": {}
+}
+---
+
+[APIGateway Controller When reconciling a resource should successfully create the Envoy Service - 1]
+{
+ "metadata": {
+  "creationTimestamp": "<Any value>",
+  "labels": {
+   "app.kubernetes.io/component": "api-gateway",
+   "app.kubernetes.io/instance": "test-resource",
+   "app.kubernetes.io/managed-by": "supabase-operator",
+   "app.kubernetes.io/name": "envoy",
+   "app.kubernetes.io/part-of": "supabase",
+   "app.kubernetes.io/version": "distroless-v1.37.1"
+  },
+  "managedFields": "<Any value>",
+  "name": "test-resource-envoy",
+  "namespace": "<Any value>",
+  "ownerReferences": [
+   {
+    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
+    "blockOwnerDeletion": true,
+    "controller": true,
+    "kind": "APIGateway",
+    "name": "test-resource",
+    "uid": "<Any value>"
+   }
+  ],
+  "resourceVersion": "<Any value>",
+  "uid": "<Any value>"
+ },
+ "spec": {
+  "clusterIP": "<Any value>",
+  "clusterIPs": "<Any value>",
+  "internalTrafficPolicy": "Cluster",
+  "ipFamilies": [
+   "IPv4"
+  ],
+  "ipFamilyPolicy": "SingleStack",
+  "ports": [
+   {
+    "appProtocol": "http",
+    "name": "studio",
+    "port": 3000,
+    "protocol": "TCP",
+    "targetPort": 3000
+   },
+   {
+    "appProtocol": "http",
+    "name": "api",
+    "port": 8000,
+    "protocol": "TCP",
+    "targetPort": 8000
+   }
+  ],
+  "selector": {
+   "app.kubernetes.io/instance": "test-resource",
+   "app.kubernetes.io/name": "envoy",
+   "app.kubernetes.io/part-of": "supabase"
+  },
+  "sessionAffinity": "None",
+  "type": "ClusterIP"
+ },
+ "status": {
+  "loadBalancer": {}
+ }
+}
+---
+
+[APIGateway Controller When reconciling a resource should successfully create the Envoy PodMonitor - 1]
+{
+ "metadata": {
+  "creationTimestamp": "<Any value>",
+  "generation": 1,
+  "labels": {
+   "app.kubernetes.io/component": "api-gateway",
+   "app.kubernetes.io/instance": "test-resource",
+   "app.kubernetes.io/managed-by": "supabase-operator",
+   "app.kubernetes.io/name": "envoy",
+   "app.kubernetes.io/part-of": "supabase",
+   "app.kubernetes.io/version": "distroless-v1.37.1"
+  },
+  "managedFields": "<Any value>",
+  "name": "test-resource-envoy",
+  "namespace": "<Any value>",
+  "ownerReferences": [
+   {
+    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
+    "blockOwnerDeletion": true,
+    "controller": true,
+    "kind": "APIGateway",
+    "name": "test-resource",
+    "uid": "<Any value>"
+   }
+  ],
+  "resourceVersion": "<Any value>",
+  "uid": "<Any value>"
+ },
+ "spec": {
+  "jobLabel": "app.kubernetes.io/instance",
+  "namespaceSelector": {},
+  "podMetricsEndpoints": [
+   {
+    "interval": "30s",
+    "params": {
+     "histogram_buckets": [
+      "cumulative"
+     ]
+    },
+    "path": "/stats/prometheus",
+    "port": "admin",
+    "scheme": "HTTP",
+    "scrapeTimeout": "5s"
+   }
+  ],
+  "selector": {
+   "matchLabels": {
+    "app.kubernetes.io/component": "api-gateway",
+    "app.kubernetes.io/instance": "test-resource",
+    "app.kubernetes.io/managed-by": "supabase-operator",
+    "app.kubernetes.io/name": "envoy",
+    "app.kubernetes.io/part-of": "supabase",
+    "app.kubernetes.io/version": "distroless-v1.37.1"
+   }
+  }
+ }
+}
+---
