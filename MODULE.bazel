@@ -92,6 +92,7 @@ use_repo(
     "com_github_elastic_crd_ref_docs",
     "com_github_envoyproxy_go_control_plane",
     "com_github_envoyproxy_go_control_plane_envoy",
+    "com_github_gkampitakis_go_snaps",
     "com_github_go_logr_logr",
     "com_github_gordonklaus_ineffassign",
     "com_github_jackc_pgx_v5",

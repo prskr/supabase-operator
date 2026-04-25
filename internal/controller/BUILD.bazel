@@ -72,10 +72,17 @@ go_test(
         "storage_s3_creds_controller_test.go",
         "suite_test.go",
     ],
-    data = ["//config/crd/bases:crd_bases"] + glob(["testdata/**"]),
+    data = ["//config/crd/bases:crd_bases"] + glob([
+        "testdata/**",
+        "__snapshots__/*.snap",
+    ]),
     embed = [":controller"],
     deps = [
         "//api/v1alpha1",
+        "//internal/certs",
+        "//internal/supabase",
+        "@com_github_gkampitakis_go_snaps//match",
+        "@com_github_gkampitakis_go_snaps//snaps",
         "@com_github_onsi_ginkgo_v2//:ginkgo",
         "@com_github_onsi_gomega//:gomega",
         "@com_github_stretchr_testify//assert",

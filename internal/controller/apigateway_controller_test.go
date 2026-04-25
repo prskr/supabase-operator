@@ -17,7 +17,6 @@ limitations under the License.
 package controller
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -27,6 +26,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/gkampitakis/go-snaps/match"
+	"github.com/gkampitakis/go-snaps/snaps"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -37,13 +38,12 @@ import (
 
 	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
 	"github.com/prskr/supabase-operator/internal/certs"
+	"github.com/prskr/supabase-operator/internal/supabase"
 )
 
 var _ = Describe("APIGateway Controller", func() {
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
-
-		ctx := context.Background()
 
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,
@@ -153,8 +153,18 @@ var _ = Describe("APIGateway Controller", func() {
 				NamespacedName: typeNamespacedName,
 			})
 			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
+
+			By("Checking the created HMAC secret")
+			err = k8sClient.Get(ctx, typeNamespacedName, apigateway)
+			Expect(err).NotTo(HaveOccurred())
+
+			hmacSecret := &corev1.Secret{}
+			hmacSecretName := supabase.ServiceConfig.Envoy.HmacSecretName(apigateway)
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: hmacSecretName, Namespace: "default"}, hmacSecret)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hmacSecret.Data).To(HaveKey(supabase.ServiceConfig.Envoy.Defaults.HmacSecretKey))
+
+			snaps.MatchJSON(GinkgoT(), hmacSecret, match.Any("data.oauth2_hmac_secret", "metadata.resourceVersion", "metadata.creationTimestamp", "metadata.uid", "metadata.managedFields", "metadata.ownerReferences.0.uid"))
 		})
 	})
 })

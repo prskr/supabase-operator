@@ -1,0 +1,27 @@
+
+[APIGateway Controller When reconciling a resource should successfully reconcile the resource - 1]
+{
+ "data": {
+  "oauth2_hmac_secret": "<Any value>"
+ },
+ "metadata": {
+  "creationTimestamp": "<Any value>",
+  "managedFields": "<Any value>",
+  "name": "test-resource-hmac-secret",
+  "namespace": "default",
+  "ownerReferences": [
+   {
+    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
+    "blockOwnerDeletion": true,
+    "controller": true,
+    "kind": "APIGateway",
+    "name": "test-resource",
+    "uid": "<Any value>"
+   }
+  ],
+  "resourceVersion": "<Any value>",
+  "uid": "<Any value>"
+ },
+ "type": "Opaque"
+}
+---
