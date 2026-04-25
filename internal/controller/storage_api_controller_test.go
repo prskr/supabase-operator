@@ -17,11 +17,15 @@ limitations under the License.
 package controller
 
 import (
+	"crypto/rand"
 	"fmt"
 	"hash/fnv"
 
 	supabasev1alpha1 "github.com/prskr/supabase-operator/api/v1alpha1"
+	"github.com/prskr/supabase-operator/internal/supabase"
 
+	"github.com/gkampitakis/go-snaps/match"
+	"github.com/gkampitakis/go-snaps/snaps"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -29,6 +33,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -41,17 +46,23 @@ var _ = Describe("Storage API Controller", func() {
 		const resourceName = "test-resource"
 
 		var (
-			namespace          *v1.Namespace
-			namespaceName      string
-			testClient         client.Client
-			typeNamespacedName types.NamespacedName
+			namespace            *v1.Namespace
+			namespaceName        string
+			testClient           client.Client
+			typeNamespacedName   types.NamespacedName
+			storage              *supabasev1alpha1.Storage
+			reconciliationErr    error
+			reconciliationResult reconcile.Result
 		)
 
 		BeforeEach(func(ctx SpecContext) {
 			hash := fnv.New32()
-			_, _ = hash.Write([]byte(ctx.SpecReport().FileName()))
+			_, _ = hash.Write([]byte(ctx.SpecReport().FullText()))
 
-			namespaceName = fmt.Sprintf("storage-api-%x", hash.Sum(nil))
+			randomSuffix := make([]byte, 4)
+			_, _ = rand.Read(randomSuffix)
+
+			namespaceName = fmt.Sprintf("storage-api-%x-%x", hash.Sum(nil), randomSuffix)
 			namespace = &v1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: namespaceName,
@@ -154,7 +165,7 @@ var _ = Describe("Storage API Controller", func() {
 
 			// Create the Storage resource
 			By("Creating the Storage resource")
-			storage := &supabasev1alpha1.Storage{
+			storage = &supabasev1alpha1.Storage{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      resourceName,
 					Namespace: namespaceName,
@@ -213,52 +224,73 @@ var _ = Describe("Storage API Controller", func() {
 			Expect(testClient.Delete(ctx, namespace)).To(Succeed())
 		})
 
-		It("should successfully reconcile the resource", func() {
+		JustBeforeEach(func(ctx SpecContext) {
 			By("Reconciling the created resource")
 			controllerReconciler := &StorageAPIReconciler{
 				Client: testClient,
 				Scheme: testClient.Scheme(),
 			}
 
-			result, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+			reconciliationResult, reconciliationErr = controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
 			})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(BeZero())
+		})
 
-			// Verify the Storage API Deployment was created
+		It("should successfully reconcile the resource", func() {
+			Expect(reconciliationErr).NotTo(HaveOccurred())
+			Expect(reconciliationResult).To(BeZero())
+		})
+
+		It("should create the Storage API Deployment", func(ctx SpecContext) {
 			By("Verifying Storage API Deployment was created")
 			storageDeployment := &appsv1.Deployment{}
 			deploymentName := types.NamespacedName{
-				Name:      fmt.Sprintf("%s-storage-api", resourceName),
+				Name:      supabase.ServiceConfig.Storage.ObjectName(storage),
 				Namespace: namespaceName,
 			}
-			Eventually(func() bool {
-				err := testClient.Get(ctx, deploymentName, storageDeployment)
-				return err == nil
-			}).Should(BeTrue(), "Storage API Deployment should be created")
+			Eventually(func() error {
+				return testClient.Get(ctx, deploymentName, storageDeployment)
+			}).Should(Succeed(), "Storage API Deployment should be created")
 
 			Expect(storageDeployment.Name).To(Equal(deploymentName.Name))
 			Expect(storageDeployment.Namespace).To(Equal(deploymentName.Namespace))
 			Expect(storageDeployment.Spec.Template.Spec.Containers).To(HaveLen(1))
 			Expect(storageDeployment.Spec.Template.Spec.Containers[0].Name).To(Equal("supabase-storage"))
 
-			// Verify the Storage API Service was created
+			snaps.MatchJSON(GinkgoT(), storageDeployment, match.Any(
+				"metadata.resourceVersion",
+				"metadata.creationTimestamp",
+				"metadata.uid",
+				"metadata.managedFields",
+				"metadata.ownerReferences.0.uid",
+				"spec.template.metadata.annotations.supabase\\.k8s\\.icb4dc0\\.de/jwt-hash",
+				"spec.template.metadata.annotations.supabase\\.k8s\\.icb4dc0\\.de/s3-credentials-hash",
+			))
+		})
+
+		It("should create the Storage API Service", func(ctx SpecContext) {
 			By("Verifying Storage API Service was created")
 			storageService := &v1.Service{}
 			serviceName := types.NamespacedName{
-				Name:      fmt.Sprintf("%s-storage-api", resourceName),
+				Name:      supabase.ServiceConfig.Storage.ObjectName(storage),
 				Namespace: namespaceName,
 			}
-			Eventually(func() bool {
-				err := testClient.Get(ctx, serviceName, storageService)
-				return err == nil
-			}).Should(BeTrue(), "Storage API Service should be created")
+			Eventually(func() error {
+				return testClient.Get(ctx, serviceName, storageService)
+			}).Should(Succeed(), "Storage API Service should be created")
 
 			Expect(storageService.Name).To(Equal(serviceName.Name))
 			Expect(storageService.Namespace).To(Equal(serviceName.Namespace))
 			Expect(storageService.Spec.Ports).To(HaveLen(1))
 			Expect(storageService.Spec.Ports[0].Port).To(Equal(int32(5000)))
+
+			snaps.MatchJSON(GinkgoT(), storageService, match.Any(
+				"metadata.resourceVersion",
+				"metadata.creationTimestamp",
+				"metadata.uid",
+				"metadata.managedFields",
+				"metadata.ownerReferences.0.uid",
+			))
 		})
 	})
 })

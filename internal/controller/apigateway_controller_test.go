@@ -55,7 +55,7 @@ var _ = Describe("APIGateway Controller", func() {
 						Envoy: &supabasev1alpha1.EnvoySpec{
 							DisableIPv6: true,
 							WorkloadSpec: &supabasev1alpha1.WorkloadSpec{
-								Replicas: func() *int32 { i := int32(1); return &i }(),
+								Replicas: new(int32(1)),
 							},
 							ControlPlane: &supabasev1alpha1.ControlPlaneSpec{
 								Host: "supabase-control-plane.supabase-system.svc",
