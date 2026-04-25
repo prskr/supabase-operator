@@ -107,6 +107,10 @@ func (r *StorageS3CredentialsReconciler) reconcileS3ProtoSecret(
 	ctx context.Context,
 	storage *supabasev1alpha1.Storage,
 ) error {
+	if storage.Spec.API.S3Protocol == nil {
+		return nil
+	}
+
 	const (
 		acccessKeyIdAndSecret = 2
 	)

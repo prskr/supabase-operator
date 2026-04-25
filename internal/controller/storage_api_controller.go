@@ -106,13 +106,6 @@ func (r *StorageAPIReconciler) reconcileStorageAPIDeployment(
 			},
 		}
 
-		s3ProtocolSecret = &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      apiSpec.S3Protocol.CredentialsSecretRef.SecretName,
-				Namespace: storage.Namespace,
-			},
-		}
-
 		jwtStateHash, s3ProtoCredentialsStateHash string
 	)
 
@@ -125,14 +118,23 @@ func (r *StorageAPIReconciler) reconcileStorageAPIDeployment(
 		jwtSecret.Data[apiSpec.JwtAuth.JwksKey],
 	))
 
-	if err := r.Get(ctx, client.ObjectKeyFromObject(s3ProtocolSecret), s3ProtocolSecret); err != nil {
-		return err
-	}
+	if apiSpec.S3Protocol != nil && apiSpec.S3Protocol.CredentialsSecretRef != nil {
+		s3ProtocolSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      apiSpec.S3Protocol.CredentialsSecretRef.SecretName,
+				Namespace: storage.Namespace,
+			},
+		}
 
-	s3ProtoCredentialsStateHash = base64.StdEncoding.EncodeToString(HashBytes(
-		s3ProtocolSecret.Data[apiSpec.S3Protocol.CredentialsSecretRef.AccessKeyIDKey],
-		s3ProtocolSecret.Data[apiSpec.S3Protocol.CredentialsSecretRef.AccessSecretKeyKey],
-	))
+		if err := r.Get(ctx, client.ObjectKeyFromObject(s3ProtocolSecret), s3ProtocolSecret); err != nil {
+			return err
+		}
+
+		s3ProtoCredentialsStateHash = base64.StdEncoding.EncodeToString(HashBytes(
+			s3ProtocolSecret.Data[apiSpec.S3Protocol.CredentialsSecretRef.AccessKeyIDKey],
+			s3ProtocolSecret.Data[apiSpec.S3Protocol.CredentialsSecretRef.AccessSecretKeyKey],
+		))
+	}
 
 	var postgrestURL string
 	if len(apiSpec.PostgRESTServiceMatchLabels) > 0 {
@@ -173,7 +175,12 @@ func (r *StorageAPIReconciler) reconcileStorageAPIDeployment(
 	}
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, storageAPIDeployment, func() error {
-		storageAPIDeployment.Labels = apiSpec.WorkloadSpec.MergeLabels(
+		var workloadSpec *supabasev1alpha1.WorkloadSpec
+		if apiSpec.WorkloadSpec != nil {
+			workloadSpec = &apiSpec.WorkloadSpec.WorkloadSpec
+		}
+
+		storageAPIDeployment.Labels = workloadSpec.MergeLabels(
 			objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.Storage.Tag),
 			storage.Labels,
 		)
@@ -207,16 +214,13 @@ func (r *StorageAPIReconciler) reconcileStorageAPIDeployment(
 			serviceCfg.EnvKeys.JwtJwks.Var(apiSpec.JwtAuth.JwksKeySelector()),
 			serviceCfg.EnvKeys.PostgrestURL.Var(postgrestURL),
 			serviceCfg.EnvKeys.S3ProtocolPrefix.Var(),
-			serviceCfg.EnvKeys.S3ProtocolAllowForwardedHeader.Var(apiSpec.S3Protocol.AllowForwardedHeader),
-			serviceCfg.EnvKeys.S3ProtocolAccessKeyID.Var(apiSpec.S3Protocol.CredentialsSecretRef.AccessKeyIDSelector()),
-			serviceCfg.EnvKeys.S3ProtocolAccessKeySecret.Var(apiSpec.S3Protocol.CredentialsSecretRef.AccessSecretKeySelector()),
 			serviceCfg.EnvKeys.FileSizeLimit.Var(apiSpec.FileSizeLimit),
 			serviceCfg.EnvKeys.UploadFileSizeLimit.Var(apiSpec.FileSizeLimit),
 			serviceCfg.EnvKeys.UploadFileSizeLimitStandard.Var(apiSpec.FileSizeLimit),
 			serviceCfg.EnvKeys.AnonKey.Var(apiSpec.JwtAuth.AnonKeySelector()),
 			// TODO: https://github.com/supabase/storage-api/issues/55
-			serviceCfg.EnvKeys.FileStorageRegion.Var(*apiSpec.Region),
-			serviceCfg.EnvKeys.TenantID.Var(*apiSpec.TenantID),
+			serviceCfg.EnvKeys.FileStorageRegion.Var(*ValueOrFallback(apiSpec.Region, new("stub"))),
+			serviceCfg.EnvKeys.TenantID.Var(*ValueOrFallback(apiSpec.TenantID, new("stub"))),
 			serviceCfg.EnvKeys.AllowForwardedPathHeader.Var(),
 			serviceCfg.EnvKeys.PGQeueEnabled.Var(false),
 		}
@@ -231,36 +235,35 @@ func (r *StorageAPIReconciler) reconcileStorageAPIDeployment(
 			}
 		}
 
-		if apiSpec.WorkloadSpec != nil {
+		if apiSpec.WorkloadSpec != nil && apiSpec.WorkloadSpec.Strategy != nil {
 			storageAPIDeployment.Spec.Strategy = *apiSpec.WorkloadSpec.Strategy
 		}
 
-		storageAPIDeployment.Spec.Replicas = apiSpec.WorkloadSpec.ReplicaCount()
+		storageAPIDeployment.Spec.Replicas = workloadSpec.ReplicaCount()
 
 		storageAPIDeployment.Spec.Template = corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					fmt.Sprintf("%s/%s", supabasev1alpha1.GroupVersion.Group, "jwt-hash"):            jwtStateHash,
-					fmt.Sprintf("%s/%s", supabasev1alpha1.GroupVersion.Group, "s3-credentials-hash"): s3ProtoCredentialsStateHash,
+					fmt.Sprintf("%s/%s", supabasev1alpha1.GroupVersion.Group, "jwt-hash"): jwtStateHash,
 				},
 				Labels: objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.Storage.Tag),
 			},
 			Spec: corev1.PodSpec{
-				ImagePullSecrets:             apiSpec.WorkloadSpec.PullSecrets(),
+				ImagePullSecrets:             workloadSpec.PullSecrets(),
 				AutomountServiceAccountToken: new(false),
 				Containers: []corev1.Container{{
 					Name:            "supabase-storage",
-					Image:           apiSpec.WorkloadSpec.Image(supabase.Images.Storage.String()),
-					ImagePullPolicy: apiSpec.WorkloadSpec.ImagePullPolicy(),
-					Env:             apiSpec.WorkloadSpec.MergeEnv(append(storagAPIEnv, slices.Concat(apiSpec.FileBackend.Env(), apiSpec.S3Backend.Env())...)),
+					Image:           workloadSpec.Image(supabase.Images.Storage.String()),
+					ImagePullPolicy: workloadSpec.ImagePullPolicy(),
+					Env:             workloadSpec.MergeEnv(append(storagAPIEnv, slices.Concat(apiSpec.FileBackend.Env(), apiSpec.S3Backend.Env())...)),
 					Ports: []corev1.ContainerPort{{
 						Name:          serviceCfg.Defaults.APIPortName,
 						ContainerPort: serviceCfg.Defaults.APIPort,
 						Protocol:      corev1.ProtocolTCP,
 					}},
-					SecurityContext: apiSpec.WorkloadSpec.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
-					Resources:       apiSpec.WorkloadSpec.Resources(),
-					VolumeMounts: apiSpec.WorkloadSpec.AdditionalVolumeMounts(
+					SecurityContext: workloadSpec.ContainerSecurityContext(serviceCfg.Defaults.UID, serviceCfg.Defaults.GID),
+					Resources:       workloadSpec.Resources(),
+					VolumeMounts: workloadSpec.AdditionalVolumeMounts(
 						corev1.VolumeMount{
 							Name:      "tmp",
 							MountPath: "/tmp",
@@ -290,8 +293,8 @@ func (r *StorageAPIReconciler) reconcileStorageAPIDeployment(
 						},
 					},
 				}},
-				SecurityContext: apiSpec.WorkloadSpec.PodSecurityContext(),
-				Volumes: apiSpec.WorkloadSpec.Volumes(
+				SecurityContext: workloadSpec.PodSecurityContext(),
+				Volumes: workloadSpec.Volumes(
 					corev1.Volume{
 						Name: "tmp",
 						VolumeSource: corev1.VolumeSource{
@@ -300,6 +303,10 @@ func (r *StorageAPIReconciler) reconcileStorageAPIDeployment(
 					},
 				),
 			},
+		}
+
+		if s3ProtoCredentialsStateHash != "" {
+			storageAPIDeployment.Spec.Template.Annotations[fmt.Sprintf("%s/%s", supabasev1alpha1.GroupVersion.Group, "s3-credentials-hash")] = s3ProtoCredentialsStateHash
 		}
 
 		if err := controllerutil.SetControllerReference(storage, storageAPIDeployment, r.Scheme); err != nil {
@@ -324,7 +331,12 @@ func (r *StorageAPIReconciler) reconcileStorageAPIService(
 	)
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, storageAPIService, func() error {
-		storageAPIService.Labels = storage.Spec.API.WorkloadSpec.MergeLabels(
+		var workloadSpec *supabasev1alpha1.WorkloadSpec
+		if storage.Spec.API.WorkloadSpec != nil {
+			workloadSpec = &storage.Spec.API.WorkloadSpec.WorkloadSpec
+		}
+
+		storageAPIService.Labels = workloadSpec.MergeLabels(
 			objectLabels(storage, serviceCfg.Name, "storage", supabase.Images.Storage.Tag),
 			storage.Labels,
 		)
