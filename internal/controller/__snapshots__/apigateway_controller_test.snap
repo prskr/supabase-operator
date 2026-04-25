@@ -25,3 +25,32 @@
  "type": "Opaque"
 }
 ---
+
+[APIGateway Controller When reconciling a resource should successfully reconcile the resource - 2]
+{
+ "data": {
+  "ca.crt": "<Any value>",
+  "tls.crt": "<Any value>",
+  "tls.key": "<Any value>"
+ },
+ "metadata": {
+  "creationTimestamp": "<Any value>",
+  "managedFields": "<Any value>",
+  "name": "test-resource-cp-client-cert",
+  "namespace": "default",
+  "ownerReferences": [
+   {
+    "apiVersion": "supabase.k8s.icb4dc0.de/v1alpha1",
+    "blockOwnerDeletion": true,
+    "controller": true,
+    "kind": "APIGateway",
+    "name": "test-resource",
+    "uid": "<Any value>"
+   }
+  ],
+  "resourceVersion": "<Any value>",
+  "uid": "<Any value>"
+ },
+ "type": "kubernetes.io/tls"
+}
+---

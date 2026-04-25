@@ -165,6 +165,26 @@ var _ = Describe("APIGateway Controller", func() {
 			Expect(hmacSecret.Data).To(HaveKey(supabase.ServiceConfig.Envoy.Defaults.HmacSecretKey))
 
 			snaps.MatchJSON(GinkgoT(), hmacSecret, match.Any("data.oauth2_hmac_secret", "metadata.resourceVersion", "metadata.creationTimestamp", "metadata.uid", "metadata.managedFields", "metadata.ownerReferences.0.uid"))
+
+			By("Checking the created client certificate secret")
+			clientCertSecret := &corev1.Secret{}
+			clientCertSecretName := supabase.ServiceConfig.Envoy.ControlPlaneClientCertSecretName(apigateway)
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: clientCertSecretName, Namespace: "default"}, clientCertSecret)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(clientCertSecret.Data).To(HaveKey("ca.crt"))
+			Expect(clientCertSecret.Data).To(HaveKey(corev1.TLSCertKey))
+			Expect(clientCertSecret.Data).To(HaveKey(corev1.TLSPrivateKeyKey))
+
+			snaps.MatchJSON(GinkgoT(), clientCertSecret, match.Any(
+				"data.ca\\.crt",
+				"data.tls\\.crt",
+				"data.tls\\.key",
+				"metadata.resourceVersion",
+				"metadata.creationTimestamp",
+				"metadata.uid",
+				"metadata.managedFields",
+				"metadata.ownerReferences.0.uid",
+			))
 		})
 	})
 })
